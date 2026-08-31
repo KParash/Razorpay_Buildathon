@@ -1,0 +1,36 @@
+# =============================================================
+# Agentic E-Commerce Framework: Core Dependencies
+# =============================================================
+
+# --- 1. Agent Orchestration & Core Framework ---
+langgraph>=0.2.0
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-community>=0.3.0
+pydantic>=2.7.0
+
+# --- 2. Model Providers & API Clients (Groq / OpenRouter / OpenAI) ---
+langchain-openai>=0.2.0
+groq>=0.11.0
+openai>=1.50.0
+
+# --- 3. Vector Database & Local Embeddings ---
+# For Local Development / Ephemeral mode:
+chromadb>=0.5.0
+
+# For Cloud / Deployable multi-user access:
+qdrant-client>=1.11.0
+
+# Lightweight CPU embedding encoder (zero API token cost):
+sentence-transformers>=3.0.0
+
+# --- 4. Payment Gateway & Checkout Security ---
+razorpay>=1.4.1
+
+# --- 5. Application Runtime & Utilities ---
+python-dotenv>=1.0.1
+aiohttp>=3.9.0
+requests>=2.32.0
+
+# --- 6. Quick Frontend / Prototyping (Optional for UI) ---
+streamlit>=1.38.0
