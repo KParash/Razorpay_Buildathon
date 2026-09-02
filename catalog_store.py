@@ -5,7 +5,15 @@ Uses ChromaDB (ephemeral) + sentence-transformers for embedding-based
 product search with optional budget filtering.
 """
 
+import warnings
+import os
+import logging
 import chromadb
+
+# Suppress Hugging Face unauthenticated request warnings
+warnings.filterwarnings("ignore", message=".*unauthenticated requests to the HF Hub.*")
+logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
+
 from sentence_transformers import SentenceTransformer
 
 # ---------------------------------------------------------------
@@ -212,3 +220,9 @@ def search_candidate_products(
             break
 
     return candidates
+
+def get_all_catalog_products() -> list[dict]:
+    """Return all products in the seed catalog for storefront rendering."""
+    _seed_if_empty()
+    return SEED_CATALOG
+
