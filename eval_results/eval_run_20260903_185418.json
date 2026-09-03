@@ -1,0 +1,135 @@
+{
+  "timestamp": "2026-09-03T18:54:18.543478",
+  "total_scenarios": 6,
+  "passed_count": 1,
+  "pass_rate_pct": 16.7,
+  "mean_scores": {
+    "relevance": 2.17,
+    "persona": 5.92,
+    "recommendation": 2.08,
+    "helpfulness": 3.17,
+    "composite": 3.33
+  },
+  "results": [
+    {
+      "id": "tc_01_beach_wedding",
+      "name": "Beach Wedding in Goa (Budget & Climate Constraint)",
+      "input_message": "I need a breathable linen outfit for an outdoor beach wedding in Goa under 4000.",
+      "execution_time_sec": 21.15,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 1.0,
+        "persona": 9.5,
+        "recommendation": 1.0,
+        "helpfulness": 2.0,
+        "overall_average": 3.38
+      },
+      "passed": false,
+      "critique": "The agent failed the primary task by recommending a fragrance (Eau de Parfum) instead of the requested breathable linen outfit. While the persona tone was excellent and the price was within budget, the product category is completely irrelevant to the user's specific need for apparel. The response attempts to justify the error by discussing the 'fabric' of the perfume, which is nonsensical in this context. The swarm evaluation correctly identified the category mismatch, but the final output ignored this critical failure.",
+      "anchor_sku": "SKU_004",
+      "product_title": "Eau de Parfum - Floral Scent",
+      "response_preview": "**The Aesthetic Vision: Romanticism Meets the Sea Breeze**\n\nFor a beach ceremony, the olfactory landscape must be as intentional as the visual one. This Floral Eau de Parfum is not..."
+    },
+    {
+      "id": "tc_02_cocktail_blazer",
+      "name": "Rooftop Cocktail Party (Evening Formality)",
+      "input_message": "Recommend a sharp evening look or structured blazer for a summer rooftop cocktail party.",
+      "execution_time_sec": 2.35,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 2.0,
+        "persona": 8.5,
+        "recommendation": 3.0,
+        "helpfulness": 6.0,
+        "overall_average": 4.88
+      },
+      "passed": false,
+      "critique": "The agent failed the primary task by recommending polarized sunglasses instead of the requested 'sharp evening look or structured blazer'. While the response includes a section on styling a blazer, it is framed as a supporting element to the incorrect anchor product (sunglasses), which is a poor choice for an evening formal event. The agent ignored the specific request for a tailored/smart piece as the main recommendation, resulting in a low relevance score. The persona is strong, but the core recommendation is fundamentally misaligned with the user's intent.",
+      "anchor_sku": "SKU_025",
+      "product_title": "Polarized Sunglasses",
+      "response_preview": "**The Aesthetic Vision**\n\nFor a rooftop cocktail gathering, the challenge is balancing polish with the ease of an evening under the open sky. These polarized sunglasses are not mer..."
+    },
+    {
+      "id": "tc_03_skincare_moisturizer",
+      "name": "Skincare & Hydration (Cross-Category Beauty)",
+      "input_message": "I have dry skin and need a deeply hydrating facial moisturizer for daily daily glow.",
+      "execution_time_sec": 2.11,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 0.0,
+        "persona": 0.0,
+        "recommendation": 0.0,
+        "helpfulness": 0.0,
+        "overall_average": 0.0
+      },
+      "passed": false,
+      "critique": "The agent completely failed to address the user's request. The user asked for a facial moisturizer for dry skin, but the agent recommended unisex casual sneakers. This is a critical category error (Fashion vs. Beauty) and a semantic failure. The response is irrelevant, unhelpful, and demonstrates a total lack of understanding of the user's intent.",
+      "anchor_sku": "SKU_023",
+      "product_title": "Unisex Casual Sneakers",
+      "response_preview": "**The Foundation of Effortless Chic**\n\nLet\u2019s talk about the anchor of your casual wardrobe. These unisex sneakers aren\u2019t just footwear; they are the quiet confidence in your stride..."
+    },
+    {
+      "id": "tc_04_wireless_audio",
+      "name": "Wireless Audio Headphones (Electronics)",
+      "input_message": "Suggest top-notch wireless bluetooth headphones for workouts and daily commuting.",
+      "execution_time_sec": 1.01,
+      "route_correct": false,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 0.0,
+        "persona": 2.0,
+        "recommendation": 0.0,
+        "helpfulness": 0.0,
+        "overall_average": 0.5
+      },
+      "passed": false,
+      "critique": "The agent completely failed to address the user's request for wireless bluetooth headphones. Instead, it hallucinated a fashion context, suggesting clothing items (jersey sets, blazers) which are irrelevant to the 'Electronics & Gadgets' category. The intent extraction incorrectly identified the target as fashion, and no product recommendation was made. This is a total failure of semantic precision and relevance.",
+      "anchor_sku": null,
+      "product_title": null,
+      "response_preview": "For a seamless transition from the studio to the street, we need to balance performance with polish. Are you drawn to the fluid, monochromatic ease of a matte technical jersey set ..."
+    },
+    {
+      "id": "tc_05_vague_needs_clarification",
+      "name": "Ambiguous Query (Clarifier Routing)",
+      "input_message": "Hi, I just want something nice to buy today.",
+      "execution_time_sec": 1.37,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 9.0,
+        "persona": 9.5,
+        "recommendation": 8.5,
+        "helpfulness": 9.0,
+        "overall_average": 9.0
+      },
+      "passed": true,
+      "critique": "The agent successfully navigates the ambiguous query by adopting a sophisticated, evocative tone that aligns with the 'high-end personal stylist' persona. It avoids premature checkout and product recommendations, instead focusing on clarifying style preferences through sensory language (texture, drape). The response is concise, engaging, and effectively routes the conversation toward a specific styling direction without being pushy, meeting all key evaluation criteria.",
+      "anchor_sku": null,
+      "product_title": null,
+      "response_preview": "For a casual outing, the magic lies in the texture and the drape. Are you drawn to the airy, unstructured ease of washed linen that moves with the breeze, or do you prefer the cris..."
+    },
+    {
+      "id": "tc_06_discount_coupon",
+      "name": "Discount Hunter (STYLE20 Coupon)",
+      "input_message": "Show me trending fashion pieces eligible for the STYLE20 discount coupon.",
+      "execution_time_sec": 0.85,
+      "route_correct": false,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 1.0,
+        "persona": 6.0,
+        "recommendation": 0.0,
+        "helpfulness": 2.0,
+        "overall_average": 2.25
+      },
+      "passed": false,
+      "critique": "The agent completely failed to address the core user request. The user explicitly asked for trending pieces eligible for a specific discount coupon (STYLE20). Instead, the agent ignored the discount constraint and the request for specific products, opting to ask a vague stylistic preference question ('relaxed tailoring' vs 'modern minimalism'). The intent extraction incorrectly marked 'is_ready_to_recommend' as false, and no pricing or coupon logic was executed. While the tone is somewhat luxurious, the response is functionally useless for a 'discount hunter' scenario.",
+      "anchor_sku": null,
+      "product_title": null,
+      "response_preview": "Let\u2019s curate a look that feels distinctly *you* right now. Since we\u2019re exploring the current zeitgeist, I\u2019m thinking of two very different moods: are you drawn to the fluid, organi..."
+    }
+  ]
+}

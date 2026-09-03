@@ -1,0 +1,918 @@
+{
+  "sessions": {
+    "sess_ejm9yzcs": {
+      "session_id": "sess_ejm9yzcs",
+      "user_id": "usr_guest",
+      "title": "I am looking for a complete outfi...",
+      "created_at": 1788439562,
+      "updated_at": 1788439565
+    },
+    "sess_1788439579498_y9du2": {
+      "session_id": "sess_1788439579498_y9du2",
+      "user_id": "usr_guest",
+      "title": "I am looking for a complete outfi...",
+      "created_at": 1788439579,
+      "updated_at": 1788439582
+    },
+    "sess_1788439606503_3ti5z": {
+      "session_id": "sess_1788439606503_3ti5z",
+      "user_id": "usr_guest",
+      "title": "Recommend a sharp evening look fo...",
+      "created_at": 1788439610,
+      "updated_at": 1788439613
+    },
+    "sess_1788440018061_534p9": {
+      "session_id": "sess_1788440018061_534p9",
+      "user_id": "usr_guest",
+      "title": "I am looking for a complete outfi...",
+      "created_at": 1788440018,
+      "updated_at": 1788440021
+    },
+    "sess_1788440479544_xgn3t": {
+      "session_id": "sess_1788440479544_xgn3t",
+      "user_id": "usr_guest",
+      "title": "I am looking for a complete outfi...",
+      "created_at": 1788440479,
+      "updated_at": 1788440482
+    },
+    "sess_1788454927989_t0fai": {
+      "session_id": "sess_1788454927989_t0fai",
+      "user_id": "usr_guest",
+      "title": "I am looking for a complete outfi...",
+      "created_at": 1788454928,
+      "updated_at": 1788454931
+    }
+  },
+  "messages": {
+    "sess_ejm9yzcs": [
+      {
+        "id": "user-1788439562636",
+        "sender": "user",
+        "text": "I am looking for a complete outfit for an upcoming vacation",
+        "timestamp": "06:16 PM"
+      },
+      {
+        "id": "asst-1788439565529",
+        "sender": "assistant",
+        "text": "**The Utilitarian Edit: Olive Stretch Cargo Joggers**\n\nThere is a distinct shift in contemporary menswear and unisex styling that favors function without sacrificing form. These Olive Stretch Cargo Joggers embody that ethos perfectly. They are not merely pants; they are a statement of effortless, modern utility. The relaxed silhouette offers a counterpoint to the structured rigidity of traditional trousers, creating a look that is approachable yet undeniably chic. This piece captures the mood of the discerning traveler or the city-dweller who values comfort as a luxury, not a compromise.\n\n**Fabric & Drape Analysis**\nWe are working with a substantial Cotton-Spandex blend at 260 GSM. This is a heavy, dense textile that provides significant structure and durability. The high GSM ensures the fabric holds its shape, preventing the \"slouch\" often associated with lighter joggers, while the spandex component offers the necessary stretch for ease of movement. *A note on climate:* Due to the weight and density of this fabric, breathability is limited. This piece is best reserved for cooler climates, transitional seasons, or as a durable base layer. It is not designed for high-heat environments where airflow is critical.\n\n**The Styling Masterclass**\nTo elevate this utilitarian base, we must balance the volume of the cargo pockets with a defined waistline.\n*   **The Top:** Tuck in a lightweight linen shirt or a simple, high-quality crew-neck tee. The tuck is non-negotiable here; it anchors the outfit and prevents the relaxed fit from appearing sloppy.\n*   **The Footwear:** Pair with clean, minimalist sneakers or leather loafers to maintain a polished casual aesthetic. Avoid bulky athletic shoes to keep the line clean.\n*   **Accessories:** Keep it minimal. A structured crossbody bag adds functionality without clutter, and a pair of sharp sunglasses completes the \"functional chic\" narrative.\n\n**Size Recommendation**\nFor the optimal drape, I advise selecting **Size 32**. This aligns with your historical fit profile and ensures the relaxed cut falls exactly as intended—neither overly baggy nor restrictive.\n\n**Investment**\n₹2,199.00",
+        "timestamp": "06:16 PM",
+        "recommendation": {
+          "sku_id": "SKU_006",
+          "title": "Olive Stretch Cargo Joggers",
+          "price": 2199.0,
+          "fit_type": "relaxed",
+          "fabric": "Cotton-Spandex",
+          "gsm": "260",
+          "color": "Olive",
+          "image_url": "https://images.unsplash.com/photo-1517445312882-bc9910d016b7?w=800&auto=format&fit=crop&q=80"
+        },
+        "candidate_skus": [
+          {
+            "sku_id": "SKU_006",
+            "metadata": {
+              "color": "Olive",
+              "title": "Olive Stretch Cargo Joggers",
+              "category": "bottoms",
+              "gsm": "260",
+              "fabric": "Cotton-Spandex",
+              "image_url": "https://images.unsplash.com/photo-1517445312882-bc9910d016b7?w=800&auto=format&fit=crop&q=80",
+              "eligible_coupon": "NONE",
+              "warehouse": "MUM_HUB",
+              "fit_type": "relaxed",
+              "price": "2199"
+            },
+            "score": -0.3595
+          },
+          {
+            "sku_id": "SKU_005",
+            "metadata": {
+              "price": "1299",
+              "category": "tops",
+              "eligible_coupon": "STYLE20",
+              "image_url": "https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?w=800&auto=format&fit=crop&q=80",
+              "gsm": "180",
+              "warehouse": "BLR_HUB",
+              "fabric": "Cotton Pique",
+              "color": "White",
+              "title": "White Pique Cotton Polo",
+              "fit_type": "regular"
+            },
+            "score": -0.4457
+          },
+          {
+            "sku_id": "SKU_003",
+            "metadata": {
+              "color": "Teal",
+              "fit_type": "relaxed",
+              "warehouse": "MUM_HUB",
+              "eligible_coupon": "STYLE20",
+              "fabric": "Rayon",
+              "gsm": "130",
+              "image_url": "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800&auto=format&fit=crop&q=80",
+              "title": "Teal Floral Camp Collar Shirt",
+              "category": "tops",
+              "price": "1599"
+            },
+            "score": -0.5459
+          },
+          {
+            "sku_id": "SKU_002",
+            "metadata": {
+              "fit_type": "slim",
+              "gsm": "220",
+              "price": "1899",
+              "image_url": "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800&auto=format&fit=crop&q=80",
+              "eligible_coupon": "NONE",
+              "warehouse": "BLR_HUB",
+              "title": "Beige Cotton Chino Trousers",
+              "category": "bottoms",
+              "color": "Beige",
+              "fabric": "Cotton Twill"
+            },
+            "score": -0.613
+          },
+          {
+            "sku_id": "SKU_001",
+            "metadata": {
+              "color": "Ivory",
+              "fit_type": "relaxed",
+              "category": "tops",
+              "price": "2499",
+              "gsm": "140",
+              "title": "Ivory Linen Mandarin Collar Shirt",
+              "warehouse": "BLR_HUB",
+              "eligible_coupon": "STYLE20",
+              "fabric": "100% Linen",
+              "image_url": "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=800&auto=format&fit=crop&q=80"
+            },
+            "score": -0.657
+          }
+        ],
+        "evaluations": [
+          {
+            "sku_id": "SKU_006",
+            "size_verdict": {
+              "recommended_size": "32",
+              "fit_confidence": 0.95,
+              "reasoning": "The user's preference for a 'relaxed' fit aligns perfectly with the product's 'relaxed' cut. The size history indicates a bottom size of 32, which is the standard baseline for this category. Since the product is designed to be relaxed and the user prefers that, sticking to the historical size ensures the intended drape and silhouette without being overly baggy or tight."
+            },
+            "fabric_verdict": {
+              "climate_pass": false,
+              "wrinkle_risk": "low",
+              "comfort_notes": "High GSM (260) indicates a heavy, dense fabric. While the spandex blend offers stretch and recovery, the high weight makes it unsuitable for hot or humid climates due to poor breathability and potential overheating. It is likely intended for cooler conditions or as a durable base layer, but specific comfort cannot be guaranteed without knowing the target climate."
+            },
+            "delivery_verdict": {
+              "meets_deadline": true,
+              "estimated_arrival": "2-3 business days (Express Courier)",
+              "warehouse": "MUM_HUB"
+            },
+            "pricing_verdict": {},
+            "is_disqualified": true,
+            "rejection_reason": null
+          }
+        ],
+        "pricing_result": {
+          "base_price": 2199.0,
+          "discount_applied": 0.0,
+          "coupon_code": "NONE",
+          "final_price": 2199.0
+        },
+        "checkout_ready": false,
+        "razorpay_order": null
+      }
+    ],
+    "sess_1788439579498_y9du2": [
+      {
+        "id": "user-1788439579519",
+        "sender": "user",
+        "text": "I am looking for a complete outfit for an upcoming vacation",
+        "timestamp": "06:16 PM"
+      },
+      {
+        "id": "asst-1788439582550",
+        "sender": "assistant",
+        "text": "**The Aesthetic Vision**\n\nThere is a specific kind of effortless authority that comes from utilitarian tailoring, and these Olive Stretch Cargo Joggers embody it perfectly. We are moving away from rigid formalities and into a space of functional luxury—think airport lounges, city strolls, and long days where comfort is non-negotiable, but looking polished remains a priority. The deep olive hue is a timeless neutral that grounds any outfit, offering a sophisticated alternative to black or grey while retaining that rugged, modern edge. This is the piece that allows you to move through your day with ease, without sacrificing the curated look you demand.\n\n**Fabric & Drape Breakdown**\n\nThe construction here is deliberate. We are working with a 260 GSM Cotton-Spandex blend, a weight that provides substantial structure and durability. This isn’t a lightweight, see-through fabric; it has body. The spandex component ensures the relaxed silhouette moves with you, preventing the \"baggy\" look that often plagues cargo styles. However, I must be transparent about the climate performance: at 260 GSM, this fabric is substantial. It is ideal for cool, dry environments or air-conditioned spaces. If you are heading into a hot, humid climate, this weight may feel warm against the skin. For cooler days or transitional weather, however, the drape is impeccable—holding its shape while allowing for full range of motion.\n\n**Concrete Styling Masterclass**\n\nTo master this look, we need to balance the volume of the cargo pockets. Here is how I would style this for maximum impact:\n\n*   **The Top:** Tuck in your top slightly. This is crucial. By defining the waist, you counteract the relaxed width of the joggers, creating an hourglass effect that looks intentional rather than oversized. Opt for a lightweight, breathable top in a neutral or earthy tone—think cream, sand, or soft white—to let the olive pop without clashing.\n*   **The Footwear:** Ground the outfit with clean white sneakers for a modern, sporty-chic vibe, or leather sandals if the weather permits. The key is support; you want footwear that looks put-together but can handle a full day of walking.\n*   **Accessories:** Keep it minimal and functional. A sleek crossbody bag keeps your hands free and maintains a streamlined silhouette. Avoid bulky jewelry; let the texture of the fabric and the clean lines of the cut speak for themselves.\n\n**Sizing & Fit**\n\nFor the perfect drape, I am confident in recommending **Size 32**. Your historical fit data aligns perfectly with the product’s relaxed cut. This size will ensure the joggers sit exactly as designed—relaxed but not overly baggy, maintaining that clean, architectural line you are after.\n\n**Final Note**\n\nAt ₹2,199.0, this is a high-value investment in versatile, travel-ready comfort. While no active coupon is currently applied, the price point reflects the quality of the 260 GSM textile and the precision of the cut. It is a staple that will serve you well across multiple seasons and settings.",
+        "timestamp": "06:16 PM",
+        "recommendation": {
+          "sku_id": "SKU_006",
+          "title": "Olive Stretch Cargo Joggers",
+          "price": 2199.0,
+          "fit_type": "relaxed",
+          "fabric": "Cotton-Spandex",
+          "gsm": "260",
+          "color": "Olive",
+          "image_url": "https://images.unsplash.com/photo-1517445312882-bc9910d016b7?w=800&auto=format&fit=crop&q=80"
+        },
+        "candidate_skus": [
+          {
+            "sku_id": "SKU_006",
+            "metadata": {
+              "title": "Olive Stretch Cargo Joggers",
+              "gsm": "260",
+              "fit_type": "relaxed",
+              "category": "bottoms",
+              "warehouse": "MUM_HUB",
+              "eligible_coupon": "NONE",
+              "color": "Olive",
+              "image_url": "https://images.unsplash.com/photo-1517445312882-bc9910d016b7?w=800&auto=format&fit=crop&q=80",
+              "price": "2199",
+              "fabric": "Cotton-Spandex"
+            },
+            "score": -0.3595
+          },
+          {
+            "sku_id": "SKU_005",
+            "metadata": {
+              "price": "1299",
+              "eligible_coupon": "STYLE20",
+              "warehouse": "BLR_HUB",
+              "color": "White",
+              "image_url": "https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?w=800&auto=format&fit=crop&q=80",
+              "fabric": "Cotton Pique",
+              "gsm": "180",
+              "fit_type": "regular",
+              "category": "tops",
+              "title": "White Pique Cotton Polo"
+            },
+            "score": -0.4457
+          },
+          {
+            "sku_id": "SKU_003",
+            "metadata": {
+              "title": "Teal Floral Camp Collar Shirt",
+              "fabric": "Rayon",
+              "gsm": "130",
+              "price": "1599",
+              "fit_type": "relaxed",
+              "color": "Teal",
+              "category": "tops",
+              "warehouse": "MUM_HUB",
+              "eligible_coupon": "STYLE20",
+              "image_url": "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800&auto=format&fit=crop&q=80"
+            },
+            "score": -0.5459
+          },
+          {
+            "sku_id": "SKU_002",
+            "metadata": {
+              "title": "Beige Cotton Chino Trousers",
+              "fabric": "Cotton Twill",
+              "warehouse": "BLR_HUB",
+              "price": "1899",
+              "image_url": "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800&auto=format&fit=crop&q=80",
+              "color": "Beige",
+              "category": "bottoms",
+              "fit_type": "slim",
+              "gsm": "220",
+              "eligible_coupon": "NONE"
+            },
+            "score": -0.613
+          },
+          {
+            "sku_id": "SKU_001",
+            "metadata": {
+              "warehouse": "BLR_HUB",
+              "price": "2499",
+              "gsm": "140",
+              "eligible_coupon": "STYLE20",
+              "image_url": "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=800&auto=format&fit=crop&q=80",
+              "fabric": "100% Linen",
+              "title": "Ivory Linen Mandarin Collar Shirt",
+              "color": "Ivory",
+              "category": "tops",
+              "fit_type": "relaxed"
+            },
+            "score": -0.657
+          }
+        ],
+        "evaluations": [
+          {
+            "sku_id": "SKU_006",
+            "size_verdict": {
+              "recommended_size": "32",
+              "fit_confidence": 0.95,
+              "reasoning": "The user's preference for a 'relaxed' fit aligns perfectly with the product's 'relaxed' cut. The size history indicates a bottom size of 32, which is the standard baseline for this category. Since the product is designed to be relaxed and the user prefers that, sticking to the historical size ensures the intended drape and silhouette without being overly baggy or tight."
+            },
+            "fabric_verdict": {
+              "climate_pass": false,
+              "wrinkle_risk": "low",
+              "comfort_notes": "260 GSM is heavy; suitable for cool/dry climates but likely too warm for hot/humid environments."
+            },
+            "delivery_verdict": {
+              "meets_deadline": true,
+              "estimated_arrival": "2-3 business days (Express Courier)",
+              "warehouse": "MUM_HUB"
+            },
+            "pricing_verdict": {},
+            "is_disqualified": true,
+            "rejection_reason": null
+          }
+        ],
+        "pricing_result": {
+          "base_price": 2199.0,
+          "discount_applied": 0.0,
+          "coupon_code": "NONE",
+          "final_price": 2199.0
+        },
+        "checkout_ready": false,
+        "razorpay_order": null
+      }
+    ],
+    "sess_1788439606503_3ti5z": [
+      {
+        "id": "user-1788439610392",
+        "sender": "user",
+        "text": "Recommend a sharp evening look for a summer rooftop cocktail party.",
+        "timestamp": "06:16 PM"
+      },
+      {
+        "id": "asst-1788439613622",
+        "sender": "assistant",
+        "text": "**The Midnight Anchor: A Study in Refined Contrast**\n\nFor an evening cocktail gathering, the challenge is rarely about adding more; it is about curating the right tension between structure and ease. This Navy Structured Linen Blazer is not merely a jacket; it is the sophisticated anchor for your look. It captures the essence of \"smart casual\" with a deliberate edge, allowing you to command the room with a silhouette that feels both intentional and effortlessly cool. The deep navy tone provides a monochromatic depth that pairs seamlessly with the evening light, while the linen texture introduces a necessary, organic softness to counterbalance the formality of the occasion.\n\n**The Textile: Breathability Meets Structure**\n\nWe are working with a 200 GSM Linen Blend, a weight specifically chosen for its performance in warm, dry conditions. This fabric is your ally against the heat, offering high breathability and moisture-wicking properties that keep you composed as the night progresses. However, linen is a fabric with a personality. It carries a high wrinkle risk, which is not a flaw but a feature—it speaks to the natural, lived-in luxury of the fiber. The 200 GSM weight provides just enough durability to hold the \"structured\" silhouette without trapping heat, ensuring that the drape remains crisp yet cool against the skin.\n\n**The Fit: A Deliberate Choice**\n\nHere is where we must be precise. You have a preference for a relaxed fit, but this piece is cut with a tailored, structured intent. There is a slight tension here. If you prioritize the exact tailored aesthetic, a **Medium** is the choice, but it will sit closer to the body with defined shoulders and a nipped waist. If you wish to honor your preference for ease and allow the linen to drape with a more relaxed, unstructured feel, I advise stepping up to a **Large**. This will soften the sharp lines, creating a more languid, modern silhouette that aligns better with your comfort profile, even if it deviates slightly from the traditional \"tailored\" cut.\n\n**The Styling Masterclass**\n\nTo elevate this from daywear to evening elegance, the details are non-negotiable:\n\n*   **The Foundation:** Pair the blazer with dark, tailored trousers in a slim or tapered cut. This creates a clean vertical line that complements the blazer’s structure. Keep your shirt tucked in—opt for a crisp white or a subtle metallic sheen to add that necessary evening polish.\n*   **The Finish:** Ensure the blazer is well-pressed before you leave. While linen wrinkles naturally, a sharp initial press maintains the integrity of the structure.\n*   **The Footwear:** Choose shoes with a slight heel or a polished leather finish. This elevates the entire ensemble, bridging the gap between the casual texture of the linen and the formal requirement of the cocktail setting.\n*   **The Accessories:** Let the fabric speak. Keep jewelry minimal—perhaps a sleek leather watch or a single metallic accent—to add just enough sparkle without competing with the texture of the weave.\n\nThis piece is an investment in a specific mood: sophisticated, breathable, and undeniably stylish. Wear it with confidence, and let the drape do the talking.",
+        "timestamp": "06:16 PM",
+        "recommendation": {
+          "sku_id": "SKU_004",
+          "title": "Navy Structured Linen Blazer",
+          "price": 4999.0,
+          "fit_type": "tailored",
+          "fabric": "Linen Blend",
+          "gsm": "200",
+          "color": "Navy",
+          "image_url": "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80"
+        },
+        "candidate_skus": [
+          {
+            "sku_id": "SKU_004",
+            "metadata": {
+              "eligible_coupon": "NONE",
+              "title": "Navy Structured Linen Blazer",
+              "image_url": "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80",
+              "fit_type": "tailored",
+              "category": "outerwear",
+              "warehouse": "DEL_HUB",
+              "fabric": "Linen Blend",
+              "gsm": "200",
+              "price": "4999",
+              "color": "Navy"
+            },
+            "score": 0.0674
+          },
+          {
+            "sku_id": "SKU_007",
+            "metadata": {
+              "fabric": "100% Linen",
+              "price": "2299",
+              "fit_type": "oversized",
+              "gsm": "135",
+              "image_url": "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=800&auto=format&fit=crop&q=80",
+              "eligible_coupon": "STYLE20",
+              "warehouse": "DEL_HUB",
+              "color": "Lavender",
+              "category": "tops",
+              "title": "Lavender Oversized Linen Shirt"
+            },
+            "score": -0.0714
+          },
+          {
+            "sku_id": "SKU_002",
+            "metadata": {
+              "category": "bottoms",
+              "image_url": "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800&auto=format&fit=crop&q=80",
+              "warehouse": "BLR_HUB",
+              "gsm": "220",
+              "price": "1899",
+              "fabric": "Cotton Twill",
+              "title": "Beige Cotton Chino Trousers",
+              "eligible_coupon": "NONE",
+              "color": "Beige",
+              "fit_type": "slim"
+            },
+            "score": -0.3706
+          },
+          {
+            "sku_id": "SKU_001",
+            "metadata": {
+              "fit_type": "relaxed",
+              "eligible_coupon": "STYLE20",
+              "color": "Ivory",
+              "price": "2499",
+              "fabric": "100% Linen",
+              "gsm": "140",
+              "image_url": "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=800&auto=format&fit=crop&q=80",
+              "warehouse": "BLR_HUB",
+              "title": "Ivory Linen Mandarin Collar Shirt",
+              "category": "tops"
+            },
+            "score": -0.4262
+          },
+          {
+            "sku_id": "SKU_005",
+            "metadata": {
+              "fabric": "Cotton Pique",
+              "warehouse": "BLR_HUB",
+              "color": "White",
+              "image_url": "https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?w=800&auto=format&fit=crop&q=80",
+              "price": "1299",
+              "gsm": "180",
+              "fit_type": "regular",
+              "category": "tops",
+              "eligible_coupon": "STYLE20",
+              "title": "White Pique Cotton Polo"
+            },
+            "score": -0.4389
+          }
+        ],
+        "evaluations": [
+          {
+            "sku_id": "SKU_004",
+            "size_verdict": {
+              "recommended_size": "M (with caution) or L (if prioritizing relaxed feel over exact tailored fit), ",
+              "fit_confidence": 0.65,
+              "reasoning": "The product is described as 'tailored' and 'structured', which directly conflicts with the user's 'relaxed' fit preference. Structured linen blazers typically have a sharper silhouette and less ease than a relaxed fit. While the user's size history suggests a Medium top, the cut mismatch is the primary concern. A relaxed fit preference usually implies a looser, less defined shape, whereas a tailored structured blazer will fit closer to the body with defined shoulders and waist. This may result in a fit that feels too tight or restrictive for the user's preference."
+            },
+            "fabric_verdict": {
+              "climate_pass": true,
+              "wrinkle_risk": "High (inherent to linen fibers, even in blends).",
+              "comfort_notes": "High breathability and moisture-wicking properties make it ideal for hot, dry rooftop conditions; 200 GSM weight provides sufficient durability without excessive heat retention."
+            },
+            "delivery_verdict": {
+              "meets_deadline": true,
+              "estimated_arrival": "2-3 business days (Express Courier)",
+              "warehouse": "DEL_HUB"
+            },
+            "pricing_verdict": {},
+            "is_disqualified": false,
+            "rejection_reason": null
+          }
+        ],
+        "pricing_result": {
+          "base_price": 4999.0,
+          "discount_applied": 0.0,
+          "coupon_code": "NONE",
+          "final_price": 4999.0
+        },
+        "checkout_ready": false,
+        "razorpay_order": null
+      }
+    ],
+    "sess_1788440018061_534p9": [
+      {
+        "id": "user-1788440018107",
+        "sender": "user",
+        "text": "I am looking for a complete outfit for an upcoming vacation",
+        "timestamp": "06:23 PM"
+      },
+      {
+        "id": "asst-1788440021073",
+        "sender": "assistant",
+        "text": "**The Aesthetic Vision: Minimalist Utility**\n\nIn the realm of modern living, true elegance is found in the seamless integration of function and form. This cordless vacuum cleaner is not merely an appliance; it is a statement of curated efficiency. Its compact silhouette speaks to a lifestyle that values uncluttered spaces and effortless maintenance. Just as a well-tailored blazer commands attention through its clean lines rather than excess ornamentation, this device embodies the \"less is more\" philosophy. It is the architectural anchor of your home’s aesthetic—understated, reliable, and poised to handle the daily rhythm of life with quiet precision.\n\n**Material & Structural Integrity**\n\nWhile traditional textiles are judged by GSM and drape, this piece is defined by its material composition: a fusion of ceramic and steel. These non-textile elements offer a high thermal mass and a rigid, durable structure that resists the wear and tear of daily use. The finish is designed to maintain its luster over time, though one must be mindful of surface care to prevent minor scratches or dents that could disrupt its sleek profile. The \"compact\" fit here translates to a manageable form factor, ensuring that the unit remains lightweight and easy to maneuver, mirroring the fluidity of a relaxed, well-fitted garment that moves with you rather than against you.\n\n**The Styling Masterclass: Curating Your Environment**\n\nTo honor the timeless, low-maintenance aesthetic of this piece, your surrounding environment should reflect similar values. Think of your home as a capsule wardrobe: every item must serve a purpose and contribute to a cohesive visual narrative.\n\n*   **Color Palette:** Stick to neutral, earthy tones in your interior decor. Soft beiges, muted greys, and warm woods will allow the steel and ceramic accents of the vacuum to blend seamlessly into the background, creating a sense of calm and order.\n*   **Organization as Style:** Just as you would avoid over-accessorizing an outfit, keep your storage solutions minimal and organized. A tidy home is the ultimate accessory.\n*   **Movement & Flow:** The cordless design allows for unrestricted movement. Pair this with footwear and attire that prioritize practicality and ease. When you are at home, opt for comfortable, slip-on shoes and breathable, natural-fiber loungewear that allows for the same freedom of movement the vacuum provides.\n\n**Final Note**\n\nThis is an investment in the quiet luxury of a well-kept space. It does not shout; it simply works, allowing you to focus on the beauty of simplicity. No discounts are currently applied, but the value lies in its enduring design and reliable performance.",
+        "timestamp": "06:23 PM",
+        "recommendation": {
+          "sku_id": "SKU_033",
+          "title": "Cordless Vacuum Cleaner",
+          "price": 18000.0,
+          "fit_type": "compact",
+          "fabric": "Ceramic / Steel",
+          "gsm": "N/A",
+          "color": "Classic",
+          "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/vacuum-cleaner.jpg"
+        },
+        "candidate_skus": [
+          {
+            "sku_id": "SKU_033",
+            "metadata": {
+              "eligible_coupon": "NONE",
+              "category": "Home & Kitchen",
+              "fabric": "Ceramic / Steel",
+              "title": "Cordless Vacuum Cleaner",
+              "fit_type": "compact",
+              "sub_category": "Home Appliances",
+              "gsm": "N/A",
+              "price": "18000",
+              "description": "Enjoy effortless cleaning with this cordless vacuum cleaner, designed for convenience and efficiency, easily reaching corners and tight spaces without any cords.",
+              "color": "Classic",
+              "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/vacuum-cleaner.jpg",
+              "warehouse": "BLR_HUB"
+            },
+            "score": -0.7253
+          },
+          {
+            "sku_id": "SKU_006",
+            "metadata": {
+              "sub_category": "Bath & Body",
+              "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/body-wash.jpg",
+              "fabric": "Organic Formulation",
+              "category": "Beauty & Personal Care",
+              "eligible_coupon": "STYLE20",
+              "color": "Classic",
+              "fit_type": "standard",
+              "description": "Our Nourishing Body Wash gently cleanses while replenishing moisture, leaving your skin feeling soft and revitalized. Infused with natural ingredients for a refreshing bathing experience.",
+              "warehouse": "BLR_HUB",
+              "title": "Nourishing Body Wash",
+              "gsm": "N/A",
+              "price": "1300"
+            },
+            "score": -0.7453
+          },
+          {
+            "sku_id": "SKU_034",
+            "metadata": {
+              "title": "Non-Stick Cookware Set",
+              "fit_type": "compact",
+              "price": "25000",
+              "color": "Classic",
+              "sub_category": "Cookware & Bakeware",
+              "description": "This non-stick cookware set is perfect for easy cooking and cleaning, ensuring your meals come out delicious without sticking, making meal prep a breeze.",
+              "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/cookware.jpg",
+              "warehouse": "DEL_HUB",
+              "category": "Home & Kitchen",
+              "fabric": "Ceramic / Steel",
+              "gsm": "N/A",
+              "eligible_coupon": "STYLE20"
+            },
+            "score": -0.7592
+          },
+          {
+            "sku_id": "SKU_002",
+            "metadata": {
+              "eligible_coupon": "STYLE20",
+              "color": "Classic",
+              "category": "Beauty & Personal Care",
+              "warehouse": "MUM_HUB",
+              "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/shampoo.jpg",
+              "fit_type": "standard",
+              "title": "Anti-Dandruff Shampoo",
+              "price": "1500",
+              "gsm": "N/A",
+              "fabric": "Organic Formulation",
+              "sub_category": "Hair Care",
+              "description": "Our Anti-Dandruff Shampoo effectively combats flakes and itchiness, promoting a healthy scalp. Infused with soothing ingredients, it cleanses your hair without stripping natural oils."
+            },
+            "score": -0.7946
+          },
+          {
+            "sku_id": "SKU_009",
+            "metadata": {
+              "gsm": "N/A",
+              "price": "1000",
+              "sub_category": "Men's Grooming Products",
+              "fabric": "Organic Formulation",
+              "description": "The Triple Blade Razor delivers an exceptionally close shave with minimal irritation. Its ergonomic design provides comfort and control, making it a must-have for every grooming routine.",
+              "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/razor.jpg",
+              "category": "Beauty & Personal Care",
+              "title": "Triple Blade Razor",
+              "warehouse": "BLR_HUB",
+              "eligible_coupon": "NONE",
+              "fit_type": "standard",
+              "color": "Classic"
+            },
+            "score": -0.7954
+          }
+        ],
+        "evaluations": [
+          {
+            "sku_id": "SKU_033",
+            "size_verdict": {
+              "recommended_size": "Standard/Compact",
+              "fit_confidence": 0.95,
+              "reasoning": "The product is a non-apparel item (Cordless Vacuum Cleaner). The 'compact' cut aligns well with a 'relaxed' preference for ease of handling and storage, as it implies a less bulky, more manageable form factor. Size history for clothing is irrelevant to this product category."
+            },
+            "fabric_verdict": {
+              "climate_pass": false,
+              "wrinkle_risk": "N/A (non-textile material does not wrinkle in the traditional sense but may show surface scratches or dents.)",
+              "comfort_notes": "Ceramic and steel are non-textile materials with high thermal mass and poor breathability, making them unsuitable for tropical moderate climates where moisture management and light weight are critical."
+            },
+            "delivery_verdict": {
+              "meets_deadline": true,
+              "estimated_arrival": "2-3 business days (Express Courier)",
+              "warehouse": "BLR_HUB"
+            },
+            "pricing_verdict": {},
+            "is_disqualified": true,
+            "rejection_reason": null
+          }
+        ],
+        "pricing_result": {
+          "base_price": 18000.0,
+          "discount_applied": 0.0,
+          "coupon_code": "NONE",
+          "final_price": 18000.0
+        },
+        "checkout_ready": false,
+        "razorpay_order": null
+      }
+    ],
+    "sess_1788440479544_xgn3t": [
+      {
+        "id": "user-1788440479577",
+        "sender": "user",
+        "text": "I am looking for a complete outfit for an upcoming vacation",
+        "timestamp": "06:31 PM"
+      },
+      {
+        "id": "asst-1788440482776",
+        "sender": "assistant",
+        "text": "**The Aesthetic Vision: Capturing the Moment in Style**\n\nThere is a distinct elegance in the intersection of technical precision and artistic expression. This 24MP DSLR is not merely a tool; it is the definitive statement piece for the modern traveler who values both the capture and the context. Its presence demands an outfit that speaks of \"effortless chic\"—a look that is polished yet unburdened, allowing the camera to serve as the focal point of your ensemble. We are moving away from the cluttered \"tourist\" aesthetic and into a curated, smart-casual narrative where your gear feels like an extension of your personal style.\n\n**Material & Structural Integrity**\n\nWhile this piece defies traditional textile metrics, its construction is a study in tactile sophistication. The matte anodized finish offers a non-reflective, refined surface that absorbs light rather than competing with it, ensuring the device remains a subtle yet powerful accent against your attire. The ergonomic silhouette is designed for seamless integration with the human form, ensuring that the weight distribution feels intentional rather than burdensome. There is no drape to manage here, but rather a rigid, architectural presence that contrasts beautifully with the fluidity of the fabrics we will pair it with.\n\n**The Styling Masterclass**\n\nTo let this piece shine, we must curate a backdrop that is breathable and movement-friendly.\n\n*   **The Palette:** Commit to a monochromatic or earth-tone foundation. Think warm beige, deep olive, or a muted navy. These neutral tones provide a canvas that allows the camera’s intricate details to stand out without visual noise.\n*   **The Fabric:** Select a lightweight, breathable linen or high-quality cotton shirt or dress. The natural texture and cooling drape of these materials support the mobility required for photography excursions, ensuring you remain comfortable as you move through your environment.\n*   **The Silhouette:** Adjust the camera strap to sit comfortably at the hip or in a cross-body configuration. This maintains a streamlined silhouette, preventing the equipment from breaking the line of your outfit.\n*   **The Finishing Touches:** Keep jewelry minimal. Delicate pieces near the neck or wrists are sufficient; avoid bulky accessories that would create visual clutter near the camera’s body. For footwear, opt for practical yet stylish loafers or clean white sneakers that support long days of exploration without compromising the aesthetic.\n\n**Your Privilege**\n\nThis piece is currently available at a compelling price point of **₹68,000**, reflecting a significant reduction from its original value of ₹85,000. To further enhance this acquisition, apply the code **STYLE20** at checkout to unlock an additional 20% off. This is not just a discount; it is a privilege reserved for those who understand the value of a perfectly curated aesthetic.",
+        "timestamp": "06:31 PM",
+        "recommendation": {
+          "sku_id": "SKU_018",
+          "title": "DSLR Camera - 24MP",
+          "price": 85000.0,
+          "fit_type": "ergonomic",
+          "fabric": "Matte Anodized",
+          "gsm": "N/A",
+          "color": "Classic",
+          "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/dslr-camera.jpg"
+        },
+        "candidate_skus": [
+          {
+            "sku_id": "SKU_018",
+            "metadata": {
+              "color": "Classic",
+              "title": "DSLR Camera - 24MP",
+              "sub_category": "Cameras",
+              "fabric": "Matte Anodized",
+              "category": "Electronics & Gadgets",
+              "fit_type": "ergonomic",
+              "eligible_coupon": "STYLE20",
+              "gsm": "N/A",
+              "warehouse": "BLR_HUB",
+              "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/dslr-camera.jpg",
+              "description": "Capture stunning photos and videos with this 24MP DSLR camera, offering professional-quality imaging and advanced features for creatives.",
+              "price": "85000"
+            },
+            "score": -0.8237
+          },
+          {
+            "sku_id": "SKU_009",
+            "metadata": {
+              "title": "Triple Blade Razor",
+              "color": "Classic",
+              "eligible_coupon": "NONE",
+              "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/razor.jpg",
+              "category": "Beauty & Personal Care",
+              "gsm": "N/A",
+              "price": "1000",
+              "sub_category": "Men's Grooming Products",
+              "fabric": "Organic Formulation",
+              "warehouse": "BLR_HUB",
+              "fit_type": "standard",
+              "description": "The Triple Blade Razor delivers an exceptionally close shave with minimal irritation. Its ergonomic design provides comfort and control, making it a must-have for every grooming routine."
+            },
+            "score": -0.8319
+          },
+          {
+            "sku_id": "SKU_014",
+            "metadata": {
+              "gsm": "N/A",
+              "category": "Electronics & Gadgets",
+              "eligible_coupon": "STYLE20",
+              "color": "Classic",
+              "title": "Gaming Laptop - 16GB RAM, 512GB SSD",
+              "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/laptop.jpg",
+              "sub_category": "Computers",
+              "price": "120000",
+              "fit_type": "ergonomic",
+              "fabric": "Matte Anodized",
+              "warehouse": "MUM_HUB",
+              "description": "Unleash your gaming potential with this powerful gaming laptop featuring 16GB RAM and 512GB SSD for speed and performance."
+            },
+            "score": -0.8322
+          },
+          {
+            "sku_id": "SKU_041",
+            "metadata": {
+              "fit_type": "athletic",
+              "sub_category": "Fitness Equipment",
+              "gsm": "N/A",
+              "description": "This Foldable Electric Treadmill offers a convenient way to maintain fitness at home. With various speed settings and a compact design, it's perfect for beginners and seasoned athletes.",
+              "fabric": "Performance Grade",
+              "price": "350000",
+              "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/treadmill.jpg",
+              "color": "Classic",
+              "title": "Foldable Electric Treadmill",
+              "category": "Health & Fitness",
+              "warehouse": "MUM_HUB",
+              "eligible_coupon": "NONE"
+            },
+            "score": -0.8664
+          },
+          {
+            "sku_id": "SKU_020",
+            "metadata": {
+              "fabric": "Matte Anodized",
+              "warehouse": "MUM_HUB",
+              "gsm": "N/A",
+              "category": "Electronics & Gadgets",
+              "color": "Classic",
+              "sub_category": "Cameras",
+              "fit_type": "ergonomic",
+              "description": "Record your adventures in stunning detail with this 4K action camera, built to withstand tough conditions and capture high-quality footage.",
+              "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/action-camera.jpg",
+              "eligible_coupon": "STYLE20",
+              "price": "18000",
+              "title": "4K Action Camera"
+            },
+            "score": -0.867
+          }
+        ],
+        "evaluations": [
+          {
+            "sku_id": "SKU_018",
+            "size_verdict": {
+              "recommended_size": "N/A",
+              "fit_confidence": 0.0,
+              "reasoning": "Incompatible categories: 'DSLR Camera' is an electronic device, not apparel. Sizing, silhouette, and drape metrics are not applicable to this product type."
+            },
+            "fabric_verdict": {
+              "climate_pass": false,
+              "wrinkle_risk": "N/A (rigid material, does not wrinkle).",
+              "comfort_notes": "Material is non-textile (metal); no thermal or moisture management properties."
+            },
+            "delivery_verdict": {
+              "meets_deadline": true,
+              "estimated_arrival": "2-3 business days (Express Courier)",
+              "warehouse": "BLR_HUB"
+            },
+            "pricing_verdict": {},
+            "is_disqualified": true,
+            "rejection_reason": null
+          }
+        ],
+        "pricing_result": {
+          "base_price": 85000.0,
+          "discount_applied": 0.2,
+          "coupon_code": "STYLE20",
+          "final_price": 68000.0
+        },
+        "checkout_ready": false,
+        "razorpay_order": null
+      }
+    ],
+    "sess_1788454927989_t0fai": [
+      {
+        "id": "user-1788454928223",
+        "sender": "user",
+        "text": "I am looking for a complete outfit for an upcoming vacation",
+        "timestamp": "10:32 PM"
+      },
+      {
+        "id": "asst-1788454931019",
+        "sender": "assistant",
+        "text": "Picture this: the sun is high, the air is warm, and you are stepping out in a silhouette that moves with you rather than against you. This Women's Floral Maxi Dress is not merely a garment; it is a statement of effortless elegance, crafted from a premium 180 GSM cotton blend that strikes the perfect balance between structure and breathability. The vibrant floral pattern is designed to catch the light, while the regular fit ensures a flattering, relaxed drape that skims the body without clinging. For your specific profile, we have curated a size Medium, which aligns perfectly with your preference for a relaxed fit, ensuring that the fabric falls with a luxurious, loose elegance that feels as good as it looks.\n\nStyling this piece is an exercise in restraint and harmony. To let the vibrancy of the print take center stage, we recommend keeping your accessories minimal and grounded in neutral tones. Imagine pairing this with comfortable, strappy sandals for seamless sightseeing, a spacious tote for your travel essentials, and a wide-brimmed hat to complete the bohemian vacation aesthetic. For those cooler evenings or air-conditioned interiors, a lightweight cardigan adds a layer of sophistication and practical versatility. The cotton blend offers moderate breathability ideal for warm climates, and while it may require a gentle touch-up after packing, its medium-low wrinkle risk ensures you arrive looking polished and put-together.\n\nAnd here is the privilege you have unlocked: with the **STYLE20** coupon applied, your investment drops from ₹4200 to a refined **₹3360**. This is not just a discount; it is a celebration of your discerning taste. You are securing a wardrobe staple that transitions effortlessly from sunny days to special occasions, all while enjoying a 20% savings on a piece that promises to be a centerpiece of your summer collection. Embrace the drape, own the silhouette, and step into your elegance.",
+        "timestamp": "10:32 PM",
+        "recommendation": {
+          "sku_id": "SKU_022",
+          "title": "Women's Floral Maxi Dress",
+          "price": 4200.0,
+          "fit_type": "regular",
+          "fabric": "Cotton Blend",
+          "gsm": "180",
+          "color": "Classic",
+          "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/maxi-dress.jpg"
+        },
+        "candidate_skus": [
+          {
+            "sku_id": "SKU_022",
+            "metadata": {
+              "fabric": "Cotton Blend",
+              "eligible_coupon": "STYLE20",
+              "sub_category": "Women's Clothing",
+              "gsm": "180",
+              "color": "Classic",
+              "fit_type": "regular",
+              "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/maxi-dress.jpg",
+              "warehouse": "DEL_HUB",
+              "description": "Embrace elegance with this Women's Floral Maxi Dress, designed with a flattering silhouette and vibrant floral patterns. Perfect for sunny days and special occasions, it's a must-have addition to your",
+              "title": "Women's Floral Maxi Dress",
+              "category": "Fashion & Apparel",
+              "price": "4200"
+            },
+            "score": -0.2787
+          },
+          {
+            "sku_id": "SKU_030",
+            "metadata": {
+              "category": "Fashion & Apparel",
+              "fit_type": "regular",
+              "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/slippers.jpg",
+              "title": "Comfortable Flip-Flops",
+              "description": "Enjoy ultimate comfort with these Comfortable Flip-Flops. Designed for casual wear, they feature soft straps and cushioned soles, making them perfect for the beach, pool, or everyday relaxation.",
+              "color": "Classic",
+              "eligible_coupon": "STYLE20",
+              "gsm": "180",
+              "fabric": "Cotton Blend",
+              "warehouse": "BLR_HUB",
+              "price": "1200",
+              "sub_category": "Footwear"
+            },
+            "score": -0.3303
+          },
+          {
+            "sku_id": "SKU_025",
+            "metadata": {
+              "category": "Fashion & Apparel",
+              "color": "Classic",
+              "fabric": "Cotton Blend",
+              "sub_category": "Accessories",
+              "description": "Protect your eyes in style with these Polarized Sunglasses. Designed to reduce glare and enhance visual clarity, they offer both comfort and sophistication for all your outdoor adventures.",
+              "fit_type": "regular",
+              "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/sunglasses.jpg",
+              "price": "2500",
+              "warehouse": "DEL_HUB",
+              "gsm": "180",
+              "eligible_coupon": "NONE",
+              "title": "Polarized Sunglasses"
+            },
+            "score": -0.3708
+          },
+          {
+            "sku_id": "SKU_023",
+            "metadata": {
+              "fit_type": "regular",
+              "eligible_coupon": "NONE",
+              "category": "Fashion & Apparel",
+              "color": "Classic",
+              "sub_category": "Footwear",
+              "fabric": "Cotton Blend",
+              "title": "Unisex Casual Sneakers",
+              "gsm": "180",
+              "price": "5500",
+              "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/sneakers.jpg",
+              "warehouse": "MUM_HUB",
+              "description": "These Unisex Casual Sneakers blend comfort and style effortlessly. With a lightweight design and cushioned sole, they're perfect for everyday wear, making them a versatile choice for any outfit."
+            },
+            "score": -0.393
+          },
+          {
+            "sku_id": "SKU_029",
+            "metadata": {
+              "warehouse": "MUM_HUB",
+              "color": "Classic",
+              "price": "7500",
+              "description": "Make a statement with this Women's Designer Handbag, crafted from luxurious materials and featuring exquisite detailing. It's spacious enough for daily essentials while adding elegance to your ensembl",
+              "sub_category": "Accessories",
+              "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/handbag.jpg",
+              "eligible_coupon": "NONE",
+              "category": "Fashion & Apparel",
+              "title": "Women's Designer Handbag",
+              "gsm": "180",
+              "fit_type": "regular",
+              "fabric": "Cotton Blend"
+            },
+            "score": -0.4157
+          },
+          {
+            "sku_id": "SKU_026",
+            "metadata": {
+              "price": "3100",
+              "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/formal-shirt.jpg",
+              "eligible_coupon": "STYLE20",
+              "description": "This Men's Formal Shirt combines elegance with comfort. Tailored to perfection, it features a classic collar and a crisp finish, making it the ideal choice for business meetings or formal occasions.",
+              "color": "Classic",
+              "warehouse": "MUM_HUB",
+              "gsm": "180",
+              "title": "Men's Formal Shirt",
+              "category": "Fashion & Apparel",
+              "sub_category": "Men's Clothing",
+              "fabric": "Cotton Blend",
+              "fit_type": "regular"
+            },
+            "score": -0.4246
+          }
+        ],
+        "evaluations": [
+          {
+            "sku_id": "SKU_022",
+            "size_verdict": {
+              "recommended_size": "M",
+              "fit_confidence": 0.85,
+              "reasoning": "The user prefers a 'relaxed' fit, which aligns well with the 'regular' fit type of a maxi dress, as maxi dresses typically have a looser, flowing silhouette. The user's top size is 'M', which is a standard medium. For a relaxed fit in a regular-fit garment, sticking to the usual size (M) is appropriate to ensure comfort and the desired loose drape without being overly baggy. The bottom size (32) is less relevant for a one-piece dress but confirms the user's general sizing context."
+            },
+            "fabric_verdict": {
+              "climate_pass": true,
+              "wrinkle_risk": "medium-low (cotton blend resists wrinkles better than pure cotton but may crease after packing).",
+              "comfort_notes": "180 GSM cotton blend offers moderate breathability suitable for warm vacation climates, though heavier than ideal for extreme heat."
+            },
+            "delivery_verdict": {
+              "meets_deadline": true,
+              "estimated_arrival": "2-3 business days (Express Courier)",
+              "warehouse": "DEL_HUB"
+            },
+            "pricing_verdict": {},
+            "is_disqualified": false,
+            "rejection_reason": null
+          }
+        ],
+        "pricing_result": {
+          "base_price": 4200.0,
+          "discount_applied": 0.2,
+          "coupon_code": "STYLE20",
+          "final_price": 3360.0
+        },
+        "checkout_ready": false,
+        "razorpay_order": null
+      }
+    ]
+  }
+}

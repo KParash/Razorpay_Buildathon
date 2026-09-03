@@ -3,22 +3,9 @@ import { Sparkles, ShoppingCart, Check, Tag } from 'lucide-react';
 import { Card, CardContent, CardFooter } from './ui/Card';
 import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
+import { Product, getProductImage } from '../types/product';
 
-export interface Product {
-  sku_id: string;
-  document?: string;
-  metadata: {
-    title: string;
-    fit_type: string;
-    fabric: string;
-    gsm?: string;
-    color: string;
-    price: string;
-    warehouse?: string;
-    eligible_coupon?: string;
-    category?: string;
-  };
-}
+export type { Product };
 
 interface ProductCardProps {
   product: Product;
@@ -27,17 +14,6 @@ interface ProductCardProps {
   isAdded?: boolean;
 }
 
-const SKU_IMAGES: Record<string, string> = {
-  SKU_001: 'https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=600&auto=format&fit=crop&q=80',
-  SKU_002: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=600&auto=format&fit=crop&q=80',
-  SKU_003: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&auto=format&fit=crop&q=80',
-  SKU_004: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&auto=format&fit=crop&q=80',
-  SKU_005: 'https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?w=600&auto=format&fit=crop&q=80',
-  SKU_006: 'https://images.unsplash.com/photo-1517445312882-bc9910d016b7?w=600&auto=format&fit=crop&q=80',
-  SKU_007: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600&auto=format&fit=crop&q=80',
-  SKU_008: 'https://images.unsplash.com/photo-1479064555552-3ef4979f8908?w=600&auto=format&fit=crop&q=80',
-};
-
 export const ProductCard: React.FC<ProductCardProps> = ({
   product,
   onAskAI,
@@ -45,7 +21,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   isAdded,
 }) => {
   const { sku_id, metadata } = product;
-  const imageUrl = SKU_IMAGES[sku_id] || SKU_IMAGES['SKU_001'];
+  const imageUrl = metadata.image_url || getProductImage(sku_id);
   const hasCoupon = metadata.eligible_coupon && metadata.eligible_coupon !== 'NONE';
 
   return (
@@ -76,7 +52,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           variant="secondary"
           size="sm"
           onClick={() => onAskAI(metadata.title)}
-          className="absolute bottom-3 right-3 opacity-90 hover:opacity-100 backdrop-blur-md bg-white/90 text-purple-600 dark:bg-zinc-900/90 dark:text-purple-400 border border-purple-200/50 dark:border-purple-500/30 text-[10px] font-bold uppercase tracking-wider gap-1.5 shadow-lg rounded-sm"
+          className="absolute bottom-3 right-3 opacity-90 hover:opacity-100 backdrop-blur-md bg-white/90 text-purple-600 dark:bg-zinc-900/90 dark:text-purple-400 border border-purple-200/50 dark:border-purple-500/30 text-[10px] font-bold uppercase tracking-wider gap-1.5 shadow-lg rounded-sm cursor-pointer"
         >
           <Sparkles className="h-3 w-3" />
           Style Info
@@ -104,7 +80,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <CardFooter className="p-4 pt-0 gap-2">
         <Button
           variant={isAdded ? 'outline' : 'default'}
-          className={`w-full gap-2 rounded-sm font-bold uppercase tracking-wider text-[11px] ${
+          className={`w-full gap-2 rounded-sm font-bold uppercase tracking-wider text-[11px] cursor-pointer ${
             isAdded
               ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950'
               : 'bg-zinc-900 text-white hover:bg-black dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200'
