@@ -1,0 +1,135 @@
+{
+  "timestamp": "2026-09-03T19:22:32.759591",
+  "total_scenarios": 6,
+  "passed_count": 3,
+  "pass_rate_pct": 50.0,
+  "mean_scores": {
+    "relevance": 6.42,
+    "persona": 8.58,
+    "recommendation": 6.75,
+    "helpfulness": 7.0,
+    "composite": 7.19
+  },
+  "results": [
+    {
+      "id": "tc_01_beach_wedding",
+      "name": "Beach Wedding in Goa (Budget & Climate Constraint)",
+      "input_message": "I need a breathable linen outfit for an outdoor beach wedding in Goa under 4000.",
+      "execution_time_sec": 23.68,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 4.0,
+        "persona": 8.5,
+        "recommendation": 5.0,
+        "helpfulness": 6.5,
+        "overall_average": 6.0
+      },
+      "passed": false,
+      "critique": "The agent fails the primary constraint of the scenario: the user explicitly requested a 'linen' outfit, but the agent recommended a 'Cotton Blend' shirt. While the agent attempts to justify this by mentioning breathability and suggesting linen trousers as a pairing, it does not fulfill the specific product request. Furthermore, the tone is excessively flowery and verbose ('Imagine stepping into a room...'), which, while attempting a luxury persona, borders on robotic over-embellishment rather than the concise, confident advice of a true elite stylist. The budget compliance is met, but the fabric mismatch is a significant relevance error.",
+      "anchor_sku": "SKU_026",
+      "product_title": "Men's Formal Shirt",
+      "response_preview": "Imagine stepping into a room where presence is everything. This Men\u2019s Formal Shirt is not merely a garment; it is a statement of refined understatement, tailored to drape with effo..."
+    },
+    {
+      "id": "tc_02_cocktail_blazer",
+      "name": "Rooftop Cocktail Party (Evening Formality)",
+      "input_message": "Recommend a sharp evening look or structured blazer for a summer rooftop cocktail party.",
+      "execution_time_sec": 2.52,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 2.0,
+        "persona": 8.5,
+        "recommendation": 2.0,
+        "helpfulness": 4.0,
+        "overall_average": 4.12
+      },
+      "passed": false,
+      "critique": "The agent failed significantly on relevance and recommendation quality. The user requested a 'sharp evening look' or 'structured blazer' for a 'summer rooftop cocktail party'. The agent recommended a heavy 320 GSM raw denim jacket, which is explicitly flagged in the swarm evaluation as 'climate_pass: false' and 'too heavy and non-breathable for summer'. Furthermore, a denim jacket is generally considered casual, not appropriate for the 'evening formality' of a cocktail party, especially when the user specifically asked for a blazer. The agent acknowledged the climate mismatch in the text but still pushed the product, failing to provide a suitable alternative (e.g., a linen blazer or lightweight suit). The persona was strong, but the core task was failed.",
+      "anchor_sku": "SKU_021",
+      "product_title": "Men's Denim Jacket",
+      "response_preview": "Consider this piece not merely as outerwear, but as a foundational layer of your personal aesthetic architecture. Crafted from substantial 320 GSM raw denim, this jacket possesses ..."
+    },
+    {
+      "id": "tc_03_skincare_moisturizer",
+      "name": "Skincare & Hydration (Cross-Category Beauty)",
+      "input_message": "I have dry skin and need a deeply hydrating facial moisturizer for daily daily glow.",
+      "execution_time_sec": 1.66,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 8.5,
+        "persona": 9.5,
+        "recommendation": 9.0,
+        "helpfulness": 8.5,
+        "overall_average": 8.88
+      },
+      "passed": true,
+      "critique": "The agent successfully identified the correct product category and SKU, adhering to the semantic precision criteria. The persona is consistent with a high-end luxury concierge, using sophisticated language ('sophisticated essential', 'exquisite results'). The recommendation includes high-quality, specific application advice (damp skin, upward motions) which adds value. However, the response lacks structural conciseness; it is a dense block of text without bullet points or clear segmentation, which slightly reduces readability. Additionally, the agent ignored the 'mid' budget tier constraint from the customer profile, though the price (2000) is likely acceptable for the category, the lack of explicit budget acknowledgment is a minor oversight in constraint adherence.",
+      "anchor_sku": "SKU_001",
+      "product_title": "Hydrating Facial Moisturizer",
+      "response_preview": "Elevate your daily skincare ritual with this Hydrating Facial Moisturizer, a sophisticated essential designed to restore your skin\u2019s natural luminosity. Crafted with an organic for..."
+    },
+    {
+      "id": "tc_04_wireless_audio",
+      "name": "Wireless Audio Headphones (Electronics)",
+      "input_message": "Suggest top-notch wireless bluetooth headphones for workouts and daily commuting.",
+      "execution_time_sec": 10.94,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 7.0,
+        "persona": 6.0,
+        "recommendation": 6.5,
+        "helpfulness": 5.5,
+        "overall_average": 6.25
+      },
+      "passed": false,
+      "critique": "The agent successfully retrieved the correct product category (Wireless Bluetooth Headphones) and aligned with the user's ergonomic fit preference. However, the response fails significantly on the 'feature_highlighting' criterion by omitting specific technical details such as battery life, noise cancellation, or specific wireless fidelity metrics, which are critical for electronics recommendations. Furthermore, the tone is excessively flowery and abstract ('connoisseur of sound', 'liberty to move with grace'), lacking the concise, informative structure expected in a high-end tech consultation. The inclusion of irrelevant fashion styling advice (pairing with athletic wear) detracts from the utility of the response for an electronics query.",
+      "anchor_sku": "SKU_011",
+      "product_title": "Wireless Bluetooth Headphones",
+      "response_preview": "Elevate your daily auditory experience with these Wireless Bluetooth Headphones, a sophisticated companion designed for the modern connoisseur of sound and style. Crafted with a ma..."
+    },
+    {
+      "id": "tc_05_vague_needs_clarification",
+      "name": "Ambiguous Query (Clarifier Routing)",
+      "input_message": "Hi, I just want something nice to buy today.",
+      "execution_time_sec": 5.13,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 9.0,
+        "persona": 9.5,
+        "recommendation": 10.0,
+        "helpfulness": 9.0,
+        "overall_average": 9.38
+      },
+      "passed": true,
+      "critique": "The agent correctly identified the ambiguity in the user's request and routed it to a clarifier rather than attempting a premature recommendation or checkout. The tone is sophisticated and aligns well with the luxury persona, using evocative language ('mood', 'elevated') to engage the user. The intent extraction is accurate, correctly flagging that the agent is not yet ready to recommend. The response is concise and helpful in guiding the conversation forward.",
+      "anchor_sku": null,
+      "product_title": null,
+      "response_preview": "Hello. I am delighted you are here. Sometimes, the most luxurious purchase is simply the one that makes you feel instantly elevated.\n\nTo curate the perfect piece for your day, I\u2019d ..."
+    },
+    {
+      "id": "tc_06_discount_coupon",
+      "name": "Discount Hunter (STYLE20 Coupon)",
+      "input_message": "Show me trending fashion pieces eligible for the STYLE20 discount coupon.",
+      "execution_time_sec": 12.62,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 8.0,
+        "persona": 9.5,
+        "recommendation": 8.0,
+        "helpfulness": 8.5,
+        "overall_average": 8.5
+      },
+      "passed": true,
+      "critique": "The agent successfully identifies a relevant product and correctly applies the STYLE20 discount, accurately calculating the final price (\u20b93,360) and highlighting the savings. The persona is strong, adopting a sophisticated, high-end stylist tone that aligns with the luxury fashion context. The sizing recommendation (L for relaxed fit) is logically sound based on the user's profile. However, the response fails to fully address the user's request for 'trending fashion pieces' (plural) by providing only a single item without offering alternatives or a broader selection. Additionally, the response is somewhat verbose and lacks clear structural formatting (e.g., bullet points for key details), which slightly reduces conciseness and ease of scanning.",
+      "anchor_sku": "SKU_022",
+      "product_title": "Women's Floral Maxi Dress",
+      "response_preview": "Imagine stepping into a piece that doesn\u2019t just cover you, but celebrates your silhouette. This Women\u2019s Floral Maxi Dress is a masterclass in effortless elegance, crafted from a pr..."
+    }
+  ]
+}

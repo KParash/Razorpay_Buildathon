@@ -1,0 +1,902 @@
+[
+  {
+    "sku_id": "SKU_001",
+    "document": "Hydrating Facial Moisturizer Skincare Beauty & Personal Care. This Hydrating Facial Moisturizer is expertly formulated to deeply nourish and hydrate your skin, providing lasting moisture and a smooth, radiant complexion. Ideal for daily use. Keywords: moisturizer, hydration, skincare, beauty",
+    "metadata": {
+      "title": "Hydrating Facial Moisturizer",
+      "fit_type": "standard",
+      "fabric": "Organic Formulation",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "2000",
+      "warehouse": "DEL_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Beauty & Personal Care",
+      "sub_category": "Skincare",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/moisturizer.jpg",
+      "description": "This Hydrating Facial Moisturizer is expertly formulated to deeply nourish and hydrate your skin, providing lasting moisture and a smooth, radiant complexion. Ideal for daily use."
+    }
+  },
+  {
+    "sku_id": "SKU_002",
+    "document": "Anti-Dandruff Shampoo Hair Care Beauty & Personal Care. Our Anti-Dandruff Shampoo effectively combats flakes and itchiness, promoting a healthy scalp. Infused with soothing ingredients, it cleanses your hair without stripping natural oils. Keywords: shampoo, hair care, anti-dandruff, cleanse",
+    "metadata": {
+      "title": "Anti-Dandruff Shampoo",
+      "fit_type": "standard",
+      "fabric": "Organic Formulation",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "1500",
+      "warehouse": "MUM_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Beauty & Personal Care",
+      "sub_category": "Hair Care",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/shampoo.jpg",
+      "description": "Our Anti-Dandruff Shampoo effectively combats flakes and itchiness, promoting a healthy scalp. Infused with soothing ingredients, it cleanses your hair without stripping natural oils."
+    }
+  },
+  {
+    "sku_id": "SKU_003",
+    "document": "Matte Liquid Foundation Makeup Beauty & Personal Care. This Matte Liquid Foundation offers a flawless finish with long-lasting wear. Lightweight and breathable, it blends seamlessly into the skin, providing even coverage and a natural look. Keywords: foundation, makeup, beauty, matte",
+    "metadata": {
+      "title": "Matte Liquid Foundation",
+      "fit_type": "standard",
+      "fabric": "Organic Formulation",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "2200",
+      "warehouse": "BLR_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Beauty & Personal Care",
+      "sub_category": "Makeup",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/foundation.jpg",
+      "description": "This Matte Liquid Foundation offers a flawless finish with long-lasting wear. Lightweight and breathable, it blends seamlessly into the skin, providing even coverage and a natural look."
+    }
+  },
+  {
+    "sku_id": "SKU_004",
+    "document": "Eau de Parfum - Floral Scent Fragrances Beauty & Personal Care. Experience the essence of blooming florals with our Eau de Parfum. This captivating scent envelops you in elegance, making it perfect for any occasion, leaving a lasting impression. Keywords: perfume, fragrance, scent, floral",
+    "metadata": {
+      "title": "Eau de Parfum - Floral Scent",
+      "fit_type": "standard",
+      "fabric": "Organic Formulation",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "3500",
+      "warehouse": "DEL_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Beauty & Personal Care",
+      "sub_category": "Fragrances",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/perfume.jpg",
+      "description": "Experience the essence of blooming florals with our Eau de Parfum. This captivating scent envelops you in elegance, making it perfect for any occasion, leaving a lasting impression."
+    }
+  },
+  {
+    "sku_id": "SKU_005",
+    "document": "Men's Shaving Kit Grooming Beauty & Personal Care. This Men's Shaving Kit includes everything needed for a close, comfortable shave. Featuring a premium razor and soothing gel, it ensures a smooth experience with every use. Keywords: shaving kit, grooming, men, razor",
+    "metadata": {
+      "title": "Men's Shaving Kit",
+      "fit_type": "standard",
+      "fabric": "Organic Formulation",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "1800",
+      "warehouse": "MUM_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Beauty & Personal Care",
+      "sub_category": "Grooming",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/shaving-kit.jpg",
+      "description": "This Men's Shaving Kit includes everything needed for a close, comfortable shave. Featuring a premium razor and soothing gel, it ensures a smooth experience with every use."
+    }
+  },
+  {
+    "sku_id": "SKU_006",
+    "document": "Nourishing Body Wash Bath & Body Beauty & Personal Care. Our Nourishing Body Wash gently cleanses while replenishing moisture, leaving your skin feeling soft and revitalized. Infused with natural ingredients for a refreshing bathing experience. Keywords: body wash, bath, care, nourishing",
+    "metadata": {
+      "title": "Nourishing Body Wash",
+      "fit_type": "standard",
+      "fabric": "Organic Formulation",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "1300",
+      "warehouse": "BLR_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Beauty & Personal Care",
+      "sub_category": "Bath & Body",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/body-wash.jpg",
+      "description": "Our Nourishing Body Wash gently cleanses while replenishing moisture, leaving your skin feeling soft and revitalized. Infused with natural ingredients for a refreshing bathing experience."
+    }
+  },
+  {
+    "sku_id": "SKU_007",
+    "document": "Glossy Nail Polish Nail Care Beauty & Personal Care. Achieve stunning nails with our Glossy Nail Polish. This vibrant formula provides high shine and long-lasting wear, perfect for expressing your personal style with every application. Keywords: nail polish, nail care, beauty, glossy",
+    "metadata": {
+      "title": "Glossy Nail Polish",
+      "fit_type": "standard",
+      "fabric": "Organic Formulation",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "800",
+      "warehouse": "DEL_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Beauty & Personal Care",
+      "sub_category": "Nail Care",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/nail-polish.jpg",
+      "description": "Achieve stunning nails with our Glossy Nail Polish. This vibrant formula provides high shine and long-lasting wear, perfect for expressing your personal style with every application."
+    }
+  },
+  {
+    "sku_id": "SKU_008",
+    "document": "Moisturizing Conditioner Hair Care Beauty & Personal Care. Our Moisturizing Conditioner deeply hydrates and detangles hair, leaving it soft, shiny, and manageable. Perfect for all hair types, it helps restore natural moisture balance. Keywords: conditioner, hair care, moisturizing, smooth",
+    "metadata": {
+      "title": "Moisturizing Conditioner",
+      "fit_type": "standard",
+      "fabric": "Organic Formulation",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "1700",
+      "warehouse": "MUM_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Beauty & Personal Care",
+      "sub_category": "Hair Care",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/conditioner.jpg",
+      "description": "Our Moisturizing Conditioner deeply hydrates and detangles hair, leaving it soft, shiny, and manageable. Perfect for all hair types, it helps restore natural moisture balance."
+    }
+  },
+  {
+    "sku_id": "SKU_009",
+    "document": "Triple Blade Razor Men's Grooming Products Beauty & Personal Care. The Triple Blade Razor delivers an exceptionally close shave with minimal irritation. Its ergonomic design provides comfort and control, making it a must-have for every grooming routine. Keywords: razor, grooming, men, shaving",
+    "metadata": {
+      "title": "Triple Blade Razor",
+      "fit_type": "standard",
+      "fabric": "Organic Formulation",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "1000",
+      "warehouse": "BLR_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Beauty & Personal Care",
+      "sub_category": "Men's Grooming Products",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/razor.jpg",
+      "description": "The Triple Blade Razor delivers an exceptionally close shave with minimal irritation. Its ergonomic design provides comfort and control, making it a must-have for every grooming routine."
+    }
+  },
+  {
+    "sku_id": "SKU_010",
+    "document": "Vitamin C Supplement Health & Wellness Products Beauty & Personal Care. Boost your health with our Vitamin C Supplement. Designed to support immune function and overall wellness, these easy-to-take tablets provide essential nutrients for your daily needs. Keywords: vitamin c, supplement, wellness, health",
+    "metadata": {
+      "title": "Vitamin C Supplement",
+      "fit_type": "standard",
+      "fabric": "Organic Formulation",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "3000",
+      "warehouse": "DEL_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Beauty & Personal Care",
+      "sub_category": "Health & Wellness Products",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/vitamin-supplement.jpg",
+      "description": "Boost your health with our Vitamin C Supplement. Designed to support immune function and overall wellness, these easy-to-take tablets provide essential nutrients for your daily needs."
+    }
+  },
+  {
+    "sku_id": "SKU_011",
+    "document": "Wireless Bluetooth Headphones Audio Electronics & Gadgets. Experience superior sound quality with these wireless Bluetooth headphones, designed for comfort and portability for everyday use. Keywords: headphones, bluetooth, audio, electronics",
+    "metadata": {
+      "title": "Wireless Bluetooth Headphones",
+      "fit_type": "ergonomic",
+      "fabric": "Matte Anodized",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "7999",
+      "warehouse": "MUM_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Electronics & Gadgets",
+      "sub_category": "Audio",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/wireless-headphones.jpg",
+      "description": "Experience superior sound quality with these wireless Bluetooth headphones, designed for comfort and portability for everyday use."
+    }
+  },
+  {
+    "sku_id": "SKU_012",
+    "document": "Smartphone - 128GB Mobile Phones Electronics & Gadgets. Stay connected with this high-performance smartphone featuring 128GB storage, perfect for apps, photos, and multimedia. Keywords: smartphone, mobile, gadgets",
+    "metadata": {
+      "title": "Smartphone - 128GB",
+      "fit_type": "ergonomic",
+      "fabric": "Matte Anodized",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "45000",
+      "warehouse": "BLR_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Electronics & Gadgets",
+      "sub_category": "Mobile Phones",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/smartphone.jpg",
+      "description": "Stay connected with this high-performance smartphone featuring 128GB storage, perfect for apps, photos, and multimedia."
+    }
+  },
+  {
+    "sku_id": "SKU_013",
+    "document": "55-Inch 4K Ultra HD TV Televisions Electronics & Gadgets. Enjoy breathtaking visuals with this 55-inch 4K Ultra HD TV, delivering stunning detail and vibrant colors for your favorite shows. Keywords: television, 4K, electronics, gadgets",
+    "metadata": {
+      "title": "55-Inch 4K Ultra HD TV",
+      "fit_type": "ergonomic",
+      "fabric": "Matte Anodized",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "90000",
+      "warehouse": "DEL_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Electronics & Gadgets",
+      "sub_category": "Televisions",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/4k-tv.jpg",
+      "description": "Enjoy breathtaking visuals with this 55-inch 4K Ultra HD TV, delivering stunning detail and vibrant colors for your favorite shows."
+    }
+  },
+  {
+    "sku_id": "SKU_014",
+    "document": "Gaming Laptop - 16GB RAM, 512GB SSD Computers Electronics & Gadgets. Unleash your gaming potential with this powerful gaming laptop featuring 16GB RAM and 512GB SSD for speed and performance. Keywords: laptop, gaming, computers, electronics",
+    "metadata": {
+      "title": "Gaming Laptop - 16GB RAM, 512GB SSD",
+      "fit_type": "ergonomic",
+      "fabric": "Matte Anodized",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "120000",
+      "warehouse": "MUM_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Electronics & Gadgets",
+      "sub_category": "Computers",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/laptop.jpg",
+      "description": "Unleash your gaming potential with this powerful gaming laptop featuring 16GB RAM and 512GB SSD for speed and performance."
+    }
+  },
+  {
+    "sku_id": "SKU_015",
+    "document": "Smartwatch - Fitness Tracker Wearables Electronics & Gadgets. Monitor your health and stay connected with this feature-rich smartwatch, perfect for tracking fitness and receiving notifications. Keywords: smartwatch, fitness, wearables, electronics",
+    "metadata": {
+      "title": "Smartwatch - Fitness Tracker",
+      "fit_type": "ergonomic",
+      "fabric": "Matte Anodized",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "15000",
+      "warehouse": "BLR_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Electronics & Gadgets",
+      "sub_category": "Wearables",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/smartwatch.jpg",
+      "description": "Monitor your health and stay connected with this feature-rich smartwatch, perfect for tracking fitness and receiving notifications."
+    }
+  },
+  {
+    "sku_id": "SKU_016",
+    "document": "10.1-Inch Android Tablet Tablets Electronics & Gadgets. Enjoy your favorite apps and media on this sleek 10.1-inch Android tablet, offering portability and a vibrant display for on-the-go. Keywords: tablet, android, gadgets, electronics",
+    "metadata": {
+      "title": "10.1-Inch Android Tablet",
+      "fit_type": "ergonomic",
+      "fabric": "Matte Anodized",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "20000",
+      "warehouse": "DEL_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Electronics & Gadgets",
+      "sub_category": "Tablets",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/tablet.jpg",
+      "description": "Enjoy your favorite apps and media on this sleek 10.1-inch Android tablet, offering portability and a vibrant display for on-the-go."
+    }
+  },
+  {
+    "sku_id": "SKU_017",
+    "document": "Portable Bluetooth Speaker Audio Electronics & Gadgets. Take your music anywhere with this portable Bluetooth speaker, delivering powerful sound in a compact design, perfect for outdoor use. Keywords: bluetooth, speaker, audio, gadgets",
+    "metadata": {
+      "title": "Portable Bluetooth Speaker",
+      "fit_type": "ergonomic",
+      "fabric": "Matte Anodized",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "5000",
+      "warehouse": "MUM_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Electronics & Gadgets",
+      "sub_category": "Audio",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/bluetooth-speaker.jpg",
+      "description": "Take your music anywhere with this portable Bluetooth speaker, delivering powerful sound in a compact design, perfect for outdoor use."
+    }
+  },
+  {
+    "sku_id": "SKU_018",
+    "document": "DSLR Camera - 24MP Cameras Electronics & Gadgets. Capture stunning photos and videos with this 24MP DSLR camera, offering professional-quality imaging and advanced features for creatives. Keywords: camera, dslr, gadgets, electronics",
+    "metadata": {
+      "title": "DSLR Camera - 24MP",
+      "fit_type": "ergonomic",
+      "fabric": "Matte Anodized",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "85000",
+      "warehouse": "BLR_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Electronics & Gadgets",
+      "sub_category": "Cameras",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/dslr-camera.jpg",
+      "description": "Capture stunning photos and videos with this 24MP DSLR camera, offering professional-quality imaging and advanced features for creatives."
+    }
+  },
+  {
+    "sku_id": "SKU_019",
+    "document": "USB Drive - 64GB Storage Electronics & Gadgets. Store and transfer your files easily with this 64GB USB drive, offering ample space and portability for your data needs. Keywords: usb, storage, gadgets, electronics",
+    "metadata": {
+      "title": "USB Drive - 64GB",
+      "fit_type": "ergonomic",
+      "fabric": "Matte Anodized",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "1200",
+      "warehouse": "DEL_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Electronics & Gadgets",
+      "sub_category": "Storage",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/usb-drive.jpg",
+      "description": "Store and transfer your files easily with this 64GB USB drive, offering ample space and portability for your data needs."
+    }
+  },
+  {
+    "sku_id": "SKU_020",
+    "document": "4K Action Camera Cameras Electronics & Gadgets. Record your adventures in stunning detail with this 4K action camera, built to withstand tough conditions and capture high-quality footage. Keywords: action camera, 4K, gadgets, electronics",
+    "metadata": {
+      "title": "4K Action Camera",
+      "fit_type": "ergonomic",
+      "fabric": "Matte Anodized",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "18000",
+      "warehouse": "MUM_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Electronics & Gadgets",
+      "sub_category": "Cameras",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/action-camera.jpg",
+      "description": "Record your adventures in stunning detail with this 4K action camera, built to withstand tough conditions and capture high-quality footage."
+    }
+  },
+  {
+    "sku_id": "SKU_021",
+    "document": "Men's Denim Jacket Men's Clothing Fashion & Apparel. This stylish Men's Denim Jacket is perfect for any casual occasion. Crafted from high-quality denim, it features a classic fit, button closure, and timeless design that complements various outfits. Keywords: denim jacket, men's fashion, clothing, outerwear",
+    "metadata": {
+      "title": "Men's Denim Jacket",
+      "fit_type": "slim",
+      "fabric": "Raw Denim",
+      "gsm": "320",
+      "color": "Classic",
+      "price": "3500",
+      "warehouse": "BLR_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Fashion & Apparel",
+      "sub_category": "Men's Clothing",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/denim-jacket.jpg",
+      "description": "This stylish Men's Denim Jacket is perfect for any casual occasion. Crafted from high-quality denim, it features a classic fit, button closure, and timeless design that complements various outfits."
+    }
+  },
+  {
+    "sku_id": "SKU_022",
+    "document": "Women's Floral Maxi Dress Women's Clothing Fashion & Apparel. Embrace elegance with this Women's Floral Maxi Dress, designed with a flattering silhouette and vibrant floral patterns. Perfect for sunny days and special occasions, it's a must-have addition to your wardrobe. Keywords: floral dress, women's fashion, clothing, dress",
+    "metadata": {
+      "title": "Women's Floral Maxi Dress",
+      "fit_type": "regular",
+      "fabric": "Cotton Blend",
+      "gsm": "180",
+      "color": "Classic",
+      "price": "4200",
+      "warehouse": "DEL_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Fashion & Apparel",
+      "sub_category": "Women's Clothing",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/maxi-dress.jpg",
+      "description": "Embrace elegance with this Women's Floral Maxi Dress, designed with a flattering silhouette and vibrant floral patterns. Perfect for sunny days and special occasions, it's a must-have addition to your"
+    }
+  },
+  {
+    "sku_id": "SKU_023",
+    "document": "Unisex Casual Sneakers Footwear Fashion & Apparel. These Unisex Casual Sneakers blend comfort and style effortlessly. With a lightweight design and cushioned sole, they're perfect for everyday wear, making them a versatile choice for any outfit. Keywords: sneakers, footwear, shoes, casual",
+    "metadata": {
+      "title": "Unisex Casual Sneakers",
+      "fit_type": "regular",
+      "fabric": "Cotton Blend",
+      "gsm": "180",
+      "color": "Classic",
+      "price": "5500",
+      "warehouse": "MUM_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Fashion & Apparel",
+      "sub_category": "Footwear",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/sneakers.jpg",
+      "description": "These Unisex Casual Sneakers blend comfort and style effortlessly. With a lightweight design and cushioned sole, they're perfect for everyday wear, making them a versatile choice for any outfit."
+    }
+  },
+  {
+    "sku_id": "SKU_024",
+    "document": "Leather Tote Bag Accessories Fashion & Apparel. Elevate your style with this chic Leather Tote Bag, featuring a spacious interior and elegant design. Crafted from premium leather, it's perfect for carrying your essentials while looking effortlessly stylish. Keywords: leather bag, tote, accessories, fashion",
+    "metadata": {
+      "title": "Leather Tote Bag",
+      "fit_type": "regular",
+      "fabric": "Cotton Blend",
+      "gsm": "180",
+      "color": "Classic",
+      "price": "6000",
+      "warehouse": "BLR_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Fashion & Apparel",
+      "sub_category": "Accessories",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/leather-bag.jpg",
+      "description": "Elevate your style with this chic Leather Tote Bag, featuring a spacious interior and elegant design. Crafted from premium leather, it's perfect for carrying your essentials while looking effortlessly"
+    }
+  },
+  {
+    "sku_id": "SKU_025",
+    "document": "Polarized Sunglasses Accessories Fashion & Apparel. Protect your eyes in style with these Polarized Sunglasses. Designed to reduce glare and enhance visual clarity, they offer both comfort and sophistication for all your outdoor adventures. Keywords: sunglasses, polarized, accessories, fashion",
+    "metadata": {
+      "title": "Polarized Sunglasses",
+      "fit_type": "regular",
+      "fabric": "Cotton Blend",
+      "gsm": "180",
+      "color": "Classic",
+      "price": "2500",
+      "warehouse": "DEL_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Fashion & Apparel",
+      "sub_category": "Accessories",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/sunglasses.jpg",
+      "description": "Protect your eyes in style with these Polarized Sunglasses. Designed to reduce glare and enhance visual clarity, they offer both comfort and sophistication for all your outdoor adventures."
+    }
+  },
+  {
+    "sku_id": "SKU_026",
+    "document": "Men's Formal Shirt Men's Clothing Fashion & Apparel. This Men's Formal Shirt combines elegance with comfort. Tailored to perfection, it features a classic collar and a crisp finish, making it the ideal choice for business meetings or formal occasions. Keywords: formal shirt, men's fashion, clothing, shirt",
+    "metadata": {
+      "title": "Men's Formal Shirt",
+      "fit_type": "regular",
+      "fabric": "Cotton Blend",
+      "gsm": "180",
+      "color": "Classic",
+      "price": "3100",
+      "warehouse": "MUM_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Fashion & Apparel",
+      "sub_category": "Men's Clothing",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/formal-shirt.jpg",
+      "description": "This Men's Formal Shirt combines elegance with comfort. Tailored to perfection, it features a classic collar and a crisp finish, making it the ideal choice for business meetings or formal occasions."
+    }
+  },
+  {
+    "sku_id": "SKU_027",
+    "document": "Women's High Heels Footwear Fashion & Apparel. Step into sophistication with these Women's High Heels, featuring a sleek design and comfortable fit. Perfect for parties, weddings, or a night out, they will elevate any outfit with a touch of glamour. Keywords: heels, women's footwear, fashion, shoes",
+    "metadata": {
+      "title": "Women's High Heels",
+      "fit_type": "regular",
+      "fabric": "Cotton Blend",
+      "gsm": "180",
+      "color": "Classic",
+      "price": "4500",
+      "warehouse": "BLR_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Fashion & Apparel",
+      "sub_category": "Footwear",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/heels.jpg",
+      "description": "Step into sophistication with these Women's High Heels, featuring a sleek design and comfortable fit. Perfect for parties, weddings, or a night out, they will elevate any outfit with a touch of glamou"
+    }
+  },
+  {
+    "sku_id": "SKU_028",
+    "document": "Graphic Print T-Shirt Men's Clothing Fashion & Apparel. Express yourself with this Graphic Print T-Shirt, featuring vibrant colors and unique designs. Made from soft cotton, it offers a relaxed fit, making it perfect for casual outings or lounging at home. Keywords: t-shirt, graphic print, men's fashion, clothing",
+    "metadata": {
+      "title": "Graphic Print T-Shirt",
+      "fit_type": "regular",
+      "fabric": "100% Cotton",
+      "gsm": "180",
+      "color": "Classic",
+      "price": "1800",
+      "warehouse": "DEL_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Fashion & Apparel",
+      "sub_category": "Men's Clothing",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/t-shirt.jpg",
+      "description": "Express yourself with this Graphic Print T-Shirt, featuring vibrant colors and unique designs. Made from soft cotton, it offers a relaxed fit, making it perfect for casual outings or lounging at home."
+    }
+  },
+  {
+    "sku_id": "SKU_029",
+    "document": "Women's Designer Handbag Accessories Fashion & Apparel. Make a statement with this Women's Designer Handbag, crafted from luxurious materials and featuring exquisite detailing. It's spacious enough for daily essentials while adding elegance to your ensemble. Keywords: handbag, designer, fashion, accessories",
+    "metadata": {
+      "title": "Women's Designer Handbag",
+      "fit_type": "regular",
+      "fabric": "Cotton Blend",
+      "gsm": "180",
+      "color": "Classic",
+      "price": "7500",
+      "warehouse": "MUM_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Fashion & Apparel",
+      "sub_category": "Accessories",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/handbag.jpg",
+      "description": "Make a statement with this Women's Designer Handbag, crafted from luxurious materials and featuring exquisite detailing. It's spacious enough for daily essentials while adding elegance to your ensembl"
+    }
+  },
+  {
+    "sku_id": "SKU_030",
+    "document": "Comfortable Flip-Flops Footwear Fashion & Apparel. Enjoy ultimate comfort with these Comfortable Flip-Flops. Designed for casual wear, they feature soft straps and cushioned soles, making them perfect for the beach, pool, or everyday relaxation. Keywords: flip-flops, slippers, footwear, casual",
+    "metadata": {
+      "title": "Comfortable Flip-Flops",
+      "fit_type": "regular",
+      "fabric": "Cotton Blend",
+      "gsm": "180",
+      "color": "Classic",
+      "price": "1200",
+      "warehouse": "BLR_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Fashion & Apparel",
+      "sub_category": "Footwear",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/slippers.jpg",
+      "description": "Enjoy ultimate comfort with these Comfortable Flip-Flops. Designed for casual wear, they feature soft straps and cushioned soles, making them perfect for the beach, pool, or everyday relaxation."
+    }
+  },
+  {
+    "sku_id": "SKU_031",
+    "document": "Modern Leather Sofa Furniture Home & Kitchen. A stylish modern leather sofa that enhances the elegance of your living room while providing utmost comfort for relaxation and entertaining guests. Keywords: sofa, furniture, living room, home decor",
+    "metadata": {
+      "title": "Modern Leather Sofa",
+      "fit_type": "compact",
+      "fabric": "Ceramic / Steel",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "120000",
+      "warehouse": "DEL_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Home & Kitchen",
+      "sub_category": "Furniture",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/sofa.jpg",
+      "description": "A stylish modern leather sofa that enhances the elegance of your living room while providing utmost comfort for relaxation and entertaining guests."
+    }
+  },
+  {
+    "sku_id": "SKU_032",
+    "document": "Stainless Steel Refrigerator Kitchen Appliances Home & Kitchen. This sleek stainless steel refrigerator features ample storage space, energy efficiency, and modern technology, making it perfect for keeping your food fresh. Keywords: refrigerator, appliance, kitchen, stainless steel",
+    "metadata": {
+      "title": "Stainless Steel Refrigerator",
+      "fit_type": "compact",
+      "fabric": "Ceramic / Steel",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "95000",
+      "warehouse": "MUM_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Home & Kitchen",
+      "sub_category": "Kitchen Appliances",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/refrigerator.jpg",
+      "description": "This sleek stainless steel refrigerator features ample storage space, energy efficiency, and modern technology, making it perfect for keeping your food fresh."
+    }
+  },
+  {
+    "sku_id": "SKU_033",
+    "document": "Cordless Vacuum Cleaner Home Appliances Home & Kitchen. Enjoy effortless cleaning with this cordless vacuum cleaner, designed for convenience and efficiency, easily reaching corners and tight spaces without any cords. Keywords: vacuum cleaner, cordless, cleaning, home",
+    "metadata": {
+      "title": "Cordless Vacuum Cleaner",
+      "fit_type": "compact",
+      "fabric": "Ceramic / Steel",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "18000",
+      "warehouse": "BLR_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Home & Kitchen",
+      "sub_category": "Home Appliances",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/vacuum-cleaner.jpg",
+      "description": "Enjoy effortless cleaning with this cordless vacuum cleaner, designed for convenience and efficiency, easily reaching corners and tight spaces without any cords."
+    }
+  },
+  {
+    "sku_id": "SKU_034",
+    "document": "Non-Stick Cookware Set Cookware & Bakeware Home & Kitchen. This non-stick cookware set is perfect for easy cooking and cleaning, ensuring your meals come out delicious without sticking, making meal prep a breeze. Keywords: cookware, non-stick, kitchen, bakeware",
+    "metadata": {
+      "title": "Non-Stick Cookware Set",
+      "fit_type": "compact",
+      "fabric": "Ceramic / Steel",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "25000",
+      "warehouse": "DEL_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Home & Kitchen",
+      "sub_category": "Cookware & Bakeware",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/cookware.jpg",
+      "description": "This non-stick cookware set is perfect for easy cooking and cleaning, ensuring your meals come out delicious without sticking, making meal prep a breeze."
+    }
+  },
+  {
+    "sku_id": "SKU_035",
+    "document": "Porcelain Dinnerware Set Dinnerware & Serveware Home & Kitchen. Elevate your dining experience with this exquisite porcelain dinnerware set, perfect for both everyday meals and special occasions, combining elegance and functionality. Keywords: dinnerware, porcelain, kitchen, tableware",
+    "metadata": {
+      "title": "Porcelain Dinnerware Set",
+      "fit_type": "compact",
+      "fabric": "Ceramic / Steel",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "16000",
+      "warehouse": "MUM_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Home & Kitchen",
+      "sub_category": "Dinnerware & Serveware",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/dinnerware.jpg",
+      "description": "Elevate your dining experience with this exquisite porcelain dinnerware set, perfect for both everyday meals and special occasions, combining elegance and functionality."
+    }
+  },
+  {
+    "sku_id": "SKU_036",
+    "document": "Memory Foam Mattress Bedding Home & Kitchen. Experience superior comfort with our memory foam mattress, designed to contour to your body and provide excellent support for a restful night\u2019s sleep. Keywords: mattress, memory foam, bedding, sleep",
+    "metadata": {
+      "title": "Memory Foam Mattress",
+      "fit_type": "compact",
+      "fabric": "Ceramic / Steel",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "75000",
+      "warehouse": "BLR_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Home & Kitchen",
+      "sub_category": "Bedding",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/mattress.jpg",
+      "description": "Experience superior comfort with our memory foam mattress, designed to contour to your body and provide excellent support for a restful night\u2019s sleep."
+    }
+  },
+  {
+    "sku_id": "SKU_037",
+    "document": "Contemporary Table Lamp Lighting Home & Kitchen. Brighten your space with this contemporary table lamp, combining modern design and functionality, perfect for reading or creating a cozy atmosphere in any room. Keywords: lamp, lighting, home decor, table lamp",
+    "metadata": {
+      "title": "Contemporary Table Lamp",
+      "fit_type": "compact",
+      "fabric": "Ceramic / Steel",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "5000",
+      "warehouse": "DEL_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Home & Kitchen",
+      "sub_category": "Lighting",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/table-lamp.jpg",
+      "description": "Brighten your space with this contemporary table lamp, combining modern design and functionality, perfect for reading or creating a cozy atmosphere in any room."
+    }
+  },
+  {
+    "sku_id": "SKU_038",
+    "document": "Hand-Woven Area Rug Home Decor Home & Kitchen. This hand-woven area rug adds warmth and style to your home decor, featuring intricate designs that enhance any living space while providing comfort underfoot. Keywords: rug, home decor, woven, area rug",
+    "metadata": {
+      "title": "Hand-Woven Area Rug",
+      "fit_type": "compact",
+      "fabric": "Ceramic / Steel",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "20000",
+      "warehouse": "MUM_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Home & Kitchen",
+      "sub_category": "Home Decor",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/rug.jpg",
+      "description": "This hand-woven area rug adds warmth and style to your home decor, featuring intricate designs that enhance any living space while providing comfort underfoot."
+    }
+  },
+  {
+    "sku_id": "SKU_039",
+    "document": "Plastic Storage Boxes - Set of 4 Storage & Organization Home & Kitchen. Keep your home organized with this set of 4 plastic storage boxes, perfect for decluttering any space and storing items securely while maintaining easy accessibility. Keywords: storage, organization, home, plastic boxes",
+    "metadata": {
+      "title": "Plastic Storage Boxes - Set of 4",
+      "fit_type": "compact",
+      "fabric": "Ceramic / Steel",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "8000",
+      "warehouse": "BLR_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Home & Kitchen",
+      "sub_category": "Storage & Organization",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/storage-boxes.jpg",
+      "description": "Keep your home organized with this set of 4 plastic storage boxes, perfect for decluttering any space and storing items securely while maintaining easy accessibility."
+    }
+  },
+  {
+    "sku_id": "SKU_040",
+    "document": "Eco-Friendly Cleaning Supplies Kit Cleaning Supplies Home & Kitchen. This eco-friendly cleaning supplies kit features sustainable products that effectively clean your home while being safe for the environment and your family. Keywords: cleaning supplies, eco-friendly, home, cleaning kit",
+    "metadata": {
+      "title": "Eco-Friendly Cleaning Supplies Kit",
+      "fit_type": "compact",
+      "fabric": "Ceramic / Steel",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "10000",
+      "warehouse": "DEL_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Home & Kitchen",
+      "sub_category": "Cleaning Supplies",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/cleaning-supplies.jpg",
+      "description": "This eco-friendly cleaning supplies kit features sustainable products that effectively clean your home while being safe for the environment and your family."
+    }
+  },
+  {
+    "sku_id": "SKU_041",
+    "document": "Foldable Electric Treadmill Fitness Equipment Health & Fitness. This Foldable Electric Treadmill offers a convenient way to maintain fitness at home. With various speed settings and a compact design, it's perfect for beginners and seasoned athletes. Keywords: treadmill, fitness, exercise, home gym",
+    "metadata": {
+      "title": "Foldable Electric Treadmill",
+      "fit_type": "athletic",
+      "fabric": "Performance Grade",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "350000",
+      "warehouse": "MUM_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Health & Fitness",
+      "sub_category": "Fitness Equipment",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/treadmill.jpg",
+      "description": "This Foldable Electric Treadmill offers a convenient way to maintain fitness at home. With various speed settings and a compact design, it's perfect for beginners and seasoned athletes."
+    }
+  },
+  {
+    "sku_id": "SKU_042",
+    "document": "Adjustable Dumbbell Set - 20kg Fitness Equipment Health & Fitness. The Adjustable Dumbbell Set allows for a customizable weight training experience. With a total weight of 20kg, it's perfect for strength training and versatile enough for various workouts. Keywords: dumbbells, weights, fitness, strength training",
+    "metadata": {
+      "title": "Adjustable Dumbbell Set - 20kg",
+      "fit_type": "athletic",
+      "fabric": "Performance Grade",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "60000",
+      "warehouse": "BLR_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Health & Fitness",
+      "sub_category": "Fitness Equipment",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/dumbbells.jpg",
+      "description": "The Adjustable Dumbbell Set allows for a customizable weight training experience. With a total weight of 20kg, it's perfect for strength training and versatile enough for various workouts."
+    }
+  },
+  {
+    "sku_id": "SKU_043",
+    "document": "Whey Protein Powder - 2kg Sports Nutrition Health & Fitness. This Whey Protein Powder provides an excellent source of protein for muscle recovery and growth. The 2kg package is ideal for athletes and fitness enthusiasts aiming for optimal nutrition. Keywords: protein, nutrition, supplement, sports",
+    "metadata": {
+      "title": "Whey Protein Powder - 2kg",
+      "fit_type": "athletic",
+      "fabric": "Performance Grade",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "35000",
+      "warehouse": "DEL_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Health & Fitness",
+      "sub_category": "Sports Nutrition",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/protein-powder.jpg",
+      "description": "This Whey Protein Powder provides an excellent source of protein for muscle recovery and growth. The 2kg package is ideal for athletes and fitness enthusiasts aiming for optimal nutrition."
+    }
+  },
+  {
+    "sku_id": "SKU_044",
+    "document": "Digital Blood Pressure Monitor Health Monitors Health & Fitness. Stay on top of your health with this Digital Blood Pressure Monitor. Easy to use and highly accurate, it helps you track your blood pressure at home with clear digital readings. Keywords: blood pressure, monitor, health, medical",
+    "metadata": {
+      "title": "Digital Blood Pressure Monitor",
+      "fit_type": "athletic",
+      "fabric": "Performance Grade",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "22000",
+      "warehouse": "MUM_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Health & Fitness",
+      "sub_category": "Health Monitors",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/blood-pressure-monitor.jpg",
+      "description": "Stay on top of your health with this Digital Blood Pressure Monitor. Easy to use and highly accurate, it helps you track your blood pressure at home with clear digital readings."
+    }
+  },
+  {
+    "sku_id": "SKU_045",
+    "document": "Compact First Aid Kit First Aid Health & Fitness. This Compact First Aid Kit is essential for home, travel, or emergency situations. Packed with necessary supplies, it ensures you're prepared for minor injuries and emergencies. Keywords: first aid, kit, medical, emergency",
+    "metadata": {
+      "title": "Compact First Aid Kit",
+      "fit_type": "athletic",
+      "fabric": "Performance Grade",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "12000",
+      "warehouse": "BLR_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Health & Fitness",
+      "sub_category": "First Aid",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/first-aid-kit.jpg",
+      "description": "This Compact First Aid Kit is essential for home, travel, or emergency situations. Packed with necessary supplies, it ensures you're prepared for minor injuries and emergencies."
+    }
+  },
+  {
+    "sku_id": "SKU_046",
+    "document": "Alcohol-Based Hand Sanitizer - 500ml Personal Health Health & Fitness. Keep your hands clean and germ-free with this Alcohol-Based Hand Sanitizer. The 500ml bottle is perfect for personal use at home or on the go, providing effective sanitization. Keywords: hand sanitizer, personal health, hygiene, sanitizer",
+    "metadata": {
+      "title": "Alcohol-Based Hand Sanitizer - 500ml",
+      "fit_type": "athletic",
+      "fabric": "Performance Grade",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "800",
+      "warehouse": "DEL_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Health & Fitness",
+      "sub_category": "Personal Health",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/hand-sanitizer.jpg",
+      "description": "Keep your hands clean and germ-free with this Alcohol-Based Hand Sanitizer. The 500ml bottle is perfect for personal use at home or on the go, providing effective sanitization."
+    }
+  },
+  {
+    "sku_id": "SKU_047",
+    "document": "Workout Gloves - Pair Sports Gear & Accessories Health & Fitness. Enhance your workout experience with these comfortable Workout Gloves. Designed to provide grip and protection, they are perfect for lifting weights or performing rigorous exercises. Keywords: gloves, workout, sports, fitness",
+    "metadata": {
+      "title": "Workout Gloves - Pair",
+      "fit_type": "athletic",
+      "fabric": "Performance Grade",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "3000",
+      "warehouse": "MUM_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Health & Fitness",
+      "sub_category": "Sports Gear & Accessories",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/gloves.jpg",
+      "description": "Enhance your workout experience with these comfortable Workout Gloves. Designed to provide grip and protection, they are perfect for lifting weights or performing rigorous exercises."
+    }
+  },
+  {
+    "sku_id": "SKU_048",
+    "document": "Infrared Digital Thermometer Health Monitors Health & Fitness. This Infrared Digital Thermometer allows for quick and accurate temperature readings. Perfect for home health monitoring, it provides fast results without physical contact. Keywords: thermometer, digital, health, infrared",
+    "metadata": {
+      "title": "Infrared Digital Thermometer",
+      "fit_type": "athletic",
+      "fabric": "Performance Grade",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "15000",
+      "warehouse": "BLR_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Health & Fitness",
+      "sub_category": "Health Monitors",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/thermometer.jpg",
+      "description": "This Infrared Digital Thermometer allows for quick and accurate temperature readings. Perfect for home health monitoring, it provides fast results without physical contact."
+    }
+  },
+  {
+    "sku_id": "SKU_049",
+    "document": "Non-Slip Yoga Mat Yoga & Meditation Supplies Health & Fitness. The Non-Slip Yoga Mat is designed for stability and comfort during yoga sessions. Its durable material ensures a safe practice, making it ideal for all skill levels and styles. Keywords: yoga mat, fitness, yoga, exercise",
+    "metadata": {
+      "title": "Non-Slip Yoga Mat",
+      "fit_type": "athletic",
+      "fabric": "Performance Grade",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "5000",
+      "warehouse": "DEL_HUB",
+      "eligible_coupon": "NONE",
+      "category": "Health & Fitness",
+      "sub_category": "Yoga & Meditation Supplies",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/yoga-mat.jpg",
+      "description": "The Non-Slip Yoga Mat is designed for stability and comfort during yoga sessions. Its durable material ensures a safe practice, making it ideal for all skill levels and styles."
+    }
+  },
+  {
+    "sku_id": "SKU_050",
+    "document": "Adjustable Knee Pads Sports Gear & Accessories Health & Fitness. These Adjustable Knee Pads provide comfort and support during workouts. Perfect for protecting your knees during intense activities, they are essential for athletes and fitness lovers. Keywords: knee pads, sports, gear, fitness",
+    "metadata": {
+      "title": "Adjustable Knee Pads",
+      "fit_type": "athletic",
+      "fabric": "Performance Grade",
+      "gsm": "N/A",
+      "color": "Classic",
+      "price": "4000",
+      "warehouse": "MUM_HUB",
+      "eligible_coupon": "STYLE20",
+      "category": "Health & Fitness",
+      "sub_category": "Sports Gear & Accessories",
+      "image_url": "https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/images/products/knee-pads.jpg",
+      "description": "These Adjustable Knee Pads provide comfort and support during workouts. Perfect for protecting your knees during intense activities, they are essential for athletes and fitness lovers."
+    }
+  }
+]
