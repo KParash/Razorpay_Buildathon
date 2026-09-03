@@ -1,0 +1,135 @@
+{
+  "timestamp": "2026-09-03T18:52:12.325407",
+  "total_scenarios": 6,
+  "passed_count": 0,
+  "pass_rate_pct": 0.0,
+  "mean_scores": {
+    "relevance": 1.5,
+    "persona": 5.42,
+    "recommendation": 1.83,
+    "helpfulness": 2.75,
+    "composite": 2.88
+  },
+  "results": [
+    {
+      "id": "tc_01_beach_wedding",
+      "name": "Beach Wedding in Goa (Budget & Climate Constraint)",
+      "input_message": "I need a breathable linen outfit for an outdoor beach wedding in Goa under 4000.",
+      "execution_time_sec": 23.91,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 2.0,
+        "persona": 9.0,
+        "recommendation": 2.0,
+        "helpfulness": 4.0,
+        "overall_average": 4.25
+      },
+      "passed": false,
+      "critique": "The agent failed the core task by recommending flip-flops for a wedding, which is a severe dress code violation. While the persona is strong and the budget constraint was technically met (\u20b9960 < \u20b94000), the recommendation is irrelevant and unhelpful for the specific occasion requested. The agent correctly identified the mismatch in the text but failed to provide an actual suitable alternative (e.g., linen trousers or a kurta) within the budget, rendering the response a failure in relevance and helpfulness.",
+      "anchor_sku": "SKU_030",
+      "product_title": "Comfortable Flip-Flops",
+      "response_preview": "**The Verdict: A Critical Pause**\n\nBefore we discuss the aesthetic potential of this piece, we must address a significant contextual mismatch. You have selected these comfortable f..."
+    },
+    {
+      "id": "tc_02_cocktail_blazer",
+      "name": "Rooftop Cocktail Party (Evening Formality)",
+      "input_message": "Recommend a sharp evening look or structured blazer for a summer rooftop cocktail party.",
+      "execution_time_sec": 2.86,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 2.0,
+        "persona": 8.5,
+        "recommendation": 2.0,
+        "helpfulness": 4.0,
+        "overall_average": 4.12
+      },
+      "passed": false,
+      "critique": "The agent failed to meet the core requirement of the scenario. The user explicitly requested a 'sharp evening look or structured blazer,' but the agent recommended 'Polarized Sunglasses' as the anchor product. This is a severe relevance error for two reasons: 1) Sunglasses are generally inappropriate for an evening cocktail party (low light), and 2) The agent ignored the specific request for a blazer, which was only mentioned as a secondary styling tip. Furthermore, the agent hallucinated technical details (180 GSM Cotton Blend) for a pair of sunglasses, which is factually incorrect and undermines the luxury persona. While the writing style is sophisticated, the fundamental product mismatch renders the recommendation useless.",
+      "anchor_sku": "SKU_025",
+      "product_title": "Polarized Sunglasses",
+      "response_preview": "### The Aesthetic Vision\n\nFor a rooftop cocktail party, the challenge is to navigate the fine line between polished sophistication and the effortless, open-air ease of the setting...."
+    },
+    {
+      "id": "tc_03_skincare_moisturizer",
+      "name": "Skincare & Hydration (Cross-Category Beauty)",
+      "input_message": "I have dry skin and need a deeply hydrating facial moisturizer for daily daily glow.",
+      "execution_time_sec": 4.05,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 0.0,
+        "persona": 2.0,
+        "recommendation": 0.0,
+        "helpfulness": 1.0,
+        "overall_average": 0.75
+      },
+      "passed": false,
+      "critique": "The agent failed completely on semantic precision and product fidelity. The user requested a facial moisturizer for dry skin (Beauty & Personal Care), but the agent recommended an 'Eco-Friendly Cleaning Supplies Kit' (Home & Kitchen). The response attempts to apply fashion/styling terminology (GSM, drape, silhouette) to a cleaning kit, resulting in a nonsensical and hallucinated narrative. The recommendation is entirely irrelevant to the user's need, and the 'styling advice' (color-coded choreography for cleaning) is absurd in this context. The agent did not retrieve any relevant skincare product from the catalog.",
+      "anchor_sku": "SKU_040",
+      "product_title": "Eco-Friendly Cleaning Supplies Kit",
+      "response_preview": "**The Aesthetic Vision: Curated Purity & Intentional Living**\n\nIn the modern atelier of home, the most sophisticated statement is not what you wear, but how you inhabit your space...."
+    },
+    {
+      "id": "tc_04_wireless_audio",
+      "name": "Wireless Audio Headphones (Electronics)",
+      "input_message": "Suggest top-notch wireless bluetooth headphones for workouts and daily commuting.",
+      "execution_time_sec": 3.04,
+      "route_correct": false,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 0.0,
+        "persona": 2.0,
+        "recommendation": 0.0,
+        "helpfulness": 0.0,
+        "overall_average": 0.5
+      },
+      "passed": false,
+      "critique": "The agent completely failed to address the user's request for wireless bluetooth headphones. Instead, it hallucinated a fashion context, suggesting trousers and modal blends, which is entirely irrelevant to the electronics category. The intent extraction was also incorrect, failing to identify the product type. This is a critical failure in semantic precision and relevance.",
+      "anchor_sku": null,
+      "product_title": null,
+      "response_preview": "Since we are blending the discipline of the gym with the rhythm of the daily commute, I\u2019m thinking of a \"functional chic\" narrative\u2014where your activewear doesn\u2019t just perform, but ..."
+    },
+    {
+      "id": "tc_05_vague_needs_clarification",
+      "name": "Ambiguous Query (Clarifier Routing)",
+      "input_message": "Hi, I just want something nice to buy today.",
+      "execution_time_sec": 3.36,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 5.0,
+        "persona": 9.0,
+        "recommendation": 7.0,
+        "helpfulness": 6.5,
+        "overall_average": 6.88
+      },
+      "passed": false,
+      "critique": "The agent fails to handle the ambiguity of the user's input ('something nice') by hallucinating a specific 'casual aesthetic' without prior context or confirmation. While the tone is luxurious and the questions are evocative (meeting the persona criteria), the assumption that the user wants casual wear is a significant logical error for a general query. The agent should have asked about the occasion or general vibe first rather than jumping to a specific style category. Additionally, it ignores the user's 'mid' budget tier and 'relaxed' fit preference in the initial framing, though the 'relaxed' preference aligns somewhat with the 'casual' assumption, the lack of clarification makes the response feel presumptive rather than consultative.",
+      "anchor_sku": null,
+      "product_title": null,
+      "response_preview": "Since we are leaning into a casual aesthetic, let\u2019s focus on the texture and movement of the piece. Are you drawn to the soft, breathable drape of high-quality organic cotton or li..."
+    },
+    {
+      "id": "tc_06_discount_coupon",
+      "name": "Discount Hunter (STYLE20 Coupon)",
+      "input_message": "Show me trending fashion pieces eligible for the STYLE20 discount coupon.",
+      "execution_time_sec": 13.51,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 0.0,
+        "persona": 2.0,
+        "recommendation": 0.0,
+        "helpfulness": 1.0,
+        "overall_average": 0.75
+      },
+      "passed": false,
+      "critique": "The agent failed completely on the primary task. The user requested 'trending fashion pieces' eligible for a specific coupon, but the agent recommended a 55-inch 4K TV (Electronics). This is a severe category error. Furthermore, the agent explicitly stated 'no active coupons applied' and failed to apply the requested STYLE20 discount, violating the key evaluation criteria for discount computation and coupon acknowledgement. The response is irrelevant to the user's intent and profile.",
+      "anchor_sku": "SKU_013",
+      "product_title": "55-Inch 4K Ultra HD TV",
+      "response_preview": "**The Aesthetic Vision: Anchoring Modern Minimalism**\n\nIn the realm of contemporary interior curation, the television is no longer merely a screen; it is the architectural centerpi..."
+    }
+  ]
+}

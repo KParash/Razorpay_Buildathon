@@ -22,6 +22,7 @@ from pydantic import BaseModel, Field
 from graph import fashion_agent_graph
 from catalog_store import get_all_catalog_products, search_candidate_products
 from checkout_service import create_frozen_razorpay_order
+import history_store
 
 app = FastAPI(title="Agentic E-Commerce API", version="1.0.0")
 
@@ -87,19 +88,47 @@ async def search_products(q: str, max_budget: Optional[float] = None):
     return {"status": "success", "results": results}
 
 # -------------------------------------------------------------------
-# 2. Main E-Commerce AI Chat Endpoint (LangGraph Integration)
+# 2. Main E-Commerce AI Chat Endpoint & History Endpoints
 # -------------------------------------------------------------------
+@app.get("/api/chat/sessions")
+async def get_sessions(user_id: str = "usr_guest"):
+    """Retrieve all chat sessions for a user."""
+    sessions = history_store.get_all_sessions(user_id=user_id)
+    return {"status": "success", "sessions": sessions}
+
+@app.get("/api/chat/history/{session_id}")
+async def get_chat_history(session_id: str):
+    """Retrieve all messages for a specific session."""
+    messages = history_store.get_session_messages(session_id)
+    return {"status": "success", "session_id": session_id, "messages": messages}
+
+@app.delete("/api/chat/sessions/{session_id}")
+async def delete_chat_session(session_id: str):
+    """Delete a chat session."""
+    deleted = history_store.delete_session(session_id)
+    return {"status": "success", "deleted": deleted}
+
 @app.post("/api/chat")
 async def store_chat(req: ChatRequest):
     """
-    Main Chat API invoked by the frontend chat drawer widget.
-    Executes fashion_agent_graph with session memory checkpointer.
+    Main Chat API invoked by the frontend chat drawer and studio widget.
+    Executes fashion_agent_graph with session memory checkpointer and persists message history.
     """
     session_id = req.session_id or f"sess_{uuid.uuid4().hex[:12]}"
     config = {"configurable": {"thread_id": session_id}}
 
     profile = (req.customer_profile or CustomerProfileInput()).model_dump()
+    user_id = profile.get("user_id", "usr_guest")
     
+    # Save User message to history store
+    user_msg_item = {
+        "id": f"user-{int(time.time()*1000)}",
+        "sender": "user",
+        "text": req.message,
+        "timestamp": time.strftime("%I:%M %p")
+    }
+    history_store.save_message_to_session(session_id, user_msg_item, user_id=user_id)
+
     input_state = {
         "messages": [{"role": "user", "content": req.message}],
         "customer_profile": profile
@@ -114,6 +143,38 @@ async def store_chat(req: ChatRequest):
     final_response = res.get("final_response") or ""
     if not final_response and res.get("messages"):
         final_response = res["messages"][-1].get("content", "")
+
+    anchor = res.get("anchor_sku")
+    anchor_meta = anchor.get("metadata") if anchor else None
+
+    # Prepare recommendation object for frontend rendering & persistence
+    recommendation_obj = None
+    if anchor_meta:
+        recommendation_obj = {
+            "sku_id": anchor.get("sku_id"),
+            "title": anchor_meta.get("title"),
+            "price": float(anchor_meta.get("price", 0)),
+            "fit_type": anchor_meta.get("fit_type"),
+            "fabric": anchor_meta.get("fabric"),
+            "gsm": anchor_meta.get("gsm"),
+            "color": anchor_meta.get("color"),
+            "image_url": anchor_meta.get("image_url")
+        }
+
+    # Save Assistant message to history store
+    asst_msg_item = {
+        "id": f"asst-{int(time.time()*1000)}",
+        "sender": "assistant",
+        "text": final_response or "Here is my tailored recommendation for you.",
+        "timestamp": time.strftime("%I:%M %p"),
+        "recommendation": recommendation_obj,
+        "candidate_skus": res.get("candidate_skus", []),
+        "evaluations": res.get("evaluations", []),
+        "pricing_result": res.get("pricing_result"),
+        "checkout_ready": res.get("checkout_ready", False),
+        "razorpay_order": res.get("razorpay_order")
+    }
+    history_store.save_message_to_session(session_id, asst_msg_item, user_id=user_id)
 
     return {
         "status": "success",
