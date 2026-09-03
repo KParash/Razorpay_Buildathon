@@ -23,6 +23,9 @@ from graph import fashion_agent_graph
 from catalog_store import get_all_catalog_products, search_candidate_products
 from checkout_service import create_frozen_razorpay_order
 import history_store
+from db import get_db, User, SubCategory, Product
+from sqlalchemy.orm import Session
+from fastapi import Depends
 
 app = FastAPI(title="Agentic E-Commerce API", version="1.0.0")
 
@@ -73,19 +76,39 @@ class VerifyPaymentRequest(BaseModel):
     razorpay_signature: str
 
 # -------------------------------------------------------------------
-# 1. Product Catalog Endpoints
+# 1. Product Catalog & Taxonomy Endpoints
 # -------------------------------------------------------------------
 @app.get("/api/products")
-async def get_products():
-    """Fetch all available products in catalog."""
-    products = get_all_catalog_products()
+async def get_products(sub_category_id: Optional[int] = None, db: Session = Depends(get_db)):
+    """Fetch all available products in catalog with optional sub-category filter."""
+    if sub_category_id:
+        db_prods = db.query(Product).filter(Product.is_active == True, Product.sub_category_id == sub_category_id).all()
+        products = [p.to_catalog_item() for p in db_prods]
+    else:
+        products = get_all_catalog_products()
     return {"status": "success", "products": products}
+
+@app.get("/api/subcategories")
+async def get_subcategories(db: Session = Depends(get_db)):
+    """Fetch all available fashion sub-categories."""
+    cats = db.query(SubCategory).order_by(SubCategory.sub_category_id.asc()).all()
+    return {"status": "success", "sub_categories": [c.to_dict() for c in cats]}
 
 @app.get("/api/products/search")
 async def search_products(q: str, max_budget: Optional[float] = None):
     """Search products using vector similarity."""
     results = search_candidate_products(query=q, max_budget=max_budget, top_k=6)
     return {"status": "success", "results": results}
+
+@app.get("/api/user/profile")
+async def get_user_profile(user_id: str = "usr_local_dev", db: Session = Depends(get_db)):
+    """Retrieve user profile, preferences, and accumulated metadata."""
+    user = db.query(User).filter_by(user_id=user_id).first()
+    if not user and user_id == "usr_guest":
+        user = db.query(User).filter_by(user_id="usr_local_dev").first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"status": "success", "user": user.to_dict()}
 
 # -------------------------------------------------------------------
 # 2. Main E-Commerce AI Chat Endpoint & History Endpoints
