@@ -15,8 +15,6 @@ load_dotenv(override=True)
 
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "")
-print("RAZORPAY_KEY_ID:", RAZORPAY_KEY_ID)
-print("RAZORPAY_KEY_SECRET:", RAZORPAY_KEY_SECRET)
 
 # Only initialize the real client if keys are present and non-placeholder
 _USE_MOCK = (
