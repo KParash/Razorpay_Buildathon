@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Sparkles, Truck, RefreshCw, ShieldCheck, Lock } from 'lucide-react';
 import { ProductCard } from '../components/ProductCard';
 import { Product } from '../types/product';
+import { Button } from '../components/ui/Button';
 
 interface HomeProps {
   products: Product[];
@@ -53,16 +54,16 @@ export const Home: React.FC<HomeProps> = ({
   });
 
   return (
-    <div className="bg-[#f4f2ee] dark:bg-[#0c0c0d] text-[#121212] dark:text-[#f2f2f0] transition-colors duration-300">
+    <div className="bg-[#fcfbf9] dark:bg-[#09090b] text-[#121212] dark:text-[#f2f2f0] transition-colors duration-300 min-h-screen">
       
       {/* ============================================================ */}
       {/* 1. HERO SECTION: Clean Minimal Editorial                      */}
       {/* ============================================================ */}
-      <section className="relative overflow-hidden bg-[#e9e6df] dark:bg-[#151518] min-h-[580px] lg:min-h-[640px] border-b border-black/10 dark:border-white/10 flex items-center justify-center">
+      <section className="relative overflow-hidden bg-[#f4f2ee] dark:bg-[#0f0f12] min-h-[580px] lg:min-h-[640px] border-b border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-center">
         
         {/* Watermark KAZU Typography Behind Model */}
         <div className="absolute inset-0 flex items-center justify-center select-none pointer-events-none z-0">
-          <span className="font-display font-black text-[25vw] tracking-[-0.04em] text-black/[0.05] dark:text-white/[0.03] leading-none">
+          <span className="font-display font-black text-[25vw] tracking-[-0.04em] text-black/[0.04] dark:text-white/[0.02] leading-none">
             KAZU
           </span>
         </div>
@@ -73,68 +74,72 @@ export const Home: React.FC<HomeProps> = ({
           {/* Left Text Block */}
           <div className="lg:col-span-4 space-y-6 text-left">
             <div className="space-y-1">
-              <span className="text-[11px] font-mono-tight uppercase tracking-[0.25em] text-neutral-500 dark:text-neutral-400 block font-semibold">
+              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-purple-600 dark:text-purple-400 block">
                 FASHION
               </span>
-              <span className="text-[11px] font-mono-tight uppercase tracking-[0.25em] text-neutral-500 dark:text-neutral-400 block font-semibold">
+              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-neutral-500 dark:text-neutral-400 block">
                 THAT MOVES
               </span>
-              <span className="text-[11px] font-mono-tight uppercase tracking-[0.25em] text-neutral-500 dark:text-neutral-400 block font-semibold">
+              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-neutral-500 dark:text-neutral-400 block">
                 WITH YOU.
               </span>
-              <div className="w-8 h-[1.5px] bg-black dark:bg-white mt-3" />
+              <div className="w-8 h-[2px] bg-purple-600 dark:bg-purple-400 mt-3" />
             </div>
 
             {/* Buttons Row */}
-            <div className="flex flex-wrap items-center gap-3 pt-6">
-              <button
+            <div className="flex flex-wrap items-center gap-3 pt-4">
+              <Button
+                variant="default"
+                size="lg"
                 onClick={() => {
                   const el = document.getElementById('catalog-grid');
                   el?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="bg-[#0d0d0d] text-white hover:bg-neutral-800 dark:bg-[#f2f2f0] dark:text-[#0d0d0d] dark:hover:bg-white px-7 py-3.5 text-[11px] font-mono-tight font-bold tracking-widest uppercase transition-all shadow-sm cursor-pointer"
+                className="shadow-lg shadow-purple-600/10 cursor-pointer"
               >
                 SHOP NOW
-              </button>
+              </Button>
 
-              <button
+              <Button
+                variant="outline"
+                size="lg"
                 onClick={() => handleStartChatWithPrompt('Curate a complete editorial outfit for an upcoming dinner evening')}
-                className="border border-black/25 dark:border-white/25 hover:border-black dark:hover:border-white text-black dark:text-white px-5 py-3.5 text-[11px] font-mono-tight font-bold tracking-widest uppercase transition-all flex items-center gap-2 cursor-pointer"
+                className="flex items-center gap-2 cursor-pointer"
               >
-                <Sparkles className="h-3.5 w-3.5" />
+                <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                 <span>ASK STYLO</span>
-              </button>
+              </Button>
             </div>
           </div>
 
           {/* Center Fashion Editorial Model Photo — clean minimal */}
           <div className="lg:col-span-4 flex items-center justify-center relative">
-            <div className="relative w-full max-w-sm aspect-[3/4] shadow-2xl border border-black/10 overflow-hidden bg-[#e0ddd8]">
+            <div className="relative w-full max-w-sm aspect-[3/4] shadow-2xl rounded-2xl overflow-hidden bg-[#e0ddd8] dark:bg-[#1c1c24] border border-zinc-200/50 dark:border-zinc-800/80">
               <img
                 src="https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=800&auto=format&fit=crop&q=85"
                 alt="KAZU Editorial Fashion"
-                className="w-full h-full object-cover object-center grayscale hover:grayscale-0 transition-all duration-700"
+                className="w-full h-full object-cover object-center grayscale hover:grayscale-0 transition-all duration-1000 ease-out"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white text-[10px] font-mono-tight tracking-widest uppercase">
+              <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between text-white text-[9px] font-bold tracking-widest uppercase">
                 <span>KAZU STYLO</span>
-                <span>VOL. 24 / 25</span>
+                <span className="bg-purple-600 px-2 py-0.5 rounded-sm">VOL. 24 / 25</span>
               </div>
             </div>
           </div>
 
           {/* Right Text Block: NEW COLLECTION 2026 */}
           <div className="lg:col-span-4 text-left lg:text-right space-y-2">
-            <span className="text-[11px] font-mono-tight uppercase tracking-[0.25em] text-neutral-500 dark:text-neutral-400 block font-semibold">
+            <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-neutral-400 dark:text-neutral-500 block">
               NEW
             </span>
-            <span className="text-[11px] font-mono-tight uppercase tracking-[0.25em] text-neutral-500 dark:text-neutral-400 block font-semibold">
+            <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-neutral-400 dark:text-neutral-500 block">
               COLLECTION
             </span>
-            <span className="font-display text-3xl font-black tracking-tight text-black dark:text-white block">
+            <span className="font-display text-4xl sm:text-5xl font-black tracking-tight text-neutral-900 dark:text-white block leading-none">
               2026
             </span>
-            <p className="text-xs text-neutral-600 dark:text-neutral-400 pt-2 font-normal leading-relaxed max-w-xs ml-auto">
+            <p className="text-xs text-neutral-600 dark:text-neutral-400 pt-3 leading-relaxed max-w-xs lg:ml-auto">
               Tailored silhouettes, high-GSM organic weaves, and AI-curated outfits for every occasion and every season.
             </p>
           </div>
@@ -146,7 +151,7 @@ export const Home: React.FC<HomeProps> = ({
       {/* ============================================================ */}
       {/* 2. FOUR-COLUMN SEGMENT STRIP: Men / Women / Kids / Beauty      */}
       {/* ============================================================ */}
-      <section className="bg-[#0e0e10] text-white py-12 px-6 sm:px-8 border-b border-white/10">
+      <section className="bg-white dark:bg-zinc-950 py-12 px-6 sm:px-8 border-b border-zinc-200/50 dark:border-zinc-800/50">
         <div className="mx-auto max-w-7xl grid grid-cols-2 md:grid-cols-4 gap-6">
           
           {/* Card 1: MEN */}
@@ -156,19 +161,19 @@ export const Home: React.FC<HomeProps> = ({
               const el = document.getElementById('catalog-grid');
               el?.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="flex items-center gap-4 p-4 group cursor-pointer hover:bg-white/5 transition-colors"
+            className="flex items-center gap-4 p-4 rounded-2xl group cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/40 border border-transparent hover:border-zinc-200/60 dark:hover:border-zinc-800/60 transition-all duration-300"
           >
-            <div className="w-16 h-20 overflow-hidden shrink-0 border border-white/10">
+            <div className="w-16 h-20 overflow-hidden shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
               <img
                 src="https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=400&auto=format&fit=crop&q=80"
                 alt="Men Category"
-                className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
               />
             </div>
             <div className="space-y-1">
-              <h3 className="font-display text-base font-black tracking-wider uppercase">MEN</h3>
-              <p className="text-[11px] text-neutral-400 font-normal">Elevated essentials.</p>
-              <div className="pt-1 flex items-center gap-1 text-[10px] font-mono-tight font-bold tracking-widest text-white group-hover:translate-x-1 transition-transform">
+              <h3 className="font-display text-base font-black tracking-wider uppercase text-zinc-900 dark:text-white">MEN</h3>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Elevated essentials.</p>
+              <div className="pt-1.5 flex items-center gap-1 text-[9px] font-bold tracking-widest text-purple-600 dark:text-purple-400 group-hover:translate-x-1 transition-transform uppercase">
                 <span>SHOP</span>
                 <ArrowRight className="h-3 w-3" />
               </div>
@@ -182,19 +187,19 @@ export const Home: React.FC<HomeProps> = ({
               const el = document.getElementById('catalog-grid');
               el?.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="flex items-center gap-4 p-4 group cursor-pointer hover:bg-white/5 transition-colors border-l border-white/10"
+            className="flex items-center gap-4 p-4 rounded-2xl group cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/40 border border-transparent hover:border-zinc-200/60 dark:hover:border-zinc-800/60 transition-all duration-300 md:border-l md:border-zinc-200/50 dark:md:border-zinc-800/50 md:rounded-l-none"
           >
-            <div className="w-16 h-20 overflow-hidden shrink-0 border border-white/10">
+            <div className="w-16 h-20 overflow-hidden shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
               <img
                 src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&auto=format&fit=crop&q=80"
                 alt="Women Category"
-                className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
               />
             </div>
             <div className="space-y-1">
-              <h3 className="font-display text-base font-black tracking-wider uppercase">WOMEN</h3>
-              <p className="text-[11px] text-neutral-400 font-normal">Effortless style.</p>
-              <div className="pt-1 flex items-center gap-1 text-[10px] font-mono-tight font-bold tracking-widest text-white group-hover:translate-x-1 transition-transform">
+              <h3 className="font-display text-base font-black tracking-wider uppercase text-zinc-900 dark:text-white">WOMEN</h3>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Effortless style.</p>
+              <div className="pt-1.5 flex items-center gap-1 text-[9px] font-bold tracking-widest text-purple-600 dark:text-purple-400 group-hover:translate-x-1 transition-transform uppercase">
                 <span>SHOP</span>
                 <ArrowRight className="h-3 w-3" />
               </div>
@@ -208,19 +213,19 @@ export const Home: React.FC<HomeProps> = ({
               const el = document.getElementById('catalog-grid');
               el?.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="flex items-center gap-4 p-4 group cursor-pointer hover:bg-white/5 transition-colors border-l border-white/10"
+            className="flex items-center gap-4 p-4 rounded-2xl group cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/40 border border-transparent hover:border-zinc-200/60 dark:hover:border-zinc-800/60 transition-all duration-300 md:border-l md:border-zinc-200/50 dark:md:border-zinc-800/50 md:rounded-l-none"
           >
-            <div className="w-16 h-20 overflow-hidden shrink-0 border border-white/10">
+            <div className="w-16 h-20 overflow-hidden shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
               <img
                 src="https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=400&auto=format&fit=crop&q=80"
                 alt="Kids Category"
-                className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
               />
             </div>
             <div className="space-y-1">
-              <h3 className="font-display text-base font-black tracking-wider uppercase">KIDS</h3>
-              <p className="text-[11px] text-neutral-400 font-normal">Comfort meets cool.</p>
-              <div className="pt-1 flex items-center gap-1 text-[10px] font-mono-tight font-bold tracking-widest text-white group-hover:translate-x-1 transition-transform">
+              <h3 className="font-display text-base font-black tracking-wider uppercase text-zinc-900 dark:text-white">KIDS</h3>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Comfort meets cool.</p>
+              <div className="pt-1.5 flex items-center gap-1 text-[9px] font-bold tracking-widest text-purple-600 dark:text-purple-400 group-hover:translate-x-1 transition-transform uppercase">
                 <span>SHOP</span>
                 <ArrowRight className="h-3 w-3" />
               </div>
@@ -234,19 +239,19 @@ export const Home: React.FC<HomeProps> = ({
               const el = document.getElementById('catalog-grid');
               el?.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="flex items-center gap-4 p-4 group cursor-pointer hover:bg-white/5 transition-colors border-l border-white/10"
+            className="flex items-center gap-4 p-4 rounded-2xl group cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/40 border border-transparent hover:border-zinc-200/60 dark:hover:border-zinc-800/60 transition-all duration-300 md:border-l md:border-zinc-200/50 dark:md:border-zinc-800/50 md:rounded-l-none"
           >
-            <div className="w-16 h-20 overflow-hidden shrink-0 border border-white/10">
+            <div className="w-16 h-20 overflow-hidden shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
               <img
                 src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400&auto=format&fit=crop&q=80"
                 alt="Beauty Category"
-                className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
               />
             </div>
             <div className="space-y-1">
-              <h3 className="font-display text-base font-black tracking-wider uppercase">BEAUTY</h3>
-              <p className="text-[11px] text-neutral-400 font-normal">Glow essentials.</p>
-              <div className="pt-1 flex items-center gap-1 text-[10px] font-mono-tight font-bold tracking-widest text-white group-hover:translate-x-1 transition-transform">
+              <h3 className="font-display text-base font-black tracking-wider uppercase text-zinc-900 dark:text-white">BEAUTY</h3>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Glow essentials.</p>
+              <div className="pt-1.5 flex items-center gap-1 text-[9px] font-bold tracking-widest text-purple-600 dark:text-purple-400 group-hover:translate-x-1 transition-transform uppercase">
                 <span>SHOP</span>
                 <ArrowRight className="h-3 w-3" />
               </div>
@@ -260,38 +265,40 @@ export const Home: React.FC<HomeProps> = ({
       {/* ============================================================ */}
       {/* 3. NEW VIBES EDITORIAL SPLIT SECTION                          */}
       {/* ============================================================ */}
-      <section className="py-16 lg:py-24 px-6 sm:px-8 border-b border-black/10 dark:border-white/10 bg-[#f4f2ee] dark:bg-[#0c0c0d]">
+      <section className="py-16 lg:py-24 px-6 sm:px-8 border-b border-zinc-200/50 dark:border-zinc-800/50 bg-[#f9f8f6] dark:bg-[#0b0b0d]">
         <div className="mx-auto max-w-7xl">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             
             {/* Left Column: NEW SEASON / NEW VIBES */}
             <div className="lg:col-span-5 space-y-6">
-              <div className="text-[11px] font-mono-tight uppercase tracking-[0.25em] text-neutral-500 dark:text-neutral-400 font-bold">
+              <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-purple-600 dark:text-purple-400">
                 NEW SEASON
               </div>
-              <h2 className="font-display text-5xl sm:text-7xl font-black tracking-[-0.03em] uppercase leading-[0.95] text-black dark:text-white">
+              <h2 className="font-display text-5xl sm:text-7xl font-black tracking-[-0.03em] uppercase leading-[0.95] text-zinc-900 dark:text-white">
                 NEW<br />VIBES
               </h2>
               <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 max-w-md font-normal leading-relaxed">
                 Everything new and now. From curated linen silhouettes to beauty essentials and kids' statement pieces — handpicked by STYLO, KAZU's AI stylist, for every person and every moment.
               </p>
               <div className="pt-2">
-                <button
+                <Button
+                  variant="gradient"
+                  size="lg"
                   onClick={() => handleStartChatWithPrompt('Tell me about the new season vibe and curate a linen ensemble')}
-                  className="bg-[#0d0d0d] text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200 px-8 py-3.5 text-[11px] font-mono-tight font-bold tracking-widest uppercase transition-all shadow-sm cursor-pointer"
+                  className="cursor-pointer shadow-md"
                 >
                   EXPLORE WITH STYLO
-                </button>
+                </Button>
               </div>
             </div>
 
             {/* Right Column: Editorial Hero Portrait */}
             <div className="lg:col-span-7 relative">
-              <div className="aspect-[16/10] overflow-hidden border border-black/10 dark:border-white/10 shadow-lg">
+              <div className="aspect-[16/10] overflow-hidden border border-zinc-200 dark:border-zinc-800/80 shadow-2xl rounded-2xl">
                 <img
                   src="https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=1200&auto=format&fit=crop&q=85"
                   alt="New Vibes Editorial"
-                  className="w-full h-full object-cover grayscale-[30%] hover:grayscale-0 transition-all duration-700"
+                  className="w-full h-full object-cover grayscale-[20%] hover:grayscale-0 transition-all duration-1000 ease-out"
                 />
               </div>
             </div>
@@ -304,46 +311,46 @@ export const Home: React.FC<HomeProps> = ({
       {/* ============================================================ */}
       {/* 4. VALUE PROPOSITION STRIP: Delivery, Returns, Security       */}
       {/* ============================================================ */}
-      <section className="bg-[#eae7df] dark:bg-[#151518] py-8 px-6 sm:px-8 border-b border-black/10 dark:border-white/10 text-black dark:text-white">
+      <section className="bg-white dark:bg-zinc-950 py-10 px-6 sm:px-8 border-b border-zinc-200/50 dark:border-zinc-800/50 text-zinc-800 dark:text-zinc-200">
         <div className="mx-auto max-w-7xl grid grid-cols-2 md:grid-cols-4 gap-6">
           
           <div className="flex items-center gap-3">
-            <div className="p-2 border border-black/15 dark:border-white/15">
-              <Truck className="h-5 w-5 stroke-[1.5]" />
+            <div className="p-2.5 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-zinc-900 shadow-sm">
+              <Truck className="h-5 w-5 stroke-[1.5] text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <h4 className="text-[11px] font-mono-tight font-bold uppercase tracking-wider">FAST DELIVERY</h4>
-              <p className="text-[10px] text-neutral-500 uppercase tracking-widest">Quick & safe delivery</p>
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-900 dark:text-white">FAST DELIVERY</h4>
+              <p className="text-[9px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Quick & safe dispatch</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="p-2 border border-black/15 dark:border-white/15">
-              <RefreshCw className="h-5 w-5 stroke-[1.5]" />
+            <div className="p-2.5 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-zinc-900 shadow-sm">
+              <RefreshCw className="h-5 w-5 stroke-[1.5] text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <h4 className="text-[11px] font-mono-tight font-bold uppercase tracking-wider">EASY RETURNS</h4>
-              <p className="text-[10px] text-neutral-500 uppercase tracking-widest">Within 15 days</p>
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-900 dark:text-white">EASY RETURNS</h4>
+              <p className="text-[9px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Within 15 days</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="p-2 border border-black/15 dark:border-white/15">
-              <ShieldCheck className="h-5 w-5 stroke-[1.5]" />
+            <div className="p-2.5 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-zinc-900 shadow-sm">
+              <ShieldCheck className="h-5 w-5 stroke-[1.5] text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <h4 className="text-[11px] font-mono-tight font-bold uppercase tracking-wider">QUALITY ASSURED</h4>
-              <p className="text-[10px] text-neutral-500 uppercase tracking-widest">Premium, curated</p>
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-900 dark:text-white">QUALITY ASSURED</h4>
+              <p className="text-[9px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Premium curated weaves</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="p-2 border border-black/15 dark:border-white/15">
-              <Lock className="h-5 w-5 stroke-[1.5]" />
+            <div className="p-2.5 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-zinc-900 shadow-sm">
+              <Lock className="h-5 w-5 stroke-[1.5] text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <h4 className="text-[11px] font-mono-tight font-bold uppercase tracking-wider">SECURE PAYMENT</h4>
-              <p className="text-[10px] text-neutral-500 uppercase tracking-widest">100% secure Razorpay</p>
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-900 dark:text-white">SECURE PAYMENT</h4>
+              <p className="text-[9px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Razorpay verified</p>
             </div>
           </div>
 
@@ -357,16 +364,16 @@ export const Home: React.FC<HomeProps> = ({
       <main id="catalog-grid" className="mx-auto max-w-7xl px-6 sm:px-8 py-16">
         
         {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-10 border-b border-black/10 dark:border-white/10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-zinc-200 dark:border-zinc-800">
           <div>
-            <h2 className="font-display text-2xl sm:text-3xl font-black tracking-tight uppercase text-black dark:text-white">
+            <h2 className="font-display text-3xl font-black tracking-tight uppercase text-zinc-900 dark:text-white">
               {activeSegment === 'all' ? 'BEST OF KAZU' :
                activeSegment === 'men' ? 'KAZU MEN' :
                activeSegment === 'women' ? 'KAZU WOMEN' :
                activeSegment === 'kids' ? 'KAZU KIDS' :
                activeSegment === 'beauty' ? 'KAZU BEAUTY' : 'BEST OF KAZU'}
             </h2>
-            <p className="text-xs font-mono-tight text-neutral-500 uppercase tracking-widest mt-1">
+            <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mt-1">
               Curated Essentials & Handpicked Pieces ({filteredProducts.length} Items)
             </p>
           </div>
@@ -377,10 +384,10 @@ export const Home: React.FC<HomeProps> = ({
               <button
                 key={seg}
                 onClick={() => setActiveSegment(seg)}
-                className={`px-4 py-1.5 text-[10px] font-mono-tight font-bold uppercase tracking-widest border transition-all cursor-pointer ${
+                className={`px-5 py-2 text-[10px] font-bold uppercase tracking-widest rounded-full border transition-all duration-300 cursor-pointer ${
                   activeSegment === seg
-                    ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white'
-                    : 'bg-transparent text-neutral-600 dark:text-neutral-400 border-black/15 dark:border-white/15 hover:border-black'
+                    ? 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-600/15'
+                    : 'bg-transparent text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:border-purple-500 hover:text-purple-600 dark:hover:text-purple-400'
                 }`}
               >
                 {seg}
@@ -400,8 +407,8 @@ export const Home: React.FC<HomeProps> = ({
               isAdded={cart.some((c) => c.sku_id === product.sku_id)}
             />
           )) : (
-            <div className="col-span-4 py-20 text-center">
-              <p className="text-sm font-mono-tight uppercase tracking-widest text-neutral-400">
+            <div className="col-span-4 py-24 text-center">
+              <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
                 No products found. Try a different filter or search.
               </p>
             </div>
@@ -411,11 +418,11 @@ export const Home: React.FC<HomeProps> = ({
       </main>
 
       {/* Footer Minimalist Strip */}
-      <footer className="border-t border-black/10 dark:border-white/10 py-12 px-6 sm:px-8 text-center bg-[#eae7df] dark:bg-[#101012]">
-        <span className="font-display text-2xl font-black tracking-tight uppercase block text-black dark:text-white mb-2">
+      <footer className="border-t border-zinc-200 dark:border-zinc-800/80 py-12 px-6 sm:px-8 text-center bg-zinc-50 dark:bg-zinc-950/80">
+        <span className="font-display text-2xl font-black tracking-tight uppercase block text-purple-600 dark:text-purple-500 mb-2">
           KAZU
         </span>
-        <p className="text-[11px] font-mono-tight uppercase tracking-widest text-neutral-500">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500 leading-relaxed max-w-md mx-auto">
           © 2026 KAZU ATELIER. POWERED BY STYLO — AI STYLE ENGINE & RAZORPAY VERIFIED CHECKOUT.
         </p>
       </footer>

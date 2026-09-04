@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, ShoppingBag, Check, Sparkles, Heart, ShieldCheck, Truck, RefreshCw, Tag, ChevronRight } from 'lucide-react';
 import { Product, getProductImage } from '../types/product';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/Badge';
 
 interface ProductDetailsPageProps {
   products: Product[];
   cart: Product[];
-  onAddToCart: (product: Product) => void;
+  onAddToCart: (product: Product, size?: string) => void;
   onOpenCart: () => void;
 }
 
@@ -30,15 +32,15 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-8 bg-[#f4f2ee] dark:bg-[#0c0c0d]">
+      <div className="min-h-screen flex items-center justify-center p-8 bg-[#fcfbf9] dark:bg-[#09090b]">
         <div className="text-center space-y-4">
           <h2 className="text-2xl font-display font-black uppercase">Product Not Found</h2>
-          <button
+          <Button
             onClick={() => navigate('/')}
-            className="px-6 py-2.5 bg-black text-white dark:bg-white dark:text-black font-mono-tight text-xs font-bold uppercase"
+            className="cursor-pointer"
           >
             Return to Atelier
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -65,22 +67,22 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
   };
 
   return (
-    <div className="bg-[#f4f2ee] dark:bg-[#0c0c0d] text-[#121212] dark:text-[#f2f2f0] min-h-screen transition-colors duration-300">
+    <div className="bg-[#fcfbf9] dark:bg-[#09090b] text-zinc-900 dark:text-zinc-100 min-h-screen transition-colors duration-300">
       
       {/* 1. Puma-Style Breadcrumb Bar */}
-      <div className="border-b border-black/10 dark:border-white/10 px-4 sm:px-8 py-3 bg-[#eae7df]/60 dark:bg-[#121214]/60">
-        <div className="max-w-7xl mx-auto flex items-center justify-between text-xs font-mono-tight text-neutral-500 uppercase tracking-wider">
+      <div className="border-b border-zinc-200 dark:border-zinc-850 px-4 sm:px-8 py-3.5 bg-zinc-50/60 dark:bg-zinc-900/40 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto flex items-center justify-between text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <Link to="/" className="hover:text-black dark:hover:text-white transition-colors">Home</Link>
-            <ChevronRight className="h-3 w-3 text-neutral-400 shrink-0" />
-            <span className="hover:text-black dark:hover:text-white cursor-pointer">{metadata.category || 'Apparel'}</span>
-            <ChevronRight className="h-3 w-3 text-neutral-400 shrink-0" />
-            <span className="text-black dark:text-white font-bold truncate max-w-[200px] sm:max-w-none">{metadata.title}</span>
+            <Link to="/" className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">Home</Link>
+            <ChevronRight className="h-3 w-3 text-zinc-400 dark:text-zinc-550 shrink-0" />
+            <span className="hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer">{metadata.category || 'Apparel'}</span>
+            <ChevronRight className="h-3 w-3 text-zinc-400 dark:text-zinc-550 shrink-0" />
+            <span className="text-zinc-800 dark:text-white font-black truncate max-w-[200px] sm:max-w-none">{metadata.title}</span>
           </div>
 
           <button
             onClick={() => navigate('/')}
-            className="hidden sm:flex items-center gap-1 font-bold text-black dark:text-white hover:opacity-75 transition-opacity cursor-pointer"
+            className="hidden sm:flex items-center gap-1.5 font-bold text-zinc-700 dark:text-zinc-300 hover:text-purple-600 dark:hover:text-purple-400 transition-all cursor-pointer"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>BACK TO STORE</span>
@@ -99,16 +101,16 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
                 <div
                   key={idx}
                   onClick={() => setActiveImageIndex(idx)}
-                  className={`aspect-[3/4] bg-[#e4e1d7] dark:bg-[#18181b] overflow-hidden border transition-all cursor-pointer ${
+                  className={`aspect-[3/4] bg-[#f4f2ee] dark:bg-zinc-900/60 overflow-hidden border transition-all duration-300 rounded-2xl cursor-pointer ${
                     activeImageIndex === idx
-                      ? 'border-black dark:border-white shadow-md'
-                      : 'border-black/5 dark:border-white/5 opacity-90 hover:opacity-100'
+                      ? 'border-purple-500 dark:border-purple-500 shadow-md shadow-purple-500/10'
+                      : 'border-zinc-200/50 dark:border-zinc-800/50 opacity-95 hover:opacity-100 hover:border-zinc-300 dark:hover:border-zinc-700'
                   }`}
                 >
                   <img
                     src={img}
                     alt={`${metadata.title} angle ${idx + 1}`}
-                    className="w-full h-full object-cover object-center grayscale-[10%] hover:grayscale-0 hover:scale-105 transition-all duration-500"
+                    className="w-full h-full object-cover object-center grayscale-[10%] hover:grayscale-0 hover:scale-102 transition-all duration-700 ease-out"
                   />
                 </div>
               ))}
@@ -116,49 +118,47 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
           </div>
 
           {/* RIGHT 5-COL: Product Buying Specs & Pricing Details */}
-          <div className="lg:col-span-5 sticky top-24 space-y-6 bg-white dark:bg-[#141416] p-6 sm:p-8 border border-black/10 dark:border-white/10 shadow-lg">
+          <div className="lg:col-span-5 sticky top-24 space-y-6 bg-white dark:bg-zinc-950 p-6 sm:p-8 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-xl shadow-zinc-500/[0.02] dark:shadow-none">
             
             {/* Title & Category Tag */}
             <div>
-              <div className="flex items-center justify-between text-xs font-mono-tight text-neutral-500 uppercase tracking-widest mb-1">
+              <div className="flex items-center justify-between text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-2.5">
                 <span>SKU: {sku_id}</span>
-                <span className="bg-black text-white dark:bg-white dark:text-black px-2 py-0.5 font-bold text-[10px]">
-                  NEW RELEASE
-                </span>
+                <Badge variant="purple">NEW RELEASE</Badge>
               </div>
-              <h1 className="font-display text-2xl sm:text-3xl font-black tracking-tight uppercase text-black dark:text-white leading-tight">
+              <h1 className="font-display text-2xl sm:text-3xl font-black tracking-tight uppercase text-zinc-900 dark:text-white leading-tight">
                 {metadata.title}
               </h1>
-              <p className="text-xs font-mono-tight text-neutral-500 uppercase tracking-widest mt-1">
+              <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mt-1.5 leading-none">
                 {metadata.fabric} • {metadata.fit_type} silhouette
               </p>
             </div>
 
             {/* Price & Discounts Block */}
-            <div className="border-y border-black/10 dark:border-white/10 py-4 flex items-baseline justify-between">
+            <div className="border-y border-zinc-200/60 dark:border-zinc-800/60 py-4.5 flex items-center justify-between">
               <div>
-                <span className="text-2xl sm:text-3xl font-mono-tight font-black text-black dark:text-white">
+                <span className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-white font-mono leading-none">
                   ₹{Number(metadata.price).toLocaleString('en-IN')}
                 </span>
-                <span className="text-xs text-neutral-500 block font-normal mt-0.5">Includes all taxes & duties</span>
+                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block font-bold mt-1.5 uppercase tracking-wide">Includes all taxes & duties</span>
               </div>
               {metadata.eligible_coupon && metadata.eligible_coupon !== 'NONE' && (
-                <div className="flex items-center gap-1.5 bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 px-3 py-1 text-xs font-mono-tight font-bold">
-                  <Tag className="h-3.5 w-3.5" />
+                <div className="flex items-center gap-1.5 bg-purple-50 dark:bg-purple-950/25 border border-purple-200/60 dark:border-purple-800/40 text-purple-750 dark:text-purple-300 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                  <Tag className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0 animate-pulse" />
                   <span>CODE: {metadata.eligible_coupon}</span>
                 </div>
               )}
             </div>
 
             {/* Size Selector */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs font-mono-tight font-bold uppercase tracking-wider">
+            <div className="space-y-3.5">
+              <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
                 <span>SELECT SIZE</span>
                 <button
                   onClick={handleAskStylistForThisSKU}
-                  className="text-purple-600 dark:text-purple-400 underline hover:opacity-80 cursor-pointer flex items-center gap-1"
+                  className="text-purple-600 dark:text-purple-400 hover:text-purple-700 hover:underline cursor-pointer flex items-center gap-1 transition-colors"
                 >
-                  <Sparkles className="h-3 w-3" />
+                  <Sparkles className="h-3 w-3 animate-pulse" />
                   <span>Ask AI Fit Consultant</span>
                 </button>
               </div>
@@ -168,10 +168,10 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
                   <button
                     key={sz}
                     onClick={() => setSelectedSize(sz)}
-                    className={`py-3 border text-xs font-mono-tight font-bold transition-all cursor-pointer ${
+                    className={`py-3 rounded-xl border text-xs font-mono font-bold transition-all duration-300 cursor-pointer ${
                       selectedSize === sz
-                        ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white'
-                        : 'bg-transparent text-black dark:text-white border-black/15 dark:border-white/15 hover:border-black'
+                        ? 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-600/15'
+                        : 'bg-transparent text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 hover:border-purple-500 hover:text-purple-600 dark:hover:text-purple-450'
                     }`}
                   >
                     {sz}
@@ -182,68 +182,74 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
 
             {/* Add to Cart & Wishlist CTAs */}
             <div className="space-y-3 pt-2">
-              <button
+              <Button
+                variant={isAdded ? 'outline' : 'default'}
+                size="lg"
                 onClick={() => {
-                  onAddToCart(product);
+                  onAddToCart(product, selectedSize);
                   onOpenCart();
                 }}
-                className={`w-full py-4 text-xs font-mono-tight font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                className={`w-full py-4 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
                   isAdded
-                    ? 'bg-emerald-700 text-white hover:bg-emerald-800'
-                    : 'bg-black text-white dark:bg-white dark:text-black hover:opacity-90'
+                    ? 'border-emerald-500 hover:border-emerald-600 text-emerald-600 dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20'
+                    : 'bg-zinc-900 hover:bg-black text-white dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 shadow-lg shadow-zinc-950/10'
                 }`}
               >
                 {isAdded ? (
                   <>
-                    <Check className="h-4 w-4" />
+                    <Check className="h-4 w-4 text-emerald-500" />
                     <span>ADDED TO SHOPPING BAG</span>
                   </>
                 ) : (
                   <>
-                    <ShoppingBag className="h-4 w-4" />
-                    <span>ADD TO CART • ₹{Number(metadata.price).toLocaleString('en-IN')}</span>
+                    <ShoppingBag className="h-4 w-4 shrink-0" />
+                    <span>ADD TO BAG  ₹{Number(metadata.price).toLocaleString('en-IN')}</span>
                   </>
                 )}
-              </button>
+              </Button>
 
-              <button
+              <Button
+                variant="outline"
+                size="lg"
                 onClick={handleAskStylistForThisSKU}
-                className="w-full py-3.5 border border-purple-600 text-purple-700 dark:border-purple-500 dark:text-purple-400 bg-purple-50/50 dark:bg-purple-950/30 text-xs font-mono-tight font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-all cursor-pointer"
+                className="w-full py-3.5 border-purple-200 hover:border-purple-300 text-purple-700 dark:border-purple-800 dark:text-purple-300 bg-purple-500/[0.02] dark:bg-purple-950/10 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all cursor-pointer shadow-sm"
               >
-                <Sparkles className="h-4 w-4" />
+                <Sparkles className="h-4 w-4 animate-pulse text-purple-600 dark:text-purple-400" />
                 <span>CONSULT AI STYLIST FOR THIS SKU</span>
-              </button>
+              </Button>
 
-              <button
+              <Button
+                variant="outline"
+                size="lg"
                 onClick={() => setIsWishlisted(!isWishlisted)}
-                className="w-full py-3 border border-black/20 dark:border-white/20 text-xs font-mono-tight font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:border-black dark:hover:border-white transition-all cursor-pointer"
+                className="w-full py-3 border border-zinc-200 dark:border-zinc-800 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:border-zinc-400 dark:hover:border-zinc-700 transition-all cursor-pointer"
               >
-                <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
+                <Heart className={`h-4 w-4 transition-colors ${isWishlisted ? 'fill-rose-550 text-rose-500' : 'text-zinc-405 dark:text-zinc-500'}`} />
                 <span>{isWishlisted ? 'SAVED TO WISHLIST' : 'ADD TO WISHLIST'}</span>
-              </button>
+              </Button>
             </div>
 
             {/* Product Details & Care Specifications */}
-            <div className="pt-4 border-t border-black/10 dark:border-white/10 space-y-3">
-              <h3 className="text-xs font-mono-tight font-bold uppercase tracking-widest">PRODUCT SPECIFICATIONS</h3>
-              <ul className="text-xs text-neutral-600 dark:text-neutral-400 space-y-1.5 list-disc pl-4 font-normal">
-                <li>Silhouette: {metadata.fit_type} tailored cut</li>
-                <li>Textile: {metadata.fabric} ({metadata.gsm || '180'} GSM weight)</li>
-                <li>Shade: {metadata.color}</li>
+            <div className="pt-5 border-t border-zinc-200 dark:border-zinc-800 space-y-3.5">
+              <h3 className="text-[10px] font-bold uppercase tracking-widest text-zinc-900 dark:text-white">PRODUCT SPECIFICATIONS</h3>
+              <ul className="text-xs text-zinc-550 dark:text-zinc-400 space-y-2 list-disc pl-4 font-normal leading-relaxed">
+                <li>Silhouette: <strong className="font-bold text-zinc-700 dark:text-zinc-200">{metadata.fit_type}</strong> tailored cut</li>
+                <li>Textile: <strong className="font-bold text-zinc-700 dark:text-zinc-200">{metadata.fabric}</strong> ({metadata.gsm || '180'} GSM weight)</li>
+                <li>Shade: <strong className="font-bold text-zinc-700 dark:text-zinc-200">{metadata.color}</strong></li>
                 <li>Care: Dry clean or cold delicate wash</li>
                 <li>Express Shipping: Dispatch within 24 hours</li>
               </ul>
             </div>
 
             {/* Guarantees */}
-            <div className="grid grid-cols-2 gap-3 pt-2 text-[10px] font-mono-tight text-neutral-500 uppercase tracking-widest border-t border-black/10 dark:border-white/10">
+            <div className="grid grid-cols-2 gap-3 pt-4 text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest border-t border-zinc-200 dark:border-zinc-800">
               <div className="flex items-center gap-1.5">
-                <Truck className="h-3.5 w-3.5 text-black dark:text-white" />
-                <span>Free Express Shipping</span>
+                <Truck className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                <span>Free Express Delivery</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <RefreshCw className="h-3.5 w-3.5 text-black dark:text-white" />
-                <span>15 Days Return</span>
+                <RefreshCw className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                <span>15 Days Easy Return</span>
               </div>
             </div>
 

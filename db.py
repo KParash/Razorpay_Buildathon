@@ -103,6 +103,7 @@ class User(Base):
     # Relationships
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
+    cart_items = relationship("CartItem", back_populates="user", cascade="all, delete-orphan")
 
     def to_dict(self):
         return {
@@ -308,6 +309,37 @@ class Order(Base):
             "receipt": self.receipt,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# 6. Cart Items Table
+# ---------------------------------------------------------------------------
+class CartItem(Base):
+    __tablename__ = "cart_items"
+
+    cart_item_id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String(50), ForeignKey("users.user_id"), nullable=False)
+    product_id = Column(String(20), ForeignKey("products.product_id"), nullable=False)
+    quantity = Column(Integer, nullable=False, default=1)
+    size = Column(String(10), nullable=False, default="L")
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+    # Relationships
+    user = relationship("User", back_populates="cart_items")
+    product = relationship("Product")
+
+    def to_dict(self):
+        return {
+            "cart_item_id": self.cart_item_id,
+            "user_id": self.user_id,
+            "product_id": self.product_id,
+            "quantity": self.quantity,
+            "size": self.size,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "product_details": self.product.to_catalog_item() if self.product else None
         }
 
 

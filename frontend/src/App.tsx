@@ -95,15 +95,58 @@ export function App() {
         }
       })
       .catch((err) => console.log('Using local fallback catalog data:', err));
+
+    // Fetch active persistent cart items from database
+    fetch('/api/cart?user_id=usr_guest')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status === 'success' && data.cart) {
+          setCart(data.cart);
+        }
+      })
+      .catch((err) => console.error('Failed to retrieve persistent cart:', err));
   }, []);
 
-  const handleAddToCart = (product: Product) => {
-    setCart((prev) => {
-      if (prev.some((p) => p.sku_id === product.sku_id)) {
-        return prev.filter((p) => p.sku_id !== product.sku_id);
-      }
-      return [...prev, product];
-    });
+  const handleAddToCart = (product: Product, size: string = 'L') => {
+    const isAlreadyInCart = cart.some((p) => p.sku_id === product.sku_id);
+    
+    if (isAlreadyInCart) {
+      fetch('/api/cart/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: 'usr_guest', product_id: product.sku_id, size })
+      }).catch((err) => console.error('Failed to sync cart removal with backend:', err));
+      
+      setCart((prev) => prev.filter((p) => p.sku_id !== product.sku_id));
+    } else {
+      fetch('/api/cart/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: 'usr_guest', product_id: product.sku_id, quantity: 1, size })
+      }).catch((err) => console.error('Failed to sync cart addition with backend:', err));
+      
+      setCart((prev) => [...prev, product]);
+    }
+  };
+
+  const handleRemoveFromCart = (skuId: string, size: string = 'L') => {
+    fetch('/api/cart/remove', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: 'usr_guest', product_id: skuId, size })
+    }).catch((err) => console.error('Failed to sync cart removal with backend:', err));
+
+    setCart((prev) => prev.filter((item) => item.sku_id !== skuId));
+  };
+
+  const handleClearCart = () => {
+    fetch('/api/cart/clear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: 'usr_guest' })
+    }).catch((err) => console.error('Failed to clear cart with backend:', err));
+
+    setCart([]);
   };
 
   // Called from Navbar category clicks — scroll to grid is handled by Home
@@ -172,8 +215,8 @@ export function App() {
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
         cart={cart}
-        onRemoveFromCart={(skuId) => setCart((prev) => prev.filter((item) => item.sku_id !== skuId))}
-        onClearCart={() => setCart([])}
+        onRemoveFromCart={handleRemoveFromCart}
+        onClearCart={handleClearCart}
         onOpenChat={() => {}}
       />
     </div>

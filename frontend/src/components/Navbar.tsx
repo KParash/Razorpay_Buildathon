@@ -44,7 +44,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* 1. Top Black Utility Bar (Exact match: Download App removed, centered text) */}
       <div className="bg-[#0e0e0e] text-[#b3b3b3] text-[10px] font-mono-tight tracking-widest uppercase border-b border-white/5 py-2 px-4 sm:px-8 flex items-center justify-between">
         <div>FREE DELIVERY ON ORDERS ABOVE ₹999</div>
-        <div className="hidden sm:flex items-center gap-5 text-[10px]">
+        {/* <div className="hidden sm:flex items-center gap-5 text-[10px]">
           <span
             onClick={() => alert("Orders are dispatched via BlueDart / Delhivery Express.")}
             className="hover:text-white cursor-pointer transition-colors"
@@ -58,7 +58,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             HELP
           </span>
-        </div>
+        </div> */}
       </div>
 
       {/* 2. Main Editorial Header with Grid Layout to ensure KAZU is strictly centered */}
@@ -131,10 +131,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Cart Button */}
             <button
               onClick={onOpenCart}
-              className="flex items-center gap-1.5 hover:opacity-70 transition-opacity cursor-pointer uppercase relative"
+              className="relative p-1 hover:opacity-70 transition-opacity cursor-pointer flex items-center justify-center"
+              title="Shopping Cart"
             >
               <ShoppingBag className="h-4 w-4 stroke-[1.8]" />
-              <span>CART ({cartCount})</span>
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-purple-600 text-white text-[9px] font-black leading-none select-none">
+                  {cartCount}
+                </span>
+              )}
             </button>
 
             {/* Theme Toggle */}

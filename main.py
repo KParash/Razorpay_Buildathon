@@ -24,7 +24,7 @@ from graph import fashion_agent_graph, _pg_conn
 from catalog_store import get_all_catalog_products, search_candidate_products
 from checkout_service import create_frozen_razorpay_order, verify_razorpay_payment_signature
 import history_store
-from db import get_db, User, SubCategory, Product, Order
+from db import get_db, User, SubCategory, Product, Order, CartItem
 from sqlalchemy.orm import Session
 from fastapi import Depends
 
@@ -84,6 +84,20 @@ class VerifyPaymentRequest(BaseModel):
     razorpay_order_id: str
     razorpay_payment_id: str
     razorpay_signature: str
+
+class AddCartItemRequest(BaseModel):
+    user_id: str = "usr_guest"
+    product_id: str
+    quantity: Optional[int] = 1
+    size: Optional[str] = "L"
+
+class RemoveCartItemRequest(BaseModel):
+    user_id: str = "usr_guest"
+    product_id: str
+    size: Optional[str] = "L"
+
+class ClearCartRequest(BaseModel):
+    user_id: str = "usr_guest"
 
 
 
@@ -394,6 +408,95 @@ async def openai_chat_completions(req: OpenAICompletionRequest):
             }
         }
 
+
+# -------------------------------------------------------------------
+# 5. Persistent Cart Endpoints
+# -------------------------------------------------------------------
+@app.get("/api/cart")
+async def get_cart(user_id: str = "usr_guest", db: Session = Depends(get_db)):
+    """Retrieve all cart items for a specific user, including product details."""
+    user = db.query(User).filter_by(user_id=user_id).first()
+    if not user:
+        return {"status": "success", "cart": [], "count": 0}
+    
+    from sqlalchemy.orm import joinedload
+    items = db.query(CartItem).filter_by(user_id=user_id).options(joinedload(CartItem.product)).all()
+    
+    # Format to match frontend expectations
+    cart_items_formatted = []
+    for item in items:
+        if item.product:
+            catalog_item = item.product.to_catalog_item()
+            # Inject chosen size and quantity into the returned product meta or top-level
+            catalog_item["selected_size"] = item.size
+            catalog_item["quantity"] = item.quantity
+            cart_items_formatted.append(catalog_item)
+            
+    return {
+        "status": "success",
+        "cart": cart_items_formatted,
+        "count": sum(item.quantity for item in items)
+    }
+
+@app.post("/api/cart/add")
+async def add_to_cart(req: AddCartItemRequest, db: Session = Depends(get_db)):
+    """Add a product item to the user's persistent cart database."""
+    user_id = req.user_id or "usr_guest"
+    existing_user = db.query(User).filter_by(user_id=user_id).first()
+    if not existing_user:
+        guest_user = User(
+            user_id=user_id,
+            username=f"guest_{uuid.uuid4().hex[:6]}",
+            email=f"{user_id}@example.com"
+        )
+        db.add(guest_user)
+        db.commit()
+
+    prod = db.query(Product).filter_by(product_id=req.product_id).first()
+    if not prod:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    item = db.query(CartItem).filter_by(user_id=user_id, product_id=req.product_id, size=req.size).first()
+    if item:
+        item.quantity += (req.quantity or 1)
+    else:
+        item = CartItem(
+            user_id=user_id,
+            product_id=req.product_id,
+            quantity=req.quantity or 1,
+            size=req.size or "L"
+        )
+        db.add(item)
+
+    db.commit()
+    db.refresh(item)
+    return {"status": "success", "message": "Product added to cart", "cart_item_id": item.cart_item_id}
+
+@app.post("/api/cart/remove")
+async def remove_from_cart(req: RemoveCartItemRequest, db: Session = Depends(get_db)):
+    """Remove a product item from the user's persistent cart database."""
+    user_id = req.user_id or "usr_guest"
+    item = db.query(CartItem).filter_by(user_id=user_id, product_id=req.product_id, size=req.size).first()
+    if not item:
+        # Fallback: remove any item matching product_id regardless of size if specific size not found
+        item = db.query(CartItem).filter_by(user_id=user_id, product_id=req.product_id).first()
+    
+    if item:
+        db.delete(item)
+        db.commit()
+        return {"status": "success", "message": "Product removed from cart"}
+    
+    return {"status": "success", "message": "Product was not in cart"}
+
+@app.post("/api/cart/clear")
+async def clear_cart(req: ClearCartRequest, db: Session = Depends(get_db)):
+    """Empty all cart items for a specific user."""
+    user_id = req.user_id or "usr_guest"
+    db.query(CartItem).filter_by(user_id=user_id).delete()
+    db.commit()
+    return {"status": "success", "message": "Cart cleared successfully"}
+
+
 # -------------------------------------------------------------------
 # 4. Razorpay Checkout & Order Verification
 # -------------------------------------------------------------------
@@ -469,6 +572,10 @@ async def verify_payment(req: VerifyPaymentRequest, db: Session = Depends(get_db
         db_order.status = "paid"
         db_order.razorpay_payment_id = req.razorpay_payment_id
         db_order.razorpay_signature = req.razorpay_signature
+        
+        # Clear user's database cart on successful payment verification
+        db.query(CartItem).filter_by(user_id=db_order.user_id).delete()
+        
         db.commit()
         db.refresh(db_order)
 

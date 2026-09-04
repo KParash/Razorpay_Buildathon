@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingBag, X, Trash2, ArrowRight, ShieldCheck, Tag, CreditCard, Sparkles, CheckCircle2 } from 'lucide-react';
+import { ShoppingBag, X, Trash2, ShieldCheck, Tag, CreditCard, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Badge } from './ui/Badge';
@@ -24,8 +24,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onOpenChat,
 }) => {
   const [couponCode, setCouponCode] = useState('');
-  const [appliedDiscount, setAppliedDiscount] = useState<number>(0);
-  const [appliedCoupon, setAppliedCoupon] = useState<string>('');
+  const [appliedDiscount, setAppliedDiscount] = useState<number>(() => {
+    const saved = localStorage.getItem('appliedDiscount');
+    return saved ? Number(saved) : 0;
+  });
+  const [appliedCoupon, setAppliedCoupon] = useState<string>(() => {
+    return localStorage.getItem('appliedCoupon') || '';
+  });
   const [couponError, setCouponError] = useState('');
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<any>(null);
@@ -44,10 +49,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     if (code === 'STYLE20') {
       setAppliedDiscount(20);
       setAppliedCoupon('STYLE20');
+      localStorage.setItem('appliedDiscount', '20');
+      localStorage.setItem('appliedCoupon', 'STYLE20');
       setCouponError('');
     } else if (code === 'AURA10') {
       setAppliedDiscount(10);
       setAppliedCoupon('AURA10');
+      localStorage.setItem('appliedDiscount', '10');
+      localStorage.setItem('appliedCoupon', 'AURA10');
       setCouponError('');
     } else {
       setCouponError('Invalid coupon code. Try "STYLE20" for 20% off!');
@@ -59,6 +68,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     setAppliedCoupon('');
     setCouponCode('');
     setCouponError('');
+    localStorage.removeItem('appliedDiscount');
+    localStorage.removeItem('appliedCoupon');
   };
 
   const handleCheckout = async () => {
@@ -92,6 +103,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               amount: finalTotal,
             });
             onClearCart();
+            // Clear coupon state from localStorage on successful order
+            localStorage.removeItem('appliedDiscount');
+            localStorage.removeItem('appliedCoupon');
+            setAppliedDiscount(0);
+            setAppliedCoupon('');
           },
         });
       } else {
@@ -105,18 +121,18 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm transition-all duration-300">
-      <div className="flex h-full w-full max-w-md flex-col bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800/80 shadow-2xl animate-in slide-in-from-right duration-300 text-zinc-900 dark:text-zinc-100">
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs transition-all duration-300">
+      <div className="flex h-full w-full max-w-md flex-col bg-white dark:bg-[#09090b] border-l border-zinc-200 dark:border-zinc-850 shadow-2xl animate-in slide-in-from-right duration-300 text-zinc-900 dark:text-zinc-100">
         
         {/* Drawer Header */}
-        <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 p-4 bg-zinc-50/80 dark:bg-zinc-900/60 backdrop-blur-md">
+        <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-850 p-5 bg-zinc-50/80 dark:bg-zinc-900/60 backdrop-blur-md">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-sm bg-zinc-900 dark:bg-purple-950 border border-zinc-900 dark:border-purple-800/60 text-white dark:text-purple-400">
-              <ShoppingBag className="h-5 w-5" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-600 border border-purple-500/20 text-white shadow-md">
+              <ShoppingBag className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="font-bold text-zinc-900 dark:text-white text-sm uppercase tracking-wider">Your Shopping Cart</h2>
-              <p className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
+              <h2 className="font-bold text-zinc-905 dark:text-white text-sm uppercase tracking-wider leading-none">Your Shopping Cart</h2>
+              <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mt-1.5 leading-none">
                 {cart.length} {cart.length === 1 ? 'item' : 'items'} selected
               </p>
             </div>
@@ -124,7 +140,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
           <button
             onClick={onClose}
-            className="rounded-sm p-2 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
+            className="rounded-xl p-2 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors cursor-pointer border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800"
           >
             <X className="h-5 w-5" />
           </button>
@@ -133,30 +149,31 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         {/* Order Success State */}
         {orderSuccess ? (
           <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4">
-            <div className="h-16 w-16 rounded-full bg-emerald-100 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 animate-bounce">
+            <div className="h-16 w-16 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-250 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 animate-bounce">
               <CheckCircle2 className="h-8 w-8" />
             </div>
-            <h3 className="text-xl font-black text-zinc-900 dark:text-white uppercase">Payment Verified!</h3>
-            <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400 max-w-xs">
-              Order <span className="text-emerald-600 dark:text-purple-400 font-mono font-bold">#{orderSuccess.orderId}</span> has been confirmed.
+            <h3 className="text-xl font-black text-zinc-900 dark:text-white uppercase leading-none">Payment Verified!</h3>
+            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 max-w-xs leading-relaxed">
+              Order <span className="text-emerald-600 dark:text-purple-400 font-mono font-bold">#{orderSuccess.orderId}</span> has been confirmed and verified.
             </p>
-            <div className="rounded-sm bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 w-full text-left space-y-2 text-xs">
+            <div className="rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-855 p-4 w-full text-left space-y-2 text-xs shadow-inner">
               <div className="flex justify-between font-bold">
-                <span className="text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Payment ID:</span>
-                <span className="text-zinc-900 dark:text-zinc-200 font-mono">{orderSuccess.paymentId}</span>
+                <span className="text-zinc-400 dark:text-zinc-500 uppercase tracking-widest text-[10px]">Payment ID:</span>
+                <span className="text-zinc-800 dark:text-zinc-200 font-mono select-all">{orderSuccess.paymentId}</span>
               </div>
-              <div className="flex justify-between font-bold">
-                <span className="text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Amount Paid:</span>
+              <div className="flex justify-between font-bold pt-1.5 border-t border-zinc-200/50 dark:border-zinc-800/50">
+                <span className="text-zinc-400 dark:text-zinc-500 uppercase tracking-widest text-[10px]">Amount Paid:</span>
                 <span className="text-emerald-600 dark:text-emerald-400">₹{orderSuccess.amount}</span>
               </div>
             </div>
             <Button
               variant="gradient"
+              size="lg"
               onClick={() => {
                 setOrderSuccess(null);
                 onClose();
               }}
-              className="w-full"
+              className="w-full mt-4 cursor-pointer shadow-md"
             >
               Continue Shopping
             </Button>
@@ -164,28 +181,29 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         ) : cart.length === 0 ? (
           /* Empty Cart State */
           <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4">
-            <div className="h-16 w-16 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center text-zinc-400 dark:text-zinc-500">
-              <ShoppingBag className="h-8 w-8" />
+            <div className="h-16 w-16 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-850 flex items-center justify-center text-zinc-400 dark:text-zinc-500 shadow-inner">
+              <ShoppingBag className="h-7 w-7" />
             </div>
             <div>
-              <h3 className="text-base font-black text-zinc-900 dark:text-white uppercase tracking-wider">Your Cart is Empty</h3>
-              <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mt-2 max-w-xs">
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Your Cart is Empty</h3>
+              <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mt-2 max-w-xs leading-relaxed">
                 Explore our AI-curated catalog or ask our AI Stylist for personalized recommendations.
               </p>
             </div>
-            <div className="flex flex-col gap-2 w-full pt-2">
+            <div className="flex flex-col gap-2.5 w-full pt-4 max-w-xs mx-auto">
               <Button
                 variant="gradient"
+                size="lg"
                 onClick={() => {
                   onClose();
                   onOpenChat('Help me choose an outfit');
                 }}
-                className="gap-2"
+                className="gap-2 shadow-md cursor-pointer"
               >
-                <Sparkles className="h-4 w-4" />
+                <Sparkles className="h-4 w-4 animate-pulse" />
                 Ask AI Stylist
               </Button>
-              <Button variant="outline" onClick={onClose}>
+              <Button variant="outline" size="lg" onClick={onClose} className="cursor-pointer">
                 Browse Catalog
               </Button>
             </div>
@@ -193,36 +211,36 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         ) : (
           /* Cart Content & Items List */
           <>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div className="flex-1 overflow-y-auto p-5 space-y-3.5">
               {cart.map((item) => (
                 <div
                   key={item.sku_id}
-                  className="flex items-center justify-between rounded-sm border border-zinc-200 dark:border-zinc-800/80 bg-zinc-50 dark:bg-zinc-900/60 p-3 backdrop-blur-md gap-3 shadow-sm"
+                  className="flex items-center justify-between rounded-2xl border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-900/40 p-4 gap-3 shadow-sm hover:border-purple-500/20 dark:hover:border-purple-500/20 transition-all duration-300"
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono text-zinc-500 dark:text-purple-400 uppercase font-bold">
+                  <div className="flex-1 overflow-hidden">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[9px] font-mono text-zinc-400 dark:text-purple-400 uppercase font-bold tracking-widest">
                         {item.sku_id}
                       </span>
-                      <Badge variant="secondary" className="text-[10px] py-0 px-1.5 uppercase font-bold tracking-widest border-zinc-300 dark:border-zinc-700">
+                      <Badge variant="secondary" className="text-[9px] py-0 px-2 uppercase font-bold tracking-widest border-zinc-200 dark:border-zinc-800">
                         {item.metadata.fit_type}
                       </Badge>
                     </div>
-                    <h4 className="font-bold text-zinc-900 dark:text-white text-xs mt-1 line-clamp-1 uppercase tracking-wide">
+                    <h4 className="font-bold text-zinc-900 dark:text-white text-xs mt-1.5 truncate uppercase tracking-wide">
                       {item.metadata.title}
                     </h4>
-                    <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 mt-0.5 uppercase tracking-wider">
                       {item.metadata.fabric} • {item.metadata.color}
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <span className="font-black text-zinc-900 dark:text-white text-sm font-mono">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="font-black text-zinc-900 dark:text-white text-sm font-mono leading-none">
                       ₹{item.metadata.price}
                     </span>
                     <button
                       onClick={() => onRemoveFromCart(item.sku_id)}
-                      className="rounded-sm p-1.5 text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
+                      className="rounded-xl p-2 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-red-500 dark:hover:text-red-400 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 transition-colors cursor-pointer"
                       title="Remove item"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -233,16 +251,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             </div>
 
             {/* Coupon Code Section */}
-            <div className="border-t border-zinc-200 dark:border-zinc-800/80 bg-zinc-50 dark:bg-zinc-900/40 p-4 space-y-3">
+            <div className="border-t border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-900/60 p-5 space-y-4">
               {appliedCoupon ? (
-                <div className="flex items-center justify-between rounded-sm bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800/60 p-2.5 text-xs text-purple-800 dark:text-purple-300 font-bold uppercase tracking-wide">
+                <div className="flex items-center justify-between rounded-xl bg-purple-50 dark:bg-purple-950/20 border border-purple-200/60 dark:border-purple-800/40 p-3 text-xs text-purple-800 dark:text-purple-300 font-bold uppercase tracking-wide shadow-sm">
                   <div className="flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    <Tag className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
                     <span>Coupon <strong>{appliedCoupon}</strong> ({appliedDiscount}% off)</span>
                   </div>
                   <button
                     onClick={handleRemoveCoupon}
-                    className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-[10px] underline cursor-pointer"
+                    className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-[10px] font-black uppercase tracking-wider underline cursor-pointer"
                   >
                     Remove
                   </button>
@@ -253,43 +271,44 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     placeholder="ENTER COUPON (e.g. STYLE20)"
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value)}
-                    className="text-[11px] font-bold tracking-widest flex-1 h-9 rounded-sm border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white placeholder:text-zinc-400"
+                    className="text-[10px] font-bold tracking-widest flex-1 h-10 rounded-xl border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus-visible:bg-white dark:focus-visible:bg-zinc-950"
                   />
-                  <Button type="submit" variant="outline" size="sm" className="h-9 text-[11px] font-bold tracking-widest uppercase rounded-sm border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                  <Button type="submit" variant="outline" className="h-10 text-[10px] font-bold tracking-widest uppercase rounded-xl shrink-0 cursor-pointer">
                     Apply
                   </Button>
                 </form>
               )}
               {couponError && (
-                <p className="text-[11px] font-bold tracking-wide text-red-500 dark:text-red-400 uppercase">{couponError}</p>
+                <p className="text-[10px] font-bold tracking-wide text-red-500 dark:text-red-450 uppercase px-1 leading-none">{couponError}</p>
               )}
 
               {/* Order Summary Calculations */}
-              <div className="space-y-1.5 pt-2 text-[11px] font-bold uppercase tracking-widest">
-                <div className="flex justify-between text-zinc-500 dark:text-zinc-400">
+              <div className="space-y-2 pt-1 text-[10px] font-bold uppercase tracking-widest border-t border-zinc-200/50 dark:border-zinc-800/50">
+                <div className="flex justify-between text-zinc-500 dark:text-zinc-450">
                   <span>Subtotal</span>
-                  <span className="font-mono text-zinc-900 dark:text-zinc-100">₹{subtotal}</span>
+                  <span className="font-mono text-zinc-805 dark:text-zinc-200">₹{subtotal}</span>
                 </div>
                 {discountAmount > 0 && (
-                  <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+                  <div className="flex justify-between text-emerald-600 dark:text-emerald-450">
                     <span>Discount ({appliedDiscount}%)</span>
                     <span className="font-mono">-₹{discountAmount}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-zinc-500 dark:text-zinc-400">
+                <div className="flex justify-between text-zinc-500 dark:text-zinc-450">
                   <span>Shipping</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-black">FREE</span>
+                  <span className="text-emerald-600 dark:text-emerald-450 font-black tracking-widest">FREE</span>
                 </div>
-                <div className="flex justify-between text-zinc-900 dark:text-white font-black text-sm pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                <div className="flex justify-between text-zinc-900 dark:text-white font-black text-sm pt-2.5 border-t border-zinc-200 dark:border-zinc-800">
                   <span>Total</span>
-                  <span className="font-mono text-purple-700 dark:text-purple-400">₹{finalTotal}</span>
+                  <span className="font-mono text-purple-700 dark:text-purple-400 text-base">₹{finalTotal}</span>
                 </div>
               </div>
 
               {/* Razorpay Checkout Button */}
               <Button
-                variant="default"
-                className="w-full gap-2 py-3 text-[11px] font-black uppercase tracking-wider rounded-sm bg-black text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 mt-2 shadow-lg dark:shadow-white/10"
+                variant="gradient"
+                size="lg"
+                className="w-full gap-2 py-3.5 text-xs font-black uppercase tracking-wider rounded-xl mt-2.5 shadow-lg shadow-purple-500/10 cursor-pointer"
                 onClick={handleCheckout}
                 disabled={isCheckingOut}
               >
@@ -297,9 +316,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 {isCheckingOut ? 'Initiating Razorpay...' : `Pay ₹${finalTotal} Securely`}
               </Button>
 
-              <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-500 pt-1">
-                <ShieldCheck className="h-3 w-3 text-zinc-600 dark:text-zinc-400" />
-                <span>256-Bit Encrypted Checkout</span>
+              <div className="flex items-center justify-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 pt-1 leading-none">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                <span>256-Bit Encrypted Razorpay Checkout</span>
               </div>
             </div>
           </>
