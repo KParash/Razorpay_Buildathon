@@ -17,8 +17,8 @@ from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 # Ensure environment variables are loaded
-load_dotenv()
-load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
+load_dotenv(override=True)
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"), override=True)
 
 # Enable LangSmith Tracing
 os.environ["LANGCHAIN_TRACING_V2"] = "true"

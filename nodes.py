@@ -6,14 +6,14 @@ from typing import Optional, List, Dict, Any
 from langchain_openai import ChatOpenAI
 from schema import AgentState
 
-load_dotenv()
+load_dotenv(override=True)
 
 # Master LLM (Boutique Stylist Synthesis & Semantic Intent Parsing)
 master_llm = ChatOpenAI(
     base_url="https://api.groq.com/openai/v1",
     api_key=os.getenv("GROQ_API_KEY"),
     model="qwen/qwen3.8-27b",
-    temperature=0.3
+    temperature=0.5
 )
 
 # High-Throughput Worker LLM (Deterministic Tailor, Textile, and Look Tasks)
@@ -105,29 +105,29 @@ async def clarifier_node(state: AgentState) -> dict:
     profile = state.get("customer_profile", {})
 
     system_prompt = """
-You are an experienced, high-end personal fashion consultant speaking face-to-face with a client in a private studio.
+You are a stylish friend who happens to work in fashion — chatting naturally with someone who needs outfit help.
 
-Core Directives:
-1. Never sound like automated customer support. Skip conversational fillers ("Certainly!", "I can assist!", "Sure!").
-2. Never present a questionnaire or bulleted list.
-3. Infer the obvious: If they mention a tropical trip, do not ask if it is hot. Ask about the itinerary (beach lounging vs. formal dinner) or cut preference.
-4. Formulate at most 1 or 2 purposeful, conversational questions.
-5. Keep the response under 3 sentences with warmth and style authority.
+How you talk:
+- Like a real person in a text conversation. Short, warm, genuine.
+- NEVER sound like a chatbot or customer support. No "Certainly!", "I'd be happy to!", "Sure thing!", "Great question!".
+- NEVER use bullet points or numbered lists. Just talk.
+- Keep it to 1-2 sentences. Ask ONE focused question that actually moves the conversation forward.
+- Infer the obvious — if someone says "beach trip" don't ask "will it be warm?" Instead ask what the vibe is (chill day looks vs. evening dinner) or what style they lean toward.
+- Show you're listening by briefly acknowledging what they said before asking your question.
 """
 
     user_context = f"""
-Dialogue History:
+Conversation so far:
 {history}
 
-Customer Profile:
-- Size & Fit Preference: {profile.get('fit_preference', 'relaxed')}
-- Excluded Colors: {profile.get('disliked_colors', [])}
+What we know about them:
+- They prefer {profile.get('fit_preference', 'relaxed')} fits
+- Colors they don't like: {profile.get('disliked_colors', []) or 'none mentioned'}
 
-Extracted Intent So Far:
+Intent extracted so far:
 {known_intent}
 
-Task:
-Formulate the single most natural, high-impact follow-up question to clarify their styling direction.
+Ask the ONE question that will help you pick the right piece for them. Keep it natural and brief.
 """
 
     res = await master_llm.ainvoke([
@@ -391,7 +391,7 @@ async def pricing_node(state: AgentState) -> dict:
 # -------------------------------------------------------------
 async def synthesis_node(state: AgentState) -> dict:
     if not state.get("evaluations") or not state.get("anchor_sku"):
-        return {"final_response": "I'm ready to curate your selection. What specific pieces or occasions are you shopping for today?"}
+        return {"final_response": "What are you looking for today? An occasion coming up, a wardrobe refresh, or something specific you have in mind?"}
 
     latest_eval = state["evaluations"][0]  # Primary anchor evaluation
     pricing = state.get("pricing_result", {})
@@ -400,54 +400,47 @@ async def synthesis_node(state: AgentState) -> dict:
     outfit = state.get("outfit") or {}
     intent = state.get("intent", {})
     profile = state.get("customer_profile", {})
+    history = state.get("messages", [])
 
     base_price = pricing.get("base_price", meta.get("price", 0))
     final_price = pricing.get("final_price", base_price)
     coupon = pricing.get("coupon_code", "NONE")
     
-    # Complementary pieces list
+    # Complementary pieces — just names, no price dump
     paired_items = outfit.get("paired_skus", [])
-    paired_titles = [f"{p['metadata'].get('title')} (₹{p['metadata'].get('price')})" for p in paired_items[:4]]
-    paired_summary = ", ".join(paired_titles) if paired_titles else "curated trousers and accessories"
+    paired_titles = [p['metadata'].get('title', '') for p in paired_items[:3]]
 
-    # Alternative candidate note if evaluated
-    alt_eval = state["evaluations"][1] if len(state["evaluations"]) > 1 else None
-    alt_note = ""
-    if alt_eval and alt_eval.get("is_disqualified"):
-        alt_note = f"\nNote on Alternative Options: We also examined an alternative piece, but its heavier GSM fabric is less suited for {intent.get('destination_climate', 'this climate')}. The primary piece above offers superior thermal breathability."
+    # Check if fabric has trade-offs worth mentioning
+    wrinkle_risk = latest_eval.get('fabric_verdict', {}).get('wrinkle_risk', 'Low')
+    climate_pass = latest_eval.get('fabric_verdict', {}).get('climate_pass', True)
+    fabric_caveat = ""
+    if wrinkle_risk and wrinkle_risk.lower() not in ("low", "none"):
+        fabric_caveat = f"The {meta.get('fabric', 'fabric')} does tend to wrinkle — that's part of its character, but worth knowing."
+    if not climate_pass:
+        fabric_caveat = f"Heads up: {meta.get('fabric', 'this fabric')} might feel heavy in {intent.get('destination_climate', 'that climate')}."
 
     prompt = f"""
-You are a discerning, top-tier Personal Fashion Consultant curating an outfit for a private client.
+You are a sharp, warm personal stylist chatting naturally with a customer — like a knowledgeable friend, not a product page.
 
-Stylist Rules:
-- Prohibited phrases: "Recommended for you", "I have selected", "Here is your outfit", "Hope this helps!", "Let me know if you need anything else!".
-- Jump straight into the styling vision: Start with how the anchor piece solves their specific occasion or aesthetic.
-- Balance taste with candid honesty: If the fabric has trade-offs (e.g., linen wrinkles quickly, delicate hand-wash, heavy GSM), highlight it constructively as care guidance.
-- Weave the styling pairing naturally: Describe the complete silhouette (how the trousers, accessories, or footwear complete the cut).
-- Financial clarity: Mention the pricing and coupon savings smoothly in one sentence, not like a sales banner.
-- Tone: Sophisticated, grounded, warm, peer-to-peer.
+CONVERSATION SO FAR:
+{history[-4:] if len(history) > 4 else history}
 
-Dynamic User Context:
-Client Context:
-- Occasion: {intent.get('occasion', 'tailored occasion')}
-- Climate/Setting: {intent.get('destination_climate', 'temperate')}
-- Fit Preference: {profile.get('fit_preference', 'relaxed')}
+THE CUSTOMER WANTS: {intent.get('occasion', 'something stylish')} | Climate: {intent.get('destination_climate', 'comfortable weather')}
 
-Selected Anchor Piece:
-- Title: {meta.get('title')}
-- Base Price: ₹{base_price} | Final Price: ₹{final_price} (Coupon Applied: {coupon})
-- Fabric & GSM: {meta.get('fabric', 'Premium Fabric')} ({meta.get('gsm', 'N/A')} GSM)
+YOU PICKED THIS PIECE FOR THEM:
+- {meta.get('title')} in {meta.get('color', 'a great colorway')}
+- {meta.get('fabric', 'quality fabric')}, ₹{final_price}{f' (was ₹{base_price} — {coupon} saves you {int((1 - final_price/base_price)*100)}%)' if coupon != 'NONE' and final_price < base_price else ''}
+- Pairs well with: {', '.join(paired_titles) if paired_titles else 'classic trousers and smart footwear'}
+{f'- Honest note: {fabric_caveat}' if fabric_caveat else ''}
 
-Technical Verdicts from Specialists:
-- Size & Fit: Recommended Size {latest_eval.get('size_verdict', {}).get('recommended_size', 'L')} (Reasoning: {latest_eval.get('size_verdict', {}).get('reasoning', '')})
-- Fabric Viability: {latest_eval.get('fabric_verdict', {}).get('comfort_notes', '')} | Wrinkle Risk: {latest_eval.get('fabric_verdict', {}).get('wrinkle_risk', 'Low')}
-- Delivery Timeline: {latest_eval.get('delivery_verdict', {}).get('estimated_arrival', '2-3 business days')}
-
-Complete Look Pairings & Styling Notes:
-- Instructions: {outfit.get('styling_instructions', '')}
-- Pairing Rationale: {outfit.get('pairing_rationale', '')}
-- Curated Complementary Ensemble: {paired_summary}
-{alt_note}
+YOUR RULES:
+1. KEEP IT SHORT — 2-4 sentences max. The product card with price, size, and fabric details already shows below your message, so DO NOT repeat specs.
+2. Lead with WHY this piece works for their specific situation — the occasion, the vibe, the climate. Make them picture wearing it.
+3. If there's a fabric trade-off, mention it casually and honestly — one sentence.
+4. Suggest how to style it (what to pair it with) in a natural way, like "throw this on with..." or "this works great over..."
+5. Sound like a real person texting a friend, not a luxury brand copywriter. No bullet points, no headers, no emojis.
+6. NEVER say: "Recommended for you", "I've curated", "Here is your outfit", "Hope this helps", "Let me know if you need anything else", "I'm happy to help", "Certainly!", "Great choice!"
+7. End with something that invites natural follow-up — a quick styling question or "want to see other options?" NOT a generic customer service sign-off.
 """
 
     res = await master_llm.ainvoke(prompt)
@@ -477,7 +470,7 @@ async def razorpay_checkout_node(state: AgentState) -> dict:
     }
     
     razorpay_order = create_frozen_razorpay_order(cart_payload)
-    msg = f"Your outfit is curated and your order is locked at ₹{final_total} (using code {coupon_code}). Opening Razorpay secure checkout."
+    msg = f"All set — your order's locked in at ₹{final_total}{f' with {coupon_code} applied' if coupon_code != 'NONE' else ''}. Pulling up the payment screen for you now."
     
     return {
         "checkout_ready": True,

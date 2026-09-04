@@ -2,7 +2,7 @@
 catalog_store.py — Product Catalog & Semantic Retrieval Layer
 
 Uses ChromaDB (ephemeral) + sentence-transformers for embedding-based
-product search backed by the SQLAlchemy `products` table in `app.db`.
+product search backed by the SQLAlchemy `products` table in PostgreSQL (Supabase).
 """
 
 import warnings

@@ -12,6 +12,7 @@ import os
 import uuid
 import time
 import json
+from contextlib import asynccontextmanager
 from typing import List, Dict, Any, Optional
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,7 +20,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from graph import fashion_agent_graph
+from graph import fashion_agent_graph, _pg_pool
 from catalog_store import get_all_catalog_products, search_candidate_products
 from checkout_service import create_frozen_razorpay_order
 import history_store
@@ -27,7 +28,15 @@ from db import get_db, User, SubCategory, Product
 from sqlalchemy.orm import Session
 from fastapi import Depends
 
-app = FastAPI(title="Agentic E-Commerce API", version="1.0.0")
+
+@asynccontextmanager
+async def lifespan(app):
+    # Startup: pools already created at import time
+    yield
+    # Shutdown: close the LangGraph checkpointer connection pool
+    _pg_pool.close()
+
+app = FastAPI(title="Agentic E-Commerce API", version="1.0.0", lifespan=lifespan)
 
 # Enable CORS for Vite frontend & external clients (e.g., LibreChat)
 app.add_middleware(
@@ -188,7 +197,7 @@ async def store_chat(req: ChatRequest):
     asst_msg_item = {
         "id": f"asst-{int(time.time()*1000)}",
         "sender": "assistant",
-        "text": final_response or "Here is my tailored recommendation for you.",
+        "text": final_response or "Here's what I'd go with — take a look.",
         "timestamp": time.strftime("%I:%M %p"),
         "recommendation": recommendation_obj,
         "candidate_skus": res.get("candidate_skus", []),
@@ -243,7 +252,7 @@ async def openai_chat_completions(req: OpenAICompletionRequest):
     if req.stream:
         async def event_generator():
             res = await fashion_agent_graph.ainvoke(input_state, config=config)
-            output_text = res.get("final_response") or "I am ready to help you."
+            output_text = res.get("final_response") or "What are you looking for today?"
             
             chunk = {
                 "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
@@ -262,7 +271,7 @@ async def openai_chat_completions(req: OpenAICompletionRequest):
         return StreamingResponse(event_generator(), media_type="text/event-stream")
     else:
         res = await fashion_agent_graph.ainvoke(input_state, config=config)
-        output_text = res.get("final_response") or "I am ready to help you."
+        output_text = res.get("final_response") or "What are you looking for today?"
 
         return {
             "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",

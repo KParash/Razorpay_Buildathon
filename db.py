@@ -7,12 +7,13 @@ Defines ORM models for:
   - sub_categories  : Normalized fashion sub-category lookup table
   - products        : Fashion product catalog
 
-Uses SQLite for local development (app.db), easily swappable to PostgreSQL.
+Uses PostgreSQL (Supabase) for persistent storage in both local dev and production.
 """
 
 import os
 import json
 from datetime import datetime, timezone
+from dotenv import load_dotenv
 from sqlalchemy import (
     create_engine,
     Column,
@@ -33,16 +34,23 @@ from sqlalchemy.orm import (
     Session,
 )
 
+load_dotenv(override=True)
+
 # ---------------------------------------------------------------------------
 # Database Engine & Session Factory
 # ---------------------------------------------------------------------------
-DB_PATH = os.path.join(os.path.dirname(__file__), "app.db")
-DATABASE_URL = f"sqlite:///{DB_PATH}"
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL environment variable is required. "
+        "Set it to your Supabase PostgreSQL connection string."
+    )
 
 engine = create_engine(
     DATABASE_URL,
     echo=False,
-    connect_args={"check_same_thread": False},  # Required for SQLite + FastAPI
+    pool_size=5,
+    max_overflow=10,
 )
 
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)

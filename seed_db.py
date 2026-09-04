@@ -12,6 +12,9 @@ Usage:
 import sys
 import json
 import os
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 from db import init_db, engine, SessionLocal, Base, User, SubCategory, Product, Conversation
 
@@ -189,7 +192,7 @@ def seed_database(force: bool = False):
             count = db.query(Product).filter_by(sub_category_id=cat.sub_category_id).count()
             print(f"     └─ {cat.name}: {count} products")
         
-        print(f"\n💾 Database file: {os.path.abspath('app.db')}")
+        print(f"\n💾 Database: PostgreSQL (Supabase)")
 
     except Exception as e:
         db.rollback()

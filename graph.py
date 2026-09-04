@@ -1,5 +1,8 @@
+import os
+from dotenv import load_dotenv
 from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.memory import MemorySaver
+from psycopg_pool import ConnectionPool
+from langgraph.checkpoint.postgres import PostgresSaver
 from schema import AgentState
 from nodes import (
     master_router_node,
@@ -10,6 +13,22 @@ from nodes import (
     synthesis_node,
     razorpay_checkout_node
 )
+
+load_dotenv(override=True)
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL environment variable is required. "
+        "Set it to your Supabase PostgreSQL connection string."
+    )
+
+# Connection pool for LangGraph checkpointer (separate from SQLAlchemy's pool)
+_pg_pool = ConnectionPool(conninfo=DATABASE_URL, min_size=1, max_size=5)
+_pg_pool.open()
+
+checkpointer = PostgresSaver(_pg_pool)
+checkpointer.setup()  # Creates checkpoint tables on first run (idempotent)
 
 # 1. Initialize StateGraph
 builder = StateGraph(AgentState)
@@ -53,6 +72,5 @@ builder.add_edge("pricing", "synthesis")
 builder.add_edge("synthesis", END)
 builder.add_edge("checkout", END)
 
-# 5. Compile Runnable Graph with Memory (multi-turn state persistence)
-memory = MemorySaver()
-fashion_agent_graph = builder.compile(checkpointer=memory)
+# 5. Compile Runnable Graph with PostgreSQL-backed persistence (multi-turn state)
+fashion_agent_graph = builder.compile(checkpointer=checkpointer)

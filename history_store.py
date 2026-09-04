@@ -1,7 +1,7 @@
 """
 history_store.py — Database-backed store for user chat sessions and interaction history.
 
-Persists conversations in the SQLAlchemy `conversations` table in `app.db`.
+Persists conversations in the SQLAlchemy `conversations` table in PostgreSQL (Supabase).
 Maintains backward compatibility with endpoints returning `session_id`, `title`, and `messages`.
 """
 

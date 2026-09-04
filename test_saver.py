@@ -1,8 +1,16 @@
-import asyncio
-from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+import os
+from dotenv import load_dotenv
+from langgraph.checkpoint.postgres import PostgresSaver
 
-async def main():
-    async with AsyncSqliteSaver.from_conn_string("state.db") as memory:
-        print("Works with async with:", memory)
+load_dotenv(override=True)
 
-asyncio.run(main())
+DB_URI = os.environ.get("DATABASE_URL")
+if not DB_URI:
+    raise RuntimeError("DATABASE_URL environment variable is required.")
+
+def main():
+    with PostgresSaver.from_conn_string(DB_URI) as checkpointer:
+        checkpointer.setup()
+        print("PostgresSaver connected and tables ready:", checkpointer)
+
+main()

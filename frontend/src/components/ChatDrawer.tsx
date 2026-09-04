@@ -45,7 +45,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
     {
       id: 'welcome-1',
       sender: 'assistant',
-      text: "Hello! I'm your AURA AI Personal Stylist. Tell me your occasion, climate destination, or budget, and I'll curate your tailored outfit.",
+      text: "Hey! What are you shopping for today — got an event coming up, a trip to pack for, or just looking to refresh your wardrobe?",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -101,7 +101,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
         const assistantMsg: ChatMessageItem = {
           id: `asst-${Date.now()}`,
           sender: 'assistant',
-          text: data.message || "Here is my recommendation for you.",
+          text: data.message || "Here's what I'd suggest — check it out below.",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           recommendation: anchor
             ? {
@@ -302,7 +302,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
                 <Bot className="h-4 w-4 animate-spin" />
               </div>
               <div className="rounded-sm bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-                <span>Stylist Swarm is evaluating</span>
+                <span>Thinking</span>
                 <span className="h-1.5 w-1.5 rounded-full bg-purple-500 dark:bg-purple-400 animate-ping" />
               </div>
             </div>
@@ -323,7 +323,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
             <Input
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="ASK FOR OUTFITS, CLIMATE FIT..."
+              placeholder="What are you looking for?"
               disabled={isLoading}
               className="flex-1 rounded-sm text-[11px] font-bold tracking-widest border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white"
             />

@@ -2,7 +2,7 @@ import asyncio
 import sys
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 from graph import fashion_agent_graph
 
