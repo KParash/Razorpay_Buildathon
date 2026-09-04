@@ -15,7 +15,7 @@ import json
 from typing import List, Dict, Any, Optional
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, HTMLResponse
+from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -76,41 +76,7 @@ class VerifyPaymentRequest(BaseModel):
     razorpay_payment_id: str
     razorpay_signature: str
 
-@app.get("/", response_class=HTMLResponse)
-async def root():
-    """Friendly landing page when accessing port 8000 directly."""
-    return """
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>KAZU Store - Backend API</title>
-        <meta http-equiv="refresh" content="3; url=http://localhost:5173" />
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0c; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-          .card { background: #18181b; padding: 40px; border-radius: 12px; border: 1px solid #27272a; text-align: center; max-width: 480px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
-          h1 { margin: 0 0 12px; font-size: 28px; letter-spacing: 0.05em; }
-          p { color: #a1a1aa; line-height: 1.5; margin-bottom: 24px; font-size: 15px; }
-          .btn { display: inline-block; padding: 12px 24px; margin: 6px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: 0.2s; }
-          .btn-primary { background: #fff; color: #000; }
-          .btn-primary:hover { background: #e4e4e7; }
-          .btn-secondary { background: #27272a; color: #fff; }
-          .btn-secondary:hover { background: #3f3f46; }
-          .redirect-note { font-size: 12px; color: #71717a; margin-top: 20px; }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <h1>KAZU API Server</h1>
-          <p>This is the FastAPI backend service running on port 8000. To view the storefront application and chat with STYLO, open the frontend.</p>
-          <div>
-            <a href="http://localhost:5173" class="btn btn-primary">Open Web Store (Port 5173)</a>
-            <a href="/docs" class="btn btn-secondary">API Docs (Swagger)</a>
-          </div>
-          <p class="redirect-note">Redirecting you to the storefront in 3 seconds...</p>
-        </div>
-      </body>
-    </html>
-    """
+
 
 # -------------------------------------------------------------------
 # 1. Product Catalog & Taxonomy Endpoints
