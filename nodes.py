@@ -25,17 +25,38 @@ worker_llm = ChatOpenAI(
 )
 
 # -------------------------------------------------------------
+# KAZU Inventory Reference (All Segments)
+# -------------------------------------------------------------
+KAZU_INVENTORY = """
+KAZU Atelier has 4 product segments. ONLY recommend products from these segments:
+
+1. MEN — Shirts, T-Shirts, Pants/Trousers, Shoes, Sunglasses
+   Examples: Oxford shirts, linen shirts, seersucker, polo tees, graphic tees, chinos, linen trousers, denim jeans, formal trousers, leather sneakers, derby shoes, chelsea boots, aviator sunglasses, wayfarer sunglasses
+
+2. WOMEN — Dresses, Tops, Bottoms, Shoes, Sunglasses, Bags
+   Examples: Maxi dresses, wrap dresses, blazer dresses, floral dresses, silk blouses, crop tops, co-ord sets, wide-leg pants, midi skirts, jogger pants, block-heel sandals, canvas sneakers, cat-eye sunglasses, oversized sunglasses, canvas tote, leather crossbody
+
+3. KIDS — Tops, Bottoms, Shoes, Accessories
+   Examples: Graphic tees, polo tees, tie-dye shirts, matching sets, zip-up hoodies, cargo joggers, denim shorts, cotton leggings, canvas sneakers, light-up sports shoes, rain boots, caps
+
+4. BEAUTY — Skincare, Makeup, Hair Care, Fragrances, Grooming
+   Examples: Vitamin C serum, SPF sunscreen, overnight face mask, face wash, lip balm, lipstick, mascara, eyeliner, argan hair oil, anti-frizz shampoo, EDP perfume, body mist, men's shaving gel
+"""
+
+
+# -------------------------------------------------------------
 # 1. Master Orchestrator Node (master_router_node)
 # -------------------------------------------------------------
 class IntentParser(BaseModel):
-    occasion: Optional[str] = Field(None, description="Event, setting, or aesthetic vibe, e.g. 'beach wedding', 'cocktail evening', 'formal business', 'vacation'")
-    destination_climate: Optional[str] = Field(None, description="Inferred or stated climate/weather, e.g. 'warm and humid coastal', 'tropical', 'chilly mountain', 'temperate'")
-    target_delivery_date: Optional[str] = Field(None, description="Required delivery timeframe or event date, e.g. 'this weekend', 'next Friday', 'express'")
-    max_budget: Optional[float] = Field(None, description="Maximum budget in INR if specified, e.g. 4000.0")
-    formality_level: Optional[str] = Field(None, description="e.g. 'casual', 'smart casual', 'semi-formal', 'black tie'")
-    search_query: str = Field(..., description="High-relevance semantic catalog search keywords (e.g. 'linen shirt beach wedding goa', 'navy tailored blazer')")
-    is_ready_to_recommend: bool = Field(..., description="Set true ONLY if user specifies a concrete piece/garment OR has an identified occasion/vibe AND at least one secondary constraint (budget, climate, or silhouette). Set false if the prompt is general or vague (e.g. 'help me dress up for an upcoming trip', 'show me clothes', 'recommend an outfit') so the consultant can clarify.")
-    is_checkout_requested: bool = Field(False, description="Set true ONLY if customer explicitly requests to purchase, buy, or checkout (e.g. 'buy this', 'checkout', 'proceed to pay').")
+    occasion: Optional[str] = Field(None, description="Event, setting, or aesthetic vibe, e.g. 'beach vacation', 'formal dinner', 'daily skincare routine', 'school wear'")
+    destination_climate: Optional[str] = Field(None, description="Inferred climate/weather, e.g. 'warm coastal', 'tropical', 'chilly mountain', 'temperate'")
+    target_delivery_date: Optional[str] = Field(None, description="Required delivery timeframe, e.g. 'this weekend', 'next Friday', 'express'")
+    max_budget: Optional[float] = Field(None, description="Maximum budget in INR if specified, e.g. 3000.0")
+    formality_level: Optional[str] = Field(None, description="e.g. 'casual', 'smart casual', 'semi-formal', 'glamorous'")
+    target_segment: Optional[str] = Field(None, description="Shopping segment — must be exactly one of: 'Men', 'Women', 'Kids', 'Beauty', or 'unknown'. Infer from context: 'my daughter' → 'Kids', 'skincare routine' → 'Beauty', 'husband' → 'Men'. If completely unclear, return 'unknown'.")
+    search_query: str = Field(..., description="Rich semantic catalog search keywords tailored to KAZU's inventory and the identified segment (e.g. 'linen shirt beach trousers men', 'maxi dress resort women', 'kids graphic tee jogger', 'vitamin C serum skincare')")
+    is_ready_to_recommend: bool = Field(..., description="Set true ONLY if: (a) segment is known AND occasion/vibe is identified, OR (b) user explicitly names a specific product type. Set false if segment is 'unknown' or intent is too vague.")
+    is_checkout_requested: bool = Field(False, description="Set true ONLY if customer explicitly requests to purchase, buy, or checkout.")
 
 async def master_router_node(state: AgentState) -> dict:
     history = state.get("messages", [])
@@ -43,25 +64,39 @@ async def master_router_node(state: AgentState) -> dict:
     prev_intent = state.get("intent") or {}
 
     prompt = f"""
-You are an expert Personal Fashion Consultant and Intent Resolution Engine.
-Analyze the dialogue history below:
+You are the Intent Resolution Engine for KAZU — a premium multi-segment fashion and beauty store.
+
+{KAZU_INVENTORY}
+
+Dialogue History:
 {history}
 
 Latest Customer Message: "{last_msg}"
-Previously Extracted Intent State: {prev_intent}
+Previously Extracted Intent: {prev_intent}
 
-Task:
-1. Extract customer intent (occasion, destination climate, delivery deadline, budget, and formality level).
-2. Infer obvious contextual variables (e.g., coastal vacations like Goa or Bali imply warm, sunny, and humid coastal weather; hill stations imply crisp or cold weather; summer dinners imply warm temperate).
-3. Evaluate Information Sufficiency:
-   - Set `is_ready_to_recommend = true` ONLY if you have an identified occasion/vibe AND at least one secondary constraint (budget, climate, or silhouette), OR if the user explicitly specifies a concrete product/garment (e.g. 'white linen shirt', 'cocktail blazer', 'oversized polo').
-   - If intent is general, broad, or lacks specifics (e.g., 'Help me dress up for an upcoming trip', 'Show me clothes', 'Help me dress up', 'I need an outfit', 'Recommend something nice'), set `is_ready_to_recommend = false` so the consultant can ask where they are traveling or what specific aesthetic they envision.
-4. Evaluate Purchase Readiness:
-   - Set `is_checkout_requested = true` ONLY if the client explicitly requests to purchase, buy, or checkout (e.g., 'buy this', 'checkout', 'place order', 'proceed to pay').
-5. Synthesize `search_query`: Provide 3-5 rich semantic keywords matching the intent, occasion, and inferred climate for catalog search (e.g. 'linen shirt beach wedding goa', 'silk cocktail jacket formal evening').
+Your Task:
+1. Identify the shopping SEGMENT (Men / Women / Kids / Beauty) from conversation context.
+   - Use pronouns, mentions of relationships (my daughter, husband, baby, herself), product types, or explicit mentions.
+   - If user mentions skincare, makeup, fragrance, or hair → segment is 'Beauty'.
+   - If user says "for my kids", "for my son/daughter", mentions age < 12 → segment is 'Kids'.
+   - If user mentions "for me" and seems female or mentions women's items → 'Women'.
+   - If still truly unclear after 2+ turns → segment stays 'unknown'.
+
+2. Extract occasion, climate, budget, formality from the conversation.
+
+3. Set is_ready_to_recommend = true ONLY when:
+   - Segment is known (not 'unknown') AND
+   - There's at least one specific intent (occasion, product type, or style preference)
+
+4. Synthesize a semantic search_query with 3-6 keywords that match KAZU's exact inventory.
+   - For Men: use words like 'shirt', 'chinos', 'polo', 'sneakers', 'sunglasses'
+   - For Women: use words like 'dress', 'blouse', 'wide-leg', 'sandals', 'tote'
+   - For Kids: use words like 'kids tee', 'joggers', 'sneakers', 'hoodie'
+   - For Beauty: use words like 'serum', 'lipstick', 'shampoo', 'perfume', 'face wash'
 
 Return valid structured output.
 """
+
     try:
         structured_router = master_llm.with_structured_output(IntentParser)
         res = await structured_router.ainvoke(prompt)
@@ -69,9 +104,22 @@ Return valid structured output.
     except Exception:
         # Fallback heuristic parser
         is_checkout = any(w in last_msg.lower() for w in ["buy", "checkout", "order", "purchase", "pay"])
+        msg_lower = last_msg.lower()
+        
+        # Infer segment from keywords
+        segment = prev_intent.get("target_segment") or "unknown"
+        if any(w in msg_lower for w in ["serum", "moisturizer", "lipstick", "mascara", "shampoo", "perfume", "skincare", "makeup", "hair oil", "face wash", "sunscreen", "eyeliner", "grooming", "shaving"]):
+            segment = "Beauty"
+        elif any(w in msg_lower for w in ["kid", "son", "daughter", "child", "boy", "girl", "baby", "toddler"]):
+            segment = "Kids"
+        elif any(w in msg_lower for w in ["dress", "blouse", "skirt", "maxi", "co-ord", "kurta", "her", "she", "women"]):
+            segment = "Women"
+        elif any(w in msg_lower for w in ["shirt", "trouser", "polo", "chino", "sneaker", "loafer", "he", "men"]):
+            segment = "Men"
+
         is_broad = any(last_msg.strip().lower().startswith(w) for w in [
-            "hi", "hello", "hey", "help me shop", "show me clothes", 
-            "i need an outfit", "help me dress up", "recommend something", "something nice"
+            "hi", "hello", "hey", "help me shop", "show me", 
+            "i need", "help me dress", "recommend", "something nice", "what do you have"
         ])
         intent_dict = {
             "occasion": prev_intent.get("occasion") or "lifestyle dressing",
@@ -79,16 +127,22 @@ Return valid structured output.
             "target_delivery_date": prev_intent.get("target_delivery_date") or "express",
             "max_budget": prev_intent.get("max_budget"),
             "formality_level": prev_intent.get("formality_level") or "smart casual",
+            "target_segment": segment,
             "search_query": last_msg,
-            "is_ready_to_recommend": not is_broad,
+            "is_ready_to_recommend": not is_broad and segment != "unknown",
             "is_checkout_requested": is_checkout
         }
 
     # Cumulative Intent Merge: Persist previous slots across turns
     merged_intent = {**prev_intent}
     for k, v in intent_dict.items():
-        if v is not None and v != "":
+        if v is not None and v != "" and v != "unknown":
             merged_intent[k] = v
+    
+    # Carry segment forward even if current turn doesn't re-assert it
+    if not merged_intent.get("target_segment") or merged_intent.get("target_segment") == "unknown":
+        if intent_dict.get("target_segment") and intent_dict["target_segment"] != "unknown":
+            merged_intent["target_segment"] = intent_dict["target_segment"]
             
     # Explicit checkout requested takes precedence
     if intent_dict.get("is_checkout_requested"):
@@ -103,31 +157,46 @@ async def clarifier_node(state: AgentState) -> dict:
     history = state.get("messages", [])
     known_intent = state.get("intent", {})
     profile = state.get("customer_profile", {})
+    segment = known_intent.get("target_segment") or "unknown"
 
-    system_prompt = """
-You are a stylish friend who happens to work in fashion — chatting naturally with someone who needs outfit help.
+    # Determine what category information to give the consultant
+    segment_context = ""
+    if segment == "Men":
+        segment_context = "Men's range: Shirts, T-Shirts, Trousers, Shoes, and Sunglasses."
+    elif segment == "Women":
+        segment_context = "Women's range: Dresses, Tops, Wide-Leg Pants, Skirts, Shoes, Bags, and Sunglasses."
+    elif segment == "Kids":
+        segment_context = "Kids' range: Graphic Tees, Matching Sets, Hoodies, Denim Shorts, Joggers, Sneakers, Rain Boots, and Caps."
+    elif segment == "Beauty":
+        segment_context = "Beauty range: Skincare (serums, face wash, sunscreen, moisturizer), Makeup (lipstick, mascara, eyeliner), Hair Care (hair oil, shampoo), and Fragrances (EDP, body mist)."
+    else:
+        segment_context = "KAZU has four segments: Men's Fashion, Women's Fashion, Kids' Clothing, and Beauty & Personal Care."
 
-How you talk:
-- Like a real person in a text conversation. Short, warm, genuine.
-- NEVER sound like a chatbot or customer support. No "Certainly!", "I'd be happy to!", "Sure thing!", "Great question!".
-- NEVER use bullet points or numbered lists. Just talk.
-- Keep it to 1-2 sentences. Ask ONE focused question that actually moves the conversation forward.
-- Infer the obvious — if someone says "beach trip" don't ask "will it be warm?" Instead ask what the vibe is (chill day looks vs. evening dinner) or what style they lean toward.
-- Show you're listening by briefly acknowledging what they said before asking your question.
+    system_prompt = f"""
+You are STYLO — KAZU's personal AI fashion and beauty consultant, speaking with a private client.
+
+Core Directives:
+1. KAZU has 4 segments: Men, Women, Kids, and Beauty. {segment_context}
+2. If the client asks for something outside KAZU's catalog, politely redirect to the nearest relevant category.
+3. If the client's segment is unknown, your FIRST priority is to determine who they are shopping for with one warm, natural question.
+4. Never sound like automated support. Skip filler phrases ("Certainly!", "Sure thing!", "I can help!").
+5. Ask at most 1-2 purposeful questions. Be conversational and warm.
+6. If you already know the segment, dive straight into style clarifications (occasion, budget, preference).
 """
 
     user_context = f"""
 Conversation so far:
 {history}
 
-What we know about them:
-- They prefer {profile.get('fit_preference', 'relaxed')} fits
-- Colors they don't like: {profile.get('disliked_colors', []) or 'none mentioned'}
+Customer Profile:
+- Fit Preference: {profile.get('fit_preference', 'relaxed')}
+- Excluded Colors: {profile.get('disliked_colors', [])}
 
 Intent extracted so far:
 {known_intent}
 
-Ask the ONE question that will help you pick the right piece for them. Keep it natural and brief.
+Task:
+{"Since the segment is unknown, ask who they are shopping for in one warm, natural sentence. Then ask about occasion or style." if segment == "unknown" else f"The customer is shopping for the {segment} segment. Ask one focused question to clarify their occasion, style preference, or budget so you can make the ideal recommendation."}
 """
 
     res = await master_llm.ainvoke([
@@ -140,6 +209,7 @@ Ask the ONE question that will help you pick the right piece for them. Keep it n
         "final_response": res.content
     }
 
+
 # -------------------------------------------------------------
 # 3. Hybrid Candidate Retriever Node
 # -------------------------------------------------------------
@@ -148,28 +218,51 @@ async def retriever_node(state: AgentState) -> dict:
     
     intent = state.get("intent", {})
     search_query = intent.get("search_query") or ""
+    segment = intent.get("target_segment") or None
     
     if not search_query:
         search_query = f"{intent.get('occasion', '')} {intent.get('destination_climate', '')}".strip()
     if not search_query:
-        search_query = "trending classic luxury"
+        search_query = "trending essential fashion"
         
     max_budget = intent.get("max_budget")
     
-    # Retrieve top 8 candidate products to support anchor + paired look + alternatives
-    candidates = search_candidate_products(query=search_query, max_budget=max_budget, top_k=8)
+    # Retrieve top 8 candidates scoped to the identified segment
+    candidates = search_candidate_products(
+        query=search_query,
+        max_budget=max_budget,
+        segment=segment,
+        top_k=8
+    )
     
-    # Fallback if budget filter excluded candidates
-    if len(candidates) < 5 and max_budget:
-        candidates = search_candidate_products(query=search_query, max_budget=None, top_k=8)
+    # Fallback if budget filter excluded too many candidates
+    if len(candidates) < 4 and max_budget:
+        candidates = search_candidate_products(
+            query=search_query,
+            max_budget=None,
+            segment=segment,
+            top_k=8
+        )
         
-    # Ensure minimum candidate pool for styling pairings and alternatives
-    if len(candidates) < 5:
+    # Fallback if segment filter still yields too few — search without segment filter
+    if len(candidates) < 4 and segment:
+        candidates = search_candidate_products(
+            query=search_query,
+            max_budget=max_budget,
+            segment=None,
+            top_k=8
+        )
+        
+    # Final fallback: pull all products for the segment
+    if len(candidates) < 4:
         all_prods = get_all_catalog_products()
         existing_ids = {c["sku_id"] for c in candidates}
         for p in all_prods:
             if p["sku_id"] not in existing_ids:
-                candidates.append(p)
+                # Prefer matching segment
+                p_seg = p["metadata"].get("segment", "").lower()
+                if not segment or p_seg == (segment or "").lower():
+                    candidates.append(p)
             if len(candidates) >= 8:
                 break
 
@@ -182,63 +275,68 @@ async def retriever_node(state: AgentState) -> dict:
 # 4. Parallel Worker Swarm (Deterministic Attribute Swarm)
 # -------------------------------------------------------------
 class SizeVerdict(BaseModel):
-    recommended_size: str = Field(description="e.g. M, L, XL, 32, Standard Fit")
+    recommended_size: str = Field(description="e.g. M, L, XL, 32, Standard Fit, 30ml")
     fit_confidence: float = Field(description="Confidence between 0.0 and 1.0")
-    reasoning: str = Field(description="Tailored cut, silhouette, and proportion rationale")
+    reasoning: str = Field(description="Tailored cut, silhouette, or product usage rationale")
 
 class FabricVerdict(BaseModel):
-    climate_pass: bool = Field(description="True if textile comfortably suits the climate; False if incompatible (e.g. heavy wool in hot humid coastal setting)")
-    wrinkle_risk: str = Field(description="Low, Moderate, or High / Natural Linen Character")
-    comfort_notes: str = Field(description="Technical textile breathability, GSM weight, and moisture behavior")
+    climate_pass: bool = Field(description="True if the product comfortably suits the climate/setting; False if incompatible")
+    wrinkle_risk: str = Field(description="Low, Moderate, or High / N/A for non-apparel items")
+    comfort_notes: str = Field(description="Technical notes on breathability, weight, or product suitability for the setting")
 
 class StylistVerdict(BaseModel):
-    paired_categories: List[str] = Field(description="Complementary piece categories for a complete look")
-    styling_tips: str = Field(description="Editorial wardrobe advice on drape, unbuttoning, cuffs, tucking, or accessories")
-    pairing_rationale: str = Field(description="Silhouette balance, texture interplay, and color harmony rationale")
+    paired_categories: List[str] = Field(description="Complementary product categories for a complete look or routine")
+    styling_tips: str = Field(description="Editorial advice on how to wear, apply, or style this product")
+    pairing_rationale: str = Field(description="Why these pairings work together — texture, color harmony, or routine synergy")
 
-# 5.1 Size & Fit Specialist (Master Tailor)
+# 5.1 Size & Fit Specialist
 async def size_worker_task(sku: dict, profile: dict) -> dict:
     meta = sku.get("metadata", {})
+    segment = meta.get("segment", "Men")
     prompt = f"""
-You are an expert master tailor. Evaluate garment measurements, fit type, and customer fit preferences. Return valid JSON only.
+You are a product specialist. Evaluate the right size/variant for this customer. Return valid JSON only.
 
-Garment Details:
+Product Details:
 - Title: {meta.get('title')}
-- Category: {meta.get('category', 'Fashion & Apparel')}
+- Category: {meta.get('sub_category', 'Fashion')}
+- Segment: {segment}
 - Fit Type: {meta.get('fit_type', 'regular')}
+- Size Options: {meta.get('size_options', [])}
 
 Customer Profile:
 - Fit Preference: {profile.get('fit_preference', 'relaxed')}
 - Size History: {profile.get('size_history', {})}
+
+For beauty/skincare, return standard size. For kids' items, infer age group if known.
 """
     try:
         llm = worker_llm.with_structured_output(SizeVerdict)
         res = await llm.ainvoke(prompt)
         return res.model_dump()
     except Exception:
-        fallback_size = profile.get("size_history", {}).get("tops", "L") if meta.get("category") == "Fashion & Apparel" else "Standard Fit"
         return {
-            "recommended_size": fallback_size,
-            "fit_confidence": 0.95,
-            "reasoning": f"Precision tailored {meta.get('fit_type', 'regular')} cut complements your {profile.get('fit_preference', 'relaxed')} preference."
+            "recommended_size": profile.get("size_history", {}).get("tops", "M"),
+            "fit_confidence": 0.90,
+            "reasoning": f"Standard recommendation for {meta.get('fit_type', 'regular')} fit."
         }
 
-# 5.2 Fabric & Climate Specialist (Textile Engineer)
+# 5.2 Fabric & Climate Specialist
 async def fabric_worker_task(sku: dict, climate: str) -> dict:
     meta = sku.get("metadata", {})
-    fabric_desc = meta.get("fabric", "Fine Cotton")
+    segment = meta.get("segment", "Men")
+    fabric_desc = meta.get("fabric", "Premium Material")
     gsm = meta.get("gsm", "N/A")
     prompt = f"""
-You are a textile engineer evaluating fabric breathability, fabric weight (GSM), and climate viability. Return valid JSON only.
+You are a product material specialist. Evaluate suitability for the customer's setting. Return valid JSON only.
 
-Textile Specifications:
-- Garment: {meta.get('title')}
-- Category: {meta.get('category', 'Fashion & Apparel')}
-- Material / Weave: {fabric_desc}
-- Weight: {gsm} GSM
-- Target Environment / Climate: {climate}
+Product: {meta.get('title')}
+Segment: {segment}
+Material: {fabric_desc} (GSM: {gsm})
+Customer Setting / Climate: {climate}
 
-Evaluate breathability, thermal comfort, wrinkle tendency, and climate viability.
+For apparel: assess breathability and climate viability.
+For beauty products: climate_pass is always true. Assess shelf suitability.
+For shoes/bags: assess durability and occasion fit.
 """
     try:
         llm = worker_llm.with_structured_output(FabricVerdict)
@@ -247,19 +345,25 @@ Evaluate breathability, thermal comfort, wrinkle tendency, and climate viability
     except Exception:
         return {
             "climate_pass": True,
-            "wrinkle_risk": "Moderate",
-            "comfort_notes": f"Breathable {fabric_desc} weave engineered for optimal airflow in {climate} settings."
+            "wrinkle_risk": "Low",
+            "comfort_notes": f"Suitable {fabric_desc} for {climate} setting."
         }
 
-# 5.3 Stylist & Look Specialist (Editorial Wardrobe Stylist)
+# 5.3 Stylist / Look Specialist
 async def stylist_worker_task(sku: dict, occasion: str) -> dict:
     meta = sku.get("metadata", {})
+    segment = meta.get("segment", "Men")
     prompt = f"""
-You are an editorial wardrobe stylist. Generate pairing categories and styling advice based on silhouette proportions and color harmony. Return valid JSON only.
+You are an editorial stylist and beauty advisor. Generate pairing and styling advice. Return valid JSON only.
 
-Anchor Garment: {meta.get('title')}
-Colorway: {meta.get('color', 'Neutral Tone')}
-Occasion: {occasion}
+Anchor Product: {meta.get('title')}
+Segment: {segment}
+Colorway / Variant: {meta.get('color', 'Classic')}
+Occasion / Setting: {occasion}
+
+For apparel: suggest complementary pieces and how to wear.
+For beauty: suggest complementary products in a routine or gifting set.
+For accessories: suggest outfits or occasions this best suits.
 """
     try:
         llm = worker_llm.with_structured_output(StylistVerdict)
@@ -267,9 +371,9 @@ Occasion: {occasion}
         return res.model_dump()
     except Exception:
         return {
-            "paired_categories": ["tailored trousers", "leather footwear", "woven belt"],
-            "styling_tips": "Leave the top two buttons undone with sleeves casually rolled to mid-forearm for relaxed sophistication.",
-            "pairing_rationale": "Balances effortless texture with clean, architectural lines."
+            "paired_categories": ["complementary accessory", "classic essential"],
+            "styling_tips": "Pair with minimal accessories for a clean, elevated look.",
+            "pairing_rationale": "Balances the look with clean, harmonious elements."
         }
 
 async def worker_swarm_node(state: AgentState) -> dict:
@@ -296,16 +400,17 @@ async def worker_swarm_node(state: AgentState) -> dict:
 
     delivery_verdict = {
         "meets_deadline": True,
-        "estimated_arrival": "2-3 business days (Express Courier Delivery)",
+        "estimated_arrival": "2-3 business days (Express Delivery)",
         "warehouse": anchor["metadata"].get("warehouse", "BLR_CENTRAL_HUB")
     }
 
-    # Handle climate viability & candidate failover
+    # Handle climate viability & candidate failover (apparel only)
     alternative_eval = None
-    if not fabric_res.get("climate_pass", True) and len(candidates) > 1:
+    segment = anchor["metadata"].get("segment", "Men")
+    if segment in ("Men", "Women", "Kids") and not fabric_res.get("climate_pass", True) and len(candidates) > 1:
         for cand in candidates[1:]:
             cand_fabric = str(cand["metadata"].get("fabric", "")).lower()
-            if any(k in cand_fabric for k in ["linen", "cotton", "silk", "blend", "lightweight", "chiffon"]):
+            if any(k in cand_fabric for k in ["linen", "cotton", "silk", "blend", "lightweight", "chiffon", "canvas"]):
                 alt_size, alt_fabric, alt_stylist = await asyncio.gather(
                     size_worker_task(cand, profile),
                     fabric_worker_task(cand, climate),
@@ -319,7 +424,7 @@ async def worker_swarm_node(state: AgentState) -> dict:
                         "delivery_verdict": delivery_verdict,
                         "pricing_verdict": {},
                         "is_disqualified": True,
-                        "rejection_reason": f"Textile ({anchor['metadata'].get('fabric')}, {anchor['metadata'].get('gsm')} GSM) is heavy for {climate}."
+                        "rejection_reason": f"Material ({anchor['metadata'].get('fabric')}) is heavy for {climate}."
                     }
                     anchor = cand
                     size_res, fabric_res, stylist_res = alt_size, alt_fabric, alt_stylist
@@ -340,9 +445,18 @@ async def worker_swarm_node(state: AgentState) -> dict:
     if alternative_eval:
         eval_list.append(alternative_eval)
 
-    # Select complementary pieces from remaining candidates for a 5-8 item collection
-    paired_skus = [c for c in candidates if c["sku_id"] != anchor["sku_id"]][:5]
+    from catalog_store import search_candidate_products
 
+    anchor_segment = anchor["metadata"].get("segment", "Men")
+    anchor_title = anchor["metadata"].get("title", "")
+    comp_query = f"complementary items that pair well with {anchor_title} in {anchor_segment} fashion"
+    
+    paired_candidates = search_candidate_products(comp_query, n_results=5, segment=anchor_segment)
+    paired_skus = [c for c in paired_candidates if c["sku_id"] != anchor["sku_id"]][:4]
+    
+    if not paired_skus:
+        paired_skus = [c for c in candidates if c["sku_id"] != anchor["sku_id"]][:4]
+        
     outfit = {
         "anchor_sku_id": anchor["sku_id"],
         "paired_skus": paired_skus,
@@ -391,16 +505,16 @@ async def pricing_node(state: AgentState) -> dict:
 # -------------------------------------------------------------
 async def synthesis_node(state: AgentState) -> dict:
     if not state.get("evaluations") or not state.get("anchor_sku"):
-        return {"final_response": "What are you looking for today? An occasion coming up, a wardrobe refresh, or something specific you have in mind?"}
+        return {"final_response": "I'm ready to curate your selection. Who are we shopping for today — yourself, a partner, kids, or are you looking for beauty essentials?"}
 
-    latest_eval = state["evaluations"][0]  # Primary anchor evaluation
+    latest_eval = state["evaluations"][0]
     pricing = state.get("pricing_result", {})
     anchor = state["anchor_sku"]
     meta = anchor["metadata"]
     outfit = state.get("outfit") or {}
     intent = state.get("intent", {})
     profile = state.get("customer_profile", {})
-    history = state.get("messages", [])
+    segment = meta.get("segment", "Men")
 
     base_price = pricing.get("base_price", meta.get("price", 0))
     final_price = pricing.get("final_price", base_price)
@@ -408,45 +522,97 @@ async def synthesis_node(state: AgentState) -> dict:
     
     # Complementary pieces — just names, no price dump
     paired_items = outfit.get("paired_skus", [])
-    paired_titles = [p['metadata'].get('title', '') for p in paired_items[:3]]
+    paired_titles = [f"{p['metadata'].get('title')} (₹{p['metadata'].get('price')})" for p in paired_items[:4]]
+    paired_summary = ", ".join(paired_titles) if paired_titles else "curated complementary pieces"
 
-    # Check if fabric has trade-offs worth mentioning
-    wrinkle_risk = latest_eval.get('fabric_verdict', {}).get('wrinkle_risk', 'Low')
-    climate_pass = latest_eval.get('fabric_verdict', {}).get('climate_pass', True)
-    fabric_caveat = ""
-    if wrinkle_risk and wrinkle_risk.lower() not in ("low", "none"):
-        fabric_caveat = f"The {meta.get('fabric', 'fabric')} does tend to wrinkle — that's part of its character, but worth knowing."
-    if not climate_pass:
-        fabric_caveat = f"Heads up: {meta.get('fabric', 'this fabric')} might feel heavy in {intent.get('destination_climate', 'that climate')}."
+    # Build segment-specific persona for the synthesis
+    if segment == "Beauty":
+        persona = "beauty advisor and skincare specialist"
+        context_label = "Skin Type / Setting"
+        context_value = intent.get("occasion", "daily routine")
+    elif segment == "Kids":
+        persona = "kids' fashion expert and parent advisor"
+        context_label = "Age Group / Occasion"
+        context_value = intent.get("occasion", "everyday school and play")
+    elif segment == "Women":
+        persona = "personal stylist for women's fashion"
+        context_label = "Occasion"
+        context_value = intent.get("occasion", "curated lifestyle")
+    else:
+        persona = "personal fashion consultant"
+        context_label = "Occasion"
+        context_value = intent.get("occasion", "curated lifestyle")
+
+    alt_eval = state["evaluations"][1] if len(state["evaluations"]) > 1 else None
+    alt_note = ""
+    if alt_eval and alt_eval.get("is_disqualified"):
+        alt_note = f"\nNote: We also examined an alternative, but its heavier material is less suited for {intent.get('destination_climate', 'this setting')}."
 
     prompt = f"""
-You are a sharp, warm personal stylist chatting naturally with a customer — like a knowledgeable friend, not a product page.
+You are a discerning {persona} for KAZU Atelier curating a selection for a private client.
 
-CONVERSATION SO FAR:
-{history[-4:] if len(history) > 4 else history}
+Stylist Rules:
+- BE EXTREMELY CONCISE. Tell only what is needed. Do not output a wall of text. Speak like a high-end expert who values the client's time.
+- Prohibited phrases: "Recommended for you", "I have selected", "Here is your", "Hope this helps!", "Let me know if you need anything else!".
+- Jump straight into the styling vision: Start with how the anchor product solves their specific need in 1-2 short sentences.
+- Weave in complementary products naturally as part of the complete look or routine (max 1 sentence).
+- Financial clarity: Mention pricing and coupon savings smoothly.
+- Tone: Sophisticated, warm, expert-level. Like talking to a trusted stylist.
+- AT THE VERY END of your response, you MUST provide exactly 3 suggested follow-up questions the user might ask next. Format them like this:
+IDEAS:
+- [Question 1]
+- [Question 2]
+- [Question 3]
 
-THE CUSTOMER WANTS: {intent.get('occasion', 'something stylish')} | Climate: {intent.get('destination_climate', 'comfortable weather')}
+Client Context:
+- {context_label}: {context_value}
+- Climate/Setting: {intent.get('destination_climate', 'temperate')}
+- Fit / Style Preference: {profile.get('fit_preference', 'relaxed')}
 
-YOU PICKED THIS PIECE FOR THEM:
-- {meta.get('title')} in {meta.get('color', 'a great colorway')}
-- {meta.get('fabric', 'quality fabric')}, ₹{final_price}{f' (was ₹{base_price} — {coupon} saves you {int((1 - final_price/base_price)*100)}%)' if coupon != 'NONE' and final_price < base_price else ''}
-- Pairs well with: {', '.join(paired_titles) if paired_titles else 'classic trousers and smart footwear'}
-{f'- Honest note: {fabric_caveat}' if fabric_caveat else ''}
+Anchor Product:
+- Title: {meta.get('title')}
+- Segment: {segment}
+- Price: ₹{base_price} → ₹{final_price} (Coupon: {coupon})
+- Material: {meta.get('fabric', 'Premium Material')} ({meta.get('gsm', 'N/A')} GSM)
 
-YOUR RULES:
-1. KEEP IT SHORT — 2-4 sentences max. The product card with price, size, and fabric details already shows below your message, so DO NOT repeat specs.
-2. Lead with WHY this piece works for their specific situation — the occasion, the vibe, the climate. Make them picture wearing it.
-3. If there's a fabric trade-off, mention it casually and honestly — one sentence.
-4. Suggest how to style it (what to pair it with) in a natural way, like "throw this on with..." or "this works great over..."
-5. Sound like a real person texting a friend, not a luxury brand copywriter. No bullet points, no headers, no emojis.
-6. NEVER say: "Recommended for you", "I've curated", "Here is your outfit", "Hope this helps", "Let me know if you need anything else", "I'm happy to help", "Certainly!", "Great choice!"
-7. End with something that invites natural follow-up — a quick styling question or "want to see other options?" NOT a generic customer service sign-off.
+Specialist Verdicts:
+- Size/Fit: {latest_eval.get('size_verdict', {}).get('recommended_size', 'Standard')} — {latest_eval.get('size_verdict', {}).get('reasoning', '')}
+- Material Notes: {latest_eval.get('fabric_verdict', {}).get('comfort_notes', '')} | Wrinkle/Quality Risk: {latest_eval.get('fabric_verdict', {}).get('wrinkle_risk', 'Low')}
+- Delivery: {latest_eval.get('delivery_verdict', {}).get('estimated_arrival', '2-3 business days')}
+
+Complete Look / Routine:
+- Styling Tips: {outfit.get('styling_instructions', '')}
+- Pairing Rationale: {outfit.get('pairing_rationale', '')}
+- Complementary Picks: {paired_summary}
+{alt_note}
 """
 
     res = await master_llm.ainvoke(prompt)
+    content = res.content
+    
+    suggested_questions = []
+    final_text = content
+    if "IDEAS:" in content:
+        parts = content.split("IDEAS:")
+        final_text = parts[0].strip()
+        ideas_text = parts[1].strip()
+        # parse lines starting with - or *
+        for line in ideas_text.split("\n"):
+            line = line.strip()
+            if line.startswith("-") or line.startswith("*"):
+                suggested_questions.append(line.lstrip("-* ").strip())
+    
+    # Fallback if parsing fails
+    if len(suggested_questions) < 3:
+        if segment == "Beauty":
+            suggested_questions = ["What's a good nighttime routine?", "Is this suitable for sensitive skin?", "Suggest a hydrating serum."]
+        else:
+            suggested_questions = ["What shoes go with this?", "Is the fit true to size?", "Show me some accessories."]
+
     return {
-        "messages": [{"role": "assistant", "content": res.content}],
-        "final_response": res.content
+        "messages": [{"role": "assistant", "content": final_text}],
+        "final_response": final_text,
+        "suggested_questions": suggested_questions[:3]
     }
 
 # -------------------------------------------------------------
@@ -470,7 +636,7 @@ async def razorpay_checkout_node(state: AgentState) -> dict:
     }
     
     razorpay_order = create_frozen_razorpay_order(cart_payload)
-    msg = f"All set — your order's locked in at ₹{final_total}{f' with {coupon_code} applied' if coupon_code != 'NONE' else ''}. Pulling up the payment screen for you now."
+    msg = f"Your selection is curated and your order is locked at ₹{final_total} (using code {coupon_code}). Opening KAZU secure checkout powered by Razorpay."
     
     return {
         "checkout_ready": True,

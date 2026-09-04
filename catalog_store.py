@@ -36,7 +36,7 @@ class EmbeddingFunction(chromadb.EmbeddingFunction):
 # ---------------------------------------------------------------
 _client = chromadb.Client()
 _collection = _client.get_or_create_collection(
-    name="ecommerce_catalog_fashion_v1",
+    name="ecommerce_catalog_v2_segments",
     embedding_function=EmbeddingFunction()
 )
 
@@ -68,13 +68,35 @@ def _seed_if_empty():
             )
 
 
+def rebuild_index():
+    """Force-rebuild the ChromaDB index from DB. Call after re-seeding."""
+    global _collection
+    try:
+        _client.delete_collection("ecommerce_catalog_v2_segments")
+    except Exception:
+        pass
+    _collection = _client.get_or_create_collection(
+        name="ecommerce_catalog_v2_segments",
+        embedding_function=EmbeddingFunction()
+    )
+    catalog_items = _load_products_from_db()
+    if catalog_items:
+        _collection.add(
+            ids=[item["sku_id"] for item in catalog_items],
+            documents=[item["document"] for item in catalog_items],
+            metadatas=[item["metadata"] for item in catalog_items],
+        )
+    return len(catalog_items)
+
+
 # ---------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------
 def search_candidate_products(
     query: str,
     max_budget: Optional[float] = None,
-    top_k: int = 5
+    segment: Optional[str] = None,
+    top_k: int = 6
 ) -> List[Dict[str, Any]]:
     """
     Semantic search over active product catalog.
@@ -82,6 +104,7 @@ def search_candidate_products(
     Args:
         query: Natural language search string (e.g., "breathable linen shirt").
         max_budget: Optional max price filter (INR). Applied post-retrieval.
+        segment: Optional segment filter — "Men", "Women", "Kids", "Beauty".
         top_k: Max number of candidates to return.
 
     Returns:
@@ -89,14 +112,32 @@ def search_candidate_products(
     """
     _seed_if_empty()
 
-    fetch_k = min(top_k * 2, _collection.count())
+    fetch_k = min(top_k * 4, _collection.count())
     if fetch_k == 0:
         return []
 
-    results = _collection.query(
-        query_texts=[query],
-        n_results=fetch_k
-    )
+    # Build ChromaDB where filter if segment is specified
+    where_filter = None
+    if segment and segment.lower() not in ("all", "unknown", ""):
+        # Normalize to title-case to match stored values
+        seg_normalized = segment.title()
+        where_filter = {"segment": {"$eq": seg_normalized}}
+
+    query_kwargs = {
+        "query_texts": [query],
+        "n_results": fetch_k,
+    }
+    if where_filter:
+        query_kwargs["where"] = where_filter
+
+    try:
+        results = _collection.query(**query_kwargs)
+    except Exception:
+        # Fallback without filter if ChromaDB rejects the where clause
+        results = _collection.query(
+            query_texts=[query],
+            n_results=fetch_k,
+        )
 
     candidates = []
     ids = results["ids"][0]
@@ -109,9 +150,15 @@ def search_candidate_products(
         except (ValueError, TypeError):
             price = 0.0
 
-        # Budget filter
+        # Budget filter (post-retrieval)
         if max_budget is not None and price > max_budget:
             continue
+
+        # Soft segment filter fallback (in case ChromaDB filter wasn't applied)
+        if segment and segment.lower() not in ("all", "unknown", ""):
+            item_segment = metadata.get("segment", "").lower()
+            if item_segment and item_segment != segment.lower():
+                continue
 
         candidates.append({
             "sku_id": sku_id,
@@ -129,3 +176,15 @@ def get_all_catalog_products() -> List[Dict[str, Any]]:
     """Return all active products from DB for storefront rendering."""
     _seed_if_empty()
     return _load_products_from_db()
+
+
+def get_products_by_segment(segment: str) -> List[Dict[str, Any]]:
+    """Return all active products for a given segment (Men/Women/Kids/Beauty)."""
+    _seed_if_empty()
+    all_products = _load_products_from_db()
+    if not segment or segment.lower() == "all":
+        return all_products
+    return [
+        p for p in all_products
+        if p["metadata"].get("segment", "").lower() == segment.lower()
+    ]

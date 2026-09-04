@@ -100,6 +100,7 @@ class User(Base):
 
     # Relationships
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
+    orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
 
     def to_dict(self):
         return {
@@ -203,6 +204,7 @@ class Product(Base):
     description = Column(Text, nullable=True)
     document = Column(Text, nullable=False)  # Embedding text for ChromaDB
     sub_category_id = Column(Integer, ForeignKey("sub_categories.sub_category_id"), nullable=False)
+    segment = Column(String(20), nullable=True, default="Men")  # Men, Women, Kids, Beauty
     price = Column(Float, nullable=False)
     fit_type = Column(String(30), nullable=False, default="regular")
     fabric = Column(String(100), nullable=True)
@@ -227,6 +229,7 @@ class Product(Base):
             "description": self.description,
             "sub_category_id": self.sub_category_id,
             "sub_category": self.sub_category.name if self.sub_category else None,
+            "segment": self.segment or "Men",
             "price": self.price,
             "fit_type": self.fit_type,
             "fabric": self.fabric,
@@ -254,11 +257,55 @@ class Product(Base):
                 "price": str(self.price),
                 "retailer": self.retailer or "",
                 "eligible_coupon": self.eligible_coupon or "NONE",
+                "segment": self.segment or "Men",
                 "category": "Fashion",
                 "sub_category": self.sub_category.name if self.sub_category else "",
                 "image_url": self.image_url or "",
                 "description": self.description or "",
             },
+        }
+
+
+# ---------------------------------------------------------------------------
+# 5. Orders Table
+# ---------------------------------------------------------------------------
+class Order(Base):
+    __tablename__ = "orders"
+
+    order_id = Column(String(50), primary_key=True)
+    user_id = Column(String(50), ForeignKey("users.user_id"), nullable=False)
+    anchor_sku = Column(String(50), nullable=True)
+    paired_skus = Column(JSON, default=list)
+    amount = Column(Float, nullable=False)  # in INR
+    currency = Column(String(10), default="INR")
+    status = Column(String(30), default="created")  # created, paid, failed, refunded
+    coupon = Column(String(50), default="NONE")
+    razorpay_order_id = Column(String(100), unique=True, nullable=True)
+    razorpay_payment_id = Column(String(100), nullable=True)
+    razorpay_signature = Column(String(255), nullable=True)
+    receipt = Column(String(100), nullable=True)
+    notes = Column(JSON, default=dict)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+    # Relationships
+    user = relationship("User", back_populates="orders")
+
+    def to_dict(self):
+        return {
+            "order_id": self.order_id,
+            "user_id": self.user_id,
+            "anchor_sku": self.anchor_sku,
+            "paired_skus": self.paired_skus or [],
+            "amount": self.amount,
+            "currency": self.currency,
+            "status": self.status,
+            "coupon": self.coupon,
+            "razorpay_order_id": self.razorpay_order_id,
+            "razorpay_payment_id": self.razorpay_payment_id,
+            "receipt": self.receipt,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
 

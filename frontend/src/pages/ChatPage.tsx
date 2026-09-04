@@ -126,6 +126,13 @@ export const ChatPage: React.FC<ChatPageProps> = ({
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [activeAgentStep, setActiveAgentStep] = useState<string>('');
+  const [suggestedIdeas, setSuggestedIdeas] = useState<string[]>([
+    "Suggest beach linen shirt under ₹3000",
+    "What size suits a relaxed fit?",
+    "Which bottoms pair well with ivory shirts?",
+    "I want to checkout my curated look"
+  ]);
 
   // UI Control states
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -235,6 +242,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({
     setMessages((prev) => [...prev, userMsg]);
     if (!textToSend) setInputMessage('');
     setIsLoading(true);
+    setActiveAgentStep('Initializing KAZU styling engine...');
 
     try {
       const response = await fetch('/api/chat', {
@@ -243,6 +251,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({
         body: JSON.stringify({
           message: text,
           session_id: currentSessionId,
+          stream: true,
           customer_profile: {
             user_id: 'usr_guest',
             pincode: '560001',
@@ -254,9 +263,55 @@ export const ChatPage: React.FC<ChatPageProps> = ({
         }),
       });
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}`);
+      }
 
-      if (data.status === 'success') {
+      if (!response.body) {
+        throw new Error('ReadableStream not supported by browser.');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+      let finalDataReceived: any = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith('data:')) continue;
+          const dataStr = trimmed.replace(/^data:\s*/, '');
+          if (dataStr === '[DONE]') break;
+
+          try {
+            const parsed = JSON.parse(dataStr);
+            if (parsed.type === 'step') {
+              setActiveAgentStep(parsed.label);
+            } else if (parsed.type === 'final') {
+              finalDataReceived = parsed;
+            } else if (parsed.type === 'error') {
+              throw new Error(parsed.detail || 'Agent execution error');
+            }
+          } catch (e) {
+            // Ignore parse errors on partial chunks
+          }
+        }
+      }
+
+      if (finalDataReceived) {
+        const data = finalDataReceived;
+        
+        if (data.suggested_questions && Array.isArray(data.suggested_questions) && data.suggested_questions.length > 0) {
+          setSuggestedIdeas(data.suggested_questions);
+        }
+        
         const anchor = data.anchor_sku?.metadata;
         const skuId = data.anchor_sku?.sku_id;
 
@@ -285,10 +340,15 @@ export const ChatPage: React.FC<ChatPageProps> = ({
         };
 
         setMessages((prev) => [...prev, assistantMsg]);
-        // Refresh session list so new titles or timestamps show up immediately
         fetchSessions();
-      } else {
-        throw new Error(data.detail || 'Failed to communicate with AI agent');
+
+        // Auto-launch Razorpay modal if client explicitly requested checkout
+        if (data.checkout_ready && data.razorpay_order) {
+          setTimeout(() => {
+            handleRazorpayPay(data.razorpay_order);
+          }, 400);
+        }
+
       }
     } catch (err: any) {
       setMessages((prev) => [
@@ -302,8 +362,10 @@ export const ChatPage: React.FC<ChatPageProps> = ({
       ]);
     } finally {
       setIsLoading(false);
+      setActiveAgentStep('');
     }
   };
+
 
   const handleRazorpayPay = (order: any) => {
     openRazorpayCheckout({
@@ -740,22 +802,44 @@ export const ChatPage: React.FC<ChatPageProps> = ({
                               variant="gradient"
                               size="sm"
                               onClick={() => handleRazorpayPay(msg.razorpay_order)}
-                              className="text-xs font-black uppercase tracking-wider rounded-lg gap-1.5 shadow-md"
+                              className="text-xs font-black uppercase tracking-wider rounded-lg gap-1.5 shadow-md cursor-pointer"
                             >
                               <CreditCard className="h-3.5 w-3.5" />
                               Pay ₹{msg.razorpay_order.amount / 100} with Razorpay
                             </Button>
                           ) : (
                             <Button
-                              variant="outline"
+                              variant="gradient"
                               size="sm"
-                              onClick={() => handleSendMessage(`I would like to checkout and purchase ${msg.recommendation!.title}`)}
-                              className="text-xs font-bold uppercase tracking-wider rounded-lg border-purple-300 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/50 cursor-pointer"
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch('/api/checkout/create', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      user_id: 'usr_guest',
+                                      anchor_sku: msg.recommendation!.sku_id,
+                                      final_total: msg.pricing_result?.final_price || msg.recommendation!.price,
+                                      coupon: msg.pricing_result?.coupon_code || 'NONE'
+                                    })
+                                  });
+                                  const data = await res.json();
+                                  if (data.status === 'success' && data.order) {
+                                    handleRazorpayPay(data.order);
+                                  } else {
+                                    alert('Failed to initiate instant checkout.');
+                                  }
+                                } catch (e) {
+                                  alert('Instant buy network error');
+                                }
+                              }}
+                              className="text-xs font-black uppercase tracking-wider rounded-lg gap-1.5 shadow-md cursor-pointer"
                             >
-                              <CreditCard className="h-3.5 w-3.5 mr-1.5" />
-                              Instant Buy Now
+                              <CreditCard className="h-3.5 w-3.5" />
+                              Instant Buy Now (₹{msg.pricing_result?.final_price || msg.recommendation!.price})
                             </Button>
                           )}
+
                         </div>
                       </div>
                     </div>
@@ -766,7 +850,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({
                 {msg.candidate_skus && msg.candidate_skus.length > 1 && (
                   <div className="w-full space-y-2 pt-1">
                     <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                      Alternative Options Evaluated by Swarm:
+                      COMPLEMENTARY PIECES CURATED FOR YOU:
                     </span>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                       {msg.candidate_skus.slice(1, 4).map((cand) => (
@@ -807,18 +891,19 @@ export const ChatPage: React.FC<ChatPageProps> = ({
             </div>
           ))}
 
-          {/* Typing / Swarm Loading State */}
+          {/* Typing / Swarm Loading State with Real-Time SSE Agent Step */}
           {isLoading && (
             <div className="flex gap-3 sm:gap-4 items-center animate-in fade-in">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-zinc-900 dark:bg-purple-950 border border-zinc-800 dark:border-purple-800/80 text-white dark:text-purple-300 shadow-md">
-                <Bot className="h-5 w-5 animate-spin" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center bg-black dark:bg-white text-white dark:text-black border border-black dark:border-white shadow-sm">
+                <Bot className="h-4 w-4 animate-spin" />
               </div>
-              <div className="rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-5 py-3.5 text-xs font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400 flex items-center gap-2 shadow-sm">
-                <span>Stylist Swarm is consulting fabric, fit & inventory</span>
-                <span className="h-2 w-2 rounded-full bg-purple-600 dark:bg-purple-400 animate-ping" />
+              <div className="bg-[#eae7df] dark:bg-[#18181b] border border-black/15 dark:border-white/15 px-4 py-3 text-xs font-mono-tight uppercase tracking-wider text-black dark:text-white flex items-center gap-3 shadow-sm">
+                <span className="h-2 w-2 rounded-full bg-black dark:bg-white animate-ping shrink-0" />
+                <span>{activeAgentStep || 'Stylist Swarm is consulting fabric, fit & inventory...'}</span>
               </div>
             </div>
           )}
+
 
           <div ref={messagesEndRef} />
         </div>
@@ -831,12 +916,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({
               <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-1 shrink-0">
                 <Sparkles className="h-3 w-3 text-purple-600" /> Ideas:
               </span>
-              {[
-                "Suggest beach linen shirt under ₹3000",
-                "What size suits a relaxed fit?",
-                "Which bottoms pair well with ivory shirts?",
-                "I want to checkout my curated look"
-              ].map((chip, idx) => (
+              {suggestedIdeas.map((chip, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleSendMessage(chip)}

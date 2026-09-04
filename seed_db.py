@@ -1,4 +1,4 @@
-"""
+﻿"""
 seed_db.py — Seeds the database with:
   1. Local dev user (usr_local_dev)
   2. Five fashion sub-categories
@@ -36,11 +36,30 @@ LOCAL_DEV_USER = {
 }
 
 SUB_CATEGORIES = [
-    {"sub_category_id": 1, "name": "Pants/Trousers", "slug": "pants-trousers", "category": "Fashion"},
-    {"sub_category_id": 2, "name": "Shoes",           "slug": "shoes",           "category": "Fashion"},
-    {"sub_category_id": 3, "name": "Shirts",          "slug": "shirts",          "category": "Fashion"},
-    {"sub_category_id": 4, "name": "T-shirts",        "slug": "tshirts",         "category": "Fashion"},
-    {"sub_category_id": 5, "name": "Sunglasses",      "slug": "sunglasses",      "category": "Fashion"},
+    # Men
+    {"sub_category_id": 1,  "name": "Pants/Trousers",  "slug": "pants-trousers",  "category": "Men"},
+    {"sub_category_id": 2,  "name": "Shoes",           "slug": "shoes-men",       "category": "Men"},
+    {"sub_category_id": 3,  "name": "Shirts",          "slug": "shirts",          "category": "Men"},
+    {"sub_category_id": 4,  "name": "T-Shirts",        "slug": "tshirts-men",     "category": "Men"},
+    {"sub_category_id": 5,  "name": "Sunglasses",      "slug": "sunglasses-men",  "category": "Men"},
+    # Women
+    {"sub_category_id": 6,  "name": "Dresses",         "slug": "dresses",         "category": "Women"},
+    {"sub_category_id": 7,  "name": "Bottoms",         "slug": "bottoms-women",   "category": "Women"},
+    {"sub_category_id": 8,  "name": "Tops",            "slug": "tops-women",      "category": "Women"},
+    {"sub_category_id": 9,  "name": "Shoes (Women)",   "slug": "shoes-women",     "category": "Women"},
+    {"sub_category_id": 10, "name": "Sunglasses (W)",  "slug": "sunglasses-women","category": "Women"},
+    {"sub_category_id": 11, "name": "Bags",            "slug": "bags",            "category": "Women"},
+    # Kids
+    {"sub_category_id": 12, "name": "Kids Tops",       "slug": "kids-tops",       "category": "Kids"},
+    {"sub_category_id": 13, "name": "Kids Bottoms",    "slug": "kids-bottoms",    "category": "Kids"},
+    {"sub_category_id": 14, "name": "Kids Shoes",      "slug": "kids-shoes",      "category": "Kids"},
+    {"sub_category_id": 15, "name": "Kids Accessories","slug": "kids-accessories","category": "Kids"},
+    # Beauty
+    {"sub_category_id": 16, "name": "Skincare",        "slug": "skincare",        "category": "Beauty"},
+    {"sub_category_id": 17, "name": "Makeup",          "slug": "makeup",          "category": "Beauty"},
+    {"sub_category_id": 18, "name": "Hair Care",       "slug": "haircare",        "category": "Beauty"},
+    {"sub_category_id": 19, "name": "Fragrances",      "slug": "fragrances",      "category": "Beauty"},
+    {"sub_category_id": 20, "name": "Grooming",        "slug": "grooming",        "category": "Beauty"},
 ]
 
 
@@ -62,11 +81,11 @@ def seed_database(force: bool = False):
     """Seed the database with initial data."""
     
     if force:
-        print("🔄 Force mode: Dropping all tables...")
+        print("[FORCE] Dropping all tables...")
         Base.metadata.drop_all(bind=engine)
     
     # Create tables
-    print("📦 Creating tables...")
+    print("[INFO] Creating tables...")
     init_db()
     
     db = SessionLocal()
@@ -77,9 +96,9 @@ def seed_database(force: bool = False):
             user = User(**LOCAL_DEV_USER)
             db.add(user)
             db.commit()
-            print("✅ Seeded local dev user: usr_local_dev")
+            print("[OK] Seeded local dev user: usr_local_dev")
         else:
-            print("⏭️  Local dev user already exists, skipping")
+            print("[SKIP]  Local dev user already exists, skipping")
 
         # ----- 2. Seed sub-categories -----
         existing_cats = db.query(SubCategory).count()
@@ -88,16 +107,16 @@ def seed_database(force: bool = False):
                 cat = SubCategory(**cat_data)
                 db.add(cat)
             db.commit()
-            print(f"✅ Seeded {len(SUB_CATEGORIES)} sub-categories")
+            print(f"[OK] Seeded {len(SUB_CATEGORIES)} sub-categories")
         else:
-            print(f"⏭️  {existing_cats} sub-categories already exist, skipping")
+            print(f"[SKIP]  {existing_cats} sub-categories already exist, skipping")
 
         # ----- 3. Seed products -----
         existing_products = db.query(Product).count()
         if existing_products == 0:
             products_data = _load_seed_products()
             if not products_data:
-                print("⚠️  No seed_catalog.json found — skipping product seeding")
+                print("[WARN]  No seed_catalog.json found — skipping product seeding")
                 print("   Create seed_catalog.json and re-run: python seed_db.py --force")
                 return
             
@@ -109,6 +128,7 @@ def seed_database(force: bool = False):
                     description=p.get("description"),
                     document=p["document"],
                     sub_category_id=p["sub_category_id"],
+                    segment=p.get("segment", "Men"),
                     price=p["price"],
                     fit_type=p.get("fit_type", "regular"),
                     fabric=p.get("fabric"),
@@ -123,9 +143,9 @@ def seed_database(force: bool = False):
                 db.add(product)
             
             db.commit()
-            print(f"✅ Seeded {len(products_data)} products")
+            print(f"[OK] Seeded {len(products_data)} products")
         else:
-            print(f"⏭️  {existing_products} products already exist, skipping")
+            print(f"[SKIP]  {existing_products} products already exist, skipping")
 
         # ----- 4. Seed sample conversations -----
         existing_convs = db.query(Conversation).count()
@@ -150,9 +170,9 @@ def seed_database(force: bool = False):
                         seeded_c += 1
 
                     db.commit()
-                    print(f"✅ Seeded {seeded_c} conversations from chat_history.json")
+                    print(f"[OK] Seeded {seeded_c} conversations from chat_history.json")
                 except Exception as ex:
-                    print(f"⚠️  Could not seed conversations from chat_history.json: {ex}")
+                    print(f"[WARN]  Could not seed conversations from chat_history.json: {ex}")
             else:
                 # Seed default sample consultation
                 sample_conv = Conversation(
@@ -176,12 +196,12 @@ def seed_database(force: bool = False):
                 )
                 db.add(sample_conv)
                 db.commit()
-                print("✅ Seeded default sample conversation")
+                print("[OK] Seeded default sample conversation")
         else:
-            print(f"⏭️  {existing_convs} conversations already exist, skipping")
+            print(f"[SKIP]  {existing_convs} conversations already exist, skipping")
 
         # ----- Summary -----
-        print("\n📊 Database Summary:")
+        print("\n[SUMMARY] Database Summary:")
         print(f"   Users:          {db.query(User).count()}")
         print(f"   Sub-categories: {db.query(SubCategory).count()}")
         print(f"   Products:       {db.query(Product).count()}")
@@ -196,7 +216,7 @@ def seed_database(force: bool = False):
 
     except Exception as e:
         db.rollback()
-        print(f"❌ Seeding failed: {e}")
+        print(f"[ERROR] Seeding failed: {e}")
         raise
     finally:
         db.close()
@@ -205,3 +225,5 @@ def seed_database(force: bool = False):
 if __name__ == "__main__":
     force = "--force" in sys.argv
     seed_database(force=force)
+
+

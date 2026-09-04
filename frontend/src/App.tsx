@@ -1,114 +1,80 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { CartDrawer } from './components/CartDrawer';
 import { Home } from './pages/Home';
 import { ChatPage } from './pages/ChatPage';
+import { ProductDetailsPage } from './pages/ProductDetailsPage';
 import { Product } from './types/product';
+
 
 const FALLBACK_PRODUCTS: Product[] = [
   {
-    sku_id: 'SKU_001',
+    sku_id: 'M_001',
     metadata: {
-      title: 'Ivory Linen Mandarin Collar Shirt',
-      fit_type: 'relaxed',
-      fabric: '100% Linen',
-      gsm: '140',
-      color: 'Ivory',
-      price: '2499',
-      eligible_coupon: 'STYLE20',
-      category: 'tops',
-    },
-  },
-  {
-    sku_id: 'SKU_002',
-    metadata: {
-      title: 'Beige Cotton Chino Trousers',
+      title: 'Slim Fit Oxford Cotton Shirt',
       fit_type: 'slim',
-      fabric: 'Cotton Twill',
-      gsm: '220',
-      color: 'Beige',
-      price: '1899',
-      eligible_coupon: 'NONE',
-      category: 'bottoms',
-    },
-  },
-  {
-    sku_id: 'SKU_003',
-    metadata: {
-      title: 'Teal Floral Camp Collar Shirt',
-      fit_type: 'relaxed',
-      fabric: 'Rayon',
-      gsm: '130',
-      color: 'Teal',
-      price: '1599',
-      eligible_coupon: 'STYLE20',
-      category: 'tops',
-    },
-  },
-  {
-    sku_id: 'SKU_004',
-    metadata: {
-      title: 'Navy Structured Linen Blazer',
-      fit_type: 'tailored',
-      fabric: 'Linen Blend',
-      gsm: '200',
-      color: 'Navy',
-      price: '4999',
-      eligible_coupon: 'NONE',
-      category: 'outerwear',
-    },
-  },
-  {
-    sku_id: 'SKU_005',
-    metadata: {
-      title: 'White Pique Cotton Polo',
-      fit_type: 'regular',
-      fabric: 'Cotton Pique',
-      gsm: '180',
+      fabric: 'Oxford Cotton',
+      gsm: '170',
       color: 'White',
-      price: '1299',
-      eligible_coupon: 'STYLE20',
-      category: 'tops',
-    },
-  },
-  {
-    sku_id: 'SKU_006',
-    metadata: {
-      title: 'Olive Stretch Cargo Joggers',
-      fit_type: 'relaxed',
-      fabric: 'Cotton-Spandex',
-      gsm: '260',
-      color: 'Olive',
-      price: '2199',
-      eligible_coupon: 'NONE',
-      category: 'bottoms',
-    },
-  },
-  {
-    sku_id: 'SKU_007',
-    metadata: {
-      title: 'Lavender Oversized Linen Shirt',
-      fit_type: 'oversized',
-      fabric: '100% Linen',
-      gsm: '135',
-      color: 'Lavender',
       price: '2299',
       eligible_coupon: 'STYLE20',
-      category: 'tops',
+      category: 'Shirts',
+      sub_category: 'Shirts',
+      segment: 'Men',
+      image_url: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&auto=format&fit=crop&q=80',
+      description: 'A refined slim-fit Oxford weave shirt in classic white.',
     },
   },
   {
-    sku_id: 'SKU_008',
+    sku_id: 'W_001',
     metadata: {
-      title: 'Black Formal Pleated Trousers',
-      fit_type: 'tailored',
-      fabric: 'Polyester-Viscose',
-      gsm: '240',
-      color: 'Black',
+      title: 'Flowy Maxi Dress',
+      fit_type: 'relaxed',
+      fabric: 'Viscose',
+      gsm: '120',
+      color: 'Dusty Rose',
       price: '2799',
-      eligible_coupon: 'NONE',
-      category: 'bottoms',
+      eligible_coupon: 'STYLE20',
+      category: 'Dresses',
+      sub_category: 'Dresses',
+      segment: 'Women',
+      image_url: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&auto=format&fit=crop&q=80',
+      description: 'Effortless viscose maxi dress in dusty rose.',
+    },
+  },
+  {
+    sku_id: 'K_001',
+    metadata: {
+      title: 'Kids Dinosaur Graphic Tee',
+      fit_type: 'regular',
+      fabric: '100% Cotton Jersey',
+      gsm: '180',
+      color: 'Cobalt Blue',
+      price: '699',
+      eligible_coupon: 'STYLE20',
+      category: 'Kids Tops',
+      sub_category: 'Kids Tops',
+      segment: 'Kids',
+      image_url: 'https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=600&auto=format&fit=crop&q=80',
+      description: 'Fun dinosaur graphic t-shirt for kids.',
+    },
+  },
+  {
+    sku_id: 'B_001',
+    metadata: {
+      title: 'Hydrating Vitamin C Face Serum',
+      fit_type: 'standard',
+      fabric: 'Organic Formulation',
+      gsm: 'N/A',
+      color: 'Clear',
+      price: '1299',
+      eligible_coupon: 'STYLE20',
+      category: 'Skincare',
+      sub_category: 'Skincare',
+      segment: 'Beauty',
+      image_url: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=600&auto=format&fit=crop&q=80',
+      description: 'Brightening 15% Vitamin C serum.',
     },
   },
 ];
@@ -118,6 +84,7 @@ export function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState<Product[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [activeSegment, setActiveSegment] = useState('all');
 
   useEffect(() => {
     fetch('/api/products')
@@ -139,6 +106,16 @@ export function App() {
     });
   };
 
+  // Called from Navbar category clicks — scroll to grid is handled by Home
+  const handleSelectCategory = (category: string) => {
+    setActiveSegment(category.toLowerCase());
+    // Scroll to catalog grid after a brief delay to allow state to update
+    setTimeout(() => {
+      const el = document.getElementById('catalog-grid');
+      el?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans selection:bg-purple-600 selection:text-white transition-colors duration-300">
       {/* Top Navigation */}
@@ -147,6 +124,7 @@ export function App() {
         cartCount={cart.length}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        onSelectCategory={handleSelectCategory}
       />
 
       {/* Route Views */}
@@ -159,6 +137,8 @@ export function App() {
               cart={cart}
               onAddToCart={handleAddToCart}
               searchQuery={searchQuery}
+              activeSegment={activeSegment}
+              setActiveSegment={setActiveSegment}
             />
           }
         />
@@ -173,7 +153,19 @@ export function App() {
             />
           }
         />
+        <Route
+          path="/product/:sku_id"
+          element={
+            <ProductDetailsPage
+              products={products}
+              cart={cart}
+              onAddToCart={handleAddToCart}
+              onOpenCart={() => setIsCartOpen(true)}
+            />
+          }
+        />
       </Routes>
+
 
       {/* Global Shopping Cart Drawer */}
       <CartDrawer
