@@ -20,7 +20,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from graph import fashion_agent_graph, _pg_pool
+from graph import fashion_agent_graph, _pg_conn
 from catalog_store import get_all_catalog_products, search_candidate_products
 from checkout_service import create_frozen_razorpay_order, verify_razorpay_payment_signature
 import history_store
@@ -33,8 +33,8 @@ from fastapi import Depends
 async def lifespan(app):
     # Startup: pools already created at import time
     yield
-    # Shutdown: close the LangGraph checkpointer connection pool
-    _pg_pool.close()
+    # Shutdown: close the LangGraph checkpointer connection
+    _pg_conn.close()
 
 app = FastAPI(title="Agentic E-Commerce API", version="1.0.0", lifespan=lifespan)
 
@@ -120,16 +120,9 @@ async def get_subcategories(db: Session = Depends(get_db)):
 
 @app.get("/api/products/search")
 async def search_products(q: str, max_budget: Optional[float] = None, segment: Optional[str] = None):
-    """Search products using vector similarity with optional segment filter."""
+    """Search products using Postgres-backed ranking with optional segment filter."""
     results = search_candidate_products(query=q, max_budget=max_budget, segment=segment, top_k=8)
     return {"status": "success", "results": results}
-
-@app.post("/api/admin/rebuild-index")
-async def rebuild_chroma_index():
-    """Force-rebuild ChromaDB vector index from the current database. Call after re-seeding."""
-    from catalog_store import rebuild_index
-    count = rebuild_index()
-    return {"status": "success", "message": f"ChromaDB index rebuilt with {count} products."}
 
 @app.get("/api/user/profile")
 async def get_user_profile(user_id: str = "usr_local_dev", db: Session = Depends(get_db)):

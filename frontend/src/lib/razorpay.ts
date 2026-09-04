@@ -24,6 +24,11 @@ export async function openRazorpayCheckout(orderData: {
   currency: string;
   razorpay_key_id?: string;
   is_mock?: boolean;
+  prefill?: {
+    name?: string;
+    email?: string;
+    contact?: string;
+  };
   onSuccess?: (paymentRes: any) => void;
   onError?: (error: any) => void;
 }) {
@@ -79,9 +84,9 @@ export async function openRazorpayCheckout(orderData: {
       }
     },
     prefill: {
-      name: 'Guest User',
-      email: 'customer@example.com',
-      contact: '9999999999',
+      name: orderData.prefill?.name || 'Guest User',
+      email: orderData.prefill?.email || '',
+      contact: orderData.prefill?.contact || '',
     },
     theme: {
       color: '#9333ea',

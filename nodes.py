@@ -13,7 +13,8 @@ master_llm = ChatOpenAI(
     base_url="https://api.groq.com/openai/v1",
     api_key=os.getenv("GROQ_API_KEY"),
     model="qwen/qwen3.8-27b",
-    temperature=0.5
+    temperature=0.5,
+    max_tokens=500
 )
 
 # High-Throughput Worker LLM (Deterministic Tailor, Textile, and Look Tasks)
@@ -21,7 +22,8 @@ worker_llm = ChatOpenAI(
     base_url="https://api.groq.com/openai/v1",
     api_key=os.getenv("GROQ_API_KEY"),
     model="qwen/qwen3.8-27b",
-    temperature=0.1
+    temperature=0.1,
+    max_tokens=250
 )
 
 # -------------------------------------------------------------

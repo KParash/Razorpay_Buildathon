@@ -1,92 +1,104 @@
 """
-catalog_store.py — Product Catalog & Semantic Retrieval Layer
+catalog_store.py — Product Catalog & Postgres-backed Search
 
-Uses ChromaDB (ephemeral) + sentence-transformers for embedding-based
-product search backed by the SQLAlchemy `products` table in PostgreSQL (Supabase).
+Loads active products from PostgreSQL (Supabase) and ranks them in Python for
+simple catalog search without a local vector database.
 """
 
-import warnings
-import os
-import logging
-import chromadb
-from typing import List, Dict, Any, Optional
+from __future__ import annotations
 
-# Suppress Hugging Face unauthenticated request warnings
-warnings.filterwarnings("ignore", message=".*unauthenticated requests to the HF Hub.*")
-logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
+import re
+from typing import Any, Dict, List, Optional
 
-from sentence_transformers import SentenceTransformer
 from sqlalchemy.orm import joinedload
+
 from db import SessionLocal, Product
 
-# ---------------------------------------------------------------
-# Embedding Model (lightweight, CPU-friendly, zero API cost)
-# ---------------------------------------------------------------
-_embed_model = SentenceTransformer("all-MiniLM-L6-v2")
+_SEARCH_STOPWORDS = {
+    "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "in",
+    "into", "is", "it", "of", "on", "or", "the", "to", "with", "this",
+    "that", "these", "those", "your", "you", "me", "my", "our", "their",
+    "pair", "pairs", "paired", "item", "items", "look", "wear", "style",
+    "fashion", "product", "products", "best", "good", "nice", "complementary",
+    "recommend", "recommended", "trending", "essential", "modern", "classic",
+    "simple", "versatile", "perfect", "ideal", "try", "want",
+}
 
 
-class EmbeddingFunction(chromadb.EmbeddingFunction):
-    """Adapter to plug sentence-transformers into ChromaDB."""
-    def __call__(self, input: list[str]) -> list[list[float]]:
-        return _embed_model.encode(input, convert_to_numpy=True).tolist()
+def _normalize_segment(segment: Optional[str]) -> Optional[str]:
+    if not segment or segment.lower() in {"all", "unknown"}:
+        return None
+    return segment.title()
 
 
-# ---------------------------------------------------------------
-# ChromaDB Client & Collection Setup
-# ---------------------------------------------------------------
-_client = chromadb.Client()
-_collection = _client.get_or_create_collection(
-    name="ecommerce_catalog_v2_segments",
-    embedding_function=EmbeddingFunction()
-)
-
-
-def _load_products_from_db() -> List[Dict[str, Any]]:
-    """Fetch active products from SQLAlchemy DB and convert to catalog format."""
+def _load_products_from_db(segment: Optional[str] = None) -> List[Product]:
+    """Fetch active products from SQLAlchemy DB."""
     db = SessionLocal()
     try:
-        products = (
+        query = (
             db.query(Product)
             .options(joinedload(Product.sub_category))
             .filter(Product.is_active == True)
-            .all()
         )
-        return [p.to_catalog_item() for p in products]
+        normalized_segment = _normalize_segment(segment)
+        if normalized_segment:
+            query = query.filter(Product.segment == normalized_segment)
+        return query.order_by(Product.created_at.desc()).all()
     finally:
         db.close()
 
 
-def _seed_if_empty():
-    """Ensure ChromaDB index is populated with current active DB products."""
-    if _collection.count() == 0:
-        catalog_items = _load_products_from_db()
-        if catalog_items:
-            _collection.add(
-                ids=[item["sku_id"] for item in catalog_items],
-                documents=[item["document"] for item in catalog_items],
-                metadatas=[item["metadata"] for item in catalog_items],
-            )
+def _tokenize_query(query: str) -> List[str]:
+    tokens = re.findall(r"[a-z0-9]+", (query or "").lower())
+    return [token for token in tokens if token not in _SEARCH_STOPWORDS]
 
 
-def rebuild_index():
-    """Force-rebuild the ChromaDB index from DB. Call after re-seeding."""
-    global _collection
-    try:
-        _client.delete_collection("ecommerce_catalog_v2_segments")
-    except Exception:
-        pass
-    _collection = _client.get_or_create_collection(
-        name="ecommerce_catalog_v2_segments",
-        embedding_function=EmbeddingFunction()
-    )
-    catalog_items = _load_products_from_db()
-    if catalog_items:
-        _collection.add(
-            ids=[item["sku_id"] for item in catalog_items],
-            documents=[item["document"] for item in catalog_items],
-            metadatas=[item["metadata"] for item in catalog_items],
-        )
-    return len(catalog_items)
+def _product_search_text(product: Product) -> str:
+    sub_category = product.sub_category.name if product.sub_category else ""
+    parts = [
+        product.title or "",
+        product.brand_name or "",
+        product.description or "",
+        product.document or "",
+        product.segment or "",
+        product.color or "",
+        product.fit_type or "",
+        product.fabric or "",
+        sub_category,
+    ]
+    return " ".join(parts).lower()
+
+
+def _score_product(product: Product, query_tokens: List[str], query_text: str) -> float:
+    if not query_tokens:
+        return 0.0
+
+    title = (product.title or "").lower()
+    brand = (product.brand_name or "").lower()
+    description = (product.description or "").lower()
+    document = (product.document or "").lower()
+    searchable = _product_search_text(product)
+
+    score = 0.0
+    for token in query_tokens:
+        if token in title:
+            score += 4.0
+        if token in brand:
+            score += 3.0
+        if token in description:
+            score += 2.0
+        if token in document:
+            score += 1.0
+        if token in searchable:
+            score += 0.5
+
+    # Boost exact phrase matches and close intent matches.
+    if query_text and query_text in searchable:
+        score += 8.0
+    if product.segment and product.segment.lower() in query_text:
+        score += 2.0
+
+    return score
 
 
 # ---------------------------------------------------------------
@@ -96,95 +108,69 @@ def search_candidate_products(
     query: str,
     max_budget: Optional[float] = None,
     segment: Optional[str] = None,
-    top_k: int = 6
+    top_k: int = 6,
+    n_results: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     """
-    Semantic search over active product catalog.
+    Search the active product catalog using simple Postgres-backed ranking.
 
     Args:
-        query: Natural language search string (e.g., "breathable linen shirt").
-        max_budget: Optional max price filter (INR). Applied post-retrieval.
-        segment: Optional segment filter — "Men", "Women", "Kids", "Beauty".
+        query: Natural language search string.
+        max_budget: Optional max price filter (INR).
+        segment: Optional segment filter — Men, Women, Kids, or Beauty.
         top_k: Max number of candidates to return.
+        n_results: Compatibility alias for older callers.
 
     Returns:
         List of dicts with shape {"sku_id": str, "metadata": dict, "score": float}
     """
-    _seed_if_empty()
+    limit = n_results if n_results is not None else top_k
+    normalized_segment = _normalize_segment(segment)
+    query_text = (query or "").strip().lower()
+    query_tokens = _tokenize_query(query)
 
-    fetch_k = min(top_k * 4, _collection.count())
-    if fetch_k == 0:
+    products = _load_products_from_db(normalized_segment)
+    if not products:
         return []
 
-    # Build ChromaDB where filter if segment is specified
-    where_filter = None
-    if segment and segment.lower() not in ("all", "unknown", ""):
-        # Normalize to title-case to match stored values
-        seg_normalized = segment.title()
-        where_filter = {"segment": {"$eq": seg_normalized}}
-
-    query_kwargs = {
-        "query_texts": [query],
-        "n_results": fetch_k,
-    }
-    if where_filter:
-        query_kwargs["where"] = where_filter
-
-    try:
-        results = _collection.query(**query_kwargs)
-    except Exception:
-        # Fallback without filter if ChromaDB rejects the where clause
-        results = _collection.query(
-            query_texts=[query],
-            n_results=fetch_k,
-        )
-
     candidates = []
-    ids = results["ids"][0]
-    metadatas = results["metadatas"][0]
-    distances = results["distances"][0]
-
-    for sku_id, metadata, distance in zip(ids, metadatas, distances):
+    for product in products:
         try:
-            price = float(metadata.get("price", 0))
-        except (ValueError, TypeError):
+            price = float(product.price or 0)
+        except (TypeError, ValueError):
             price = 0.0
 
-        # Budget filter (post-retrieval)
         if max_budget is not None and price > max_budget:
             continue
 
-        # Soft segment filter fallback (in case ChromaDB filter wasn't applied)
-        if segment and segment.lower() not in ("all", "unknown", ""):
-            item_segment = metadata.get("segment", "").lower()
-            if item_segment and item_segment != segment.lower():
-                continue
+        score = _score_product(product, query_tokens, query_text)
+        if score <= 0 and query_tokens:
+            continue
 
-        candidates.append({
-            "sku_id": sku_id,
-            "metadata": metadata,
-            "score": round(1 - distance, 4)  # Convert distance to similarity
+        item = product.to_catalog_item()
+        candidates.append((score, price, item))
+
+    candidates.sort(key=lambda row: (-row[0], row[1], row[2]["sku_id"]))
+
+    results: List[Dict[str, Any]] = []
+    for score, _price, item in candidates[: max(limit, 0)]:
+        results.append({
+            "sku_id": item["sku_id"],
+            "metadata": item["metadata"],
+            "score": round(score, 4),
         })
 
-        if len(candidates) >= top_k:
-            break
-
-    return candidates
+    return results
 
 
 def get_all_catalog_products() -> List[Dict[str, Any]]:
     """Return all active products from DB for storefront rendering."""
-    _seed_if_empty()
-    return _load_products_from_db()
+    return [product.to_catalog_item() for product in _load_products_from_db()]
 
 
 def get_products_by_segment(segment: str) -> List[Dict[str, Any]]:
     """Return all active products for a given segment (Men/Women/Kids/Beauty)."""
-    _seed_if_empty()
-    all_products = _load_products_from_db()
-    if not segment or segment.lower() == "all":
-        return all_products
-    return [
-        p for p in all_products
-        if p["metadata"].get("segment", "").lower() == segment.lower()
-    ]
+    normalized_segment = _normalize_segment(segment)
+    if not normalized_segment:
+        return get_all_catalog_products()
+    return [product.to_catalog_item() for product in _load_products_from_db(normalized_segment)]

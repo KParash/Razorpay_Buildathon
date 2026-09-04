@@ -34,7 +34,8 @@ judge_llm = ChatOpenAI(
     base_url="https://api.groq.com/openai/v1",
     api_key=os.getenv("GROQ_API_KEY"),
     model="qwen/qwen3.8-27b",
-    temperature=0.0
+    temperature=0.0,
+    max_tokens=400
 )
 
 # -------------------------------------------------------------
@@ -127,6 +128,9 @@ async def run_evaluation_pipeline() -> Dict[str, Any]:
     passed_count = 0
 
     for idx, tc in enumerate(EVALUATION_DATASET, start=1):
+        if idx > 1:
+            # Introduce a small delay to respect Groq's RPM/TPM rate limits on free accounts
+            await asyncio.sleep(2.5)
         print(f"[{idx}/{len(EVALUATION_DATASET)}] Evaluating: {tc['name']}...")
         start_time = time.time()
 

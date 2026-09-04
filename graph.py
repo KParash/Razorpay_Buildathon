@@ -1,8 +1,8 @@
 import os
 from dotenv import load_dotenv
 from langgraph.graph import StateGraph, START, END
-from psycopg_pool import ConnectionPool
-from langgraph.checkpoint.postgres import PostgresSaver
+import psycopg
+from langgraph.checkpoint.memory import InMemorySaver
 from schema import AgentState
 from nodes import (
     master_router_node,
@@ -23,12 +23,10 @@ if not DATABASE_URL:
         "Set it to your Supabase PostgreSQL connection string."
     )
 
-# Connection pool for LangGraph checkpointer (separate from SQLAlchemy's pool)
-_pg_pool = ConnectionPool(conninfo=DATABASE_URL, min_size=1, max_size=5)
-_pg_pool.open()
+# Direct autocommit connection for LangGraph checkpointer setup/runtime
+_pg_conn = psycopg.connect(DATABASE_URL, autocommit=True)
 
-checkpointer = PostgresSaver(_pg_pool)
-checkpointer.setup()  # Creates checkpoint tables on first run (idempotent)
+checkpointer = InMemorySaver()
 
 # 1. Initialize StateGraph
 builder = StateGraph(AgentState)

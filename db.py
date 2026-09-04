@@ -26,6 +26,8 @@ from sqlalchemy import (
     ForeignKey,
     JSON,
     event,
+    inspect,
+    text,
 )
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -202,7 +204,7 @@ class Product(Base):
     title = Column(String(255), nullable=False)
     brand_name = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
-    document = Column(Text, nullable=False)  # Embedding text for ChromaDB
+    document = Column(Text, nullable=False)  # Search text for catalog ranking
     sub_category_id = Column(Integer, ForeignKey("sub_categories.sub_category_id"), nullable=False)
     segment = Column(String(20), nullable=True, default="Men")  # Men, Women, Kids, Beauty
     price = Column(Float, nullable=False)
@@ -243,7 +245,7 @@ class Product(Base):
         }
 
     def to_catalog_item(self):
-        """Convert to the dict shape expected by catalog_store.py / ChromaDB."""
+        """Convert to the dict shape expected by catalog_store.py."""
         return {
             "sku_id": self.product_id,
             "document": self.document,
@@ -312,6 +314,23 @@ class Order(Base):
 # ---------------------------------------------------------------------------
 # Create all tables
 # ---------------------------------------------------------------------------
+def _ensure_product_segment_column():
+    """Backfill the legacy products table with the `segment` column if needed."""
+    inspector = inspect(engine)
+    if not inspector.has_table("products"):
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("products")}
+    if "segment" not in columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE products ADD COLUMN segment VARCHAR(20) DEFAULT 'Men'"))
+            conn.execute(text("UPDATE products SET segment = 'Men' WHERE segment IS NULL"))
+
+
 def init_db():
-    """Create all tables if they don't exist."""
+    """Create all tables if they don't exist and apply small schema backfills."""
     Base.metadata.create_all(bind=engine)
+    _ensure_product_segment_column()
+
+
+init_db()

@@ -1,0 +1,135 @@
+{
+  "timestamp": "2026-09-04T23:24:37.346662",
+  "total_scenarios": 6,
+  "passed_count": 1,
+  "pass_rate_pct": 16.7,
+  "mean_scores": {
+    "relevance": 2.5,
+    "persona": 4.33,
+    "recommendation": 1.33,
+    "helpfulness": 2.5,
+    "composite": 2.67
+  },
+  "results": [
+    {
+      "id": "tc_01_beach_wedding",
+      "name": "Beach Wedding in Goa (Budget & Climate Constraint)",
+      "input_message": "I need a breathable linen outfit for an outdoor beach wedding in Goa under 4000.",
+      "execution_time_sec": 1.64,
+      "route_correct": false,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 3.0,
+        "persona": 4.0,
+        "recommendation": 0.0,
+        "helpfulness": 2.0,
+        "overall_average": 2.25
+      },
+      "passed": false,
+      "critique": "The agent failed to provide any product recommendations, which is the primary objective of the scenario. Instead of leveraging the provided customer profile (size, fit preference, budget) to offer a curated selection, it asked redundant clarifying questions (e.g., asking for color preferences when the profile already lists disliked colors, or asking who it is for when the user said 'I need'). The response is passive and does not demonstrate the 'elite boutique stylist' persona effectively, as a true stylist would offer immediate, tailored suggestions while refining details. The lack of any SKU or styling advice results in a very low helpfulness and recommendation score.",
+      "anchor_sku": null,
+      "product_title": null,
+      "response_preview": "A breathable linen ensemble for a Goa beach wedding sounds perfect. Are you looking for this for yourself, a partner, or perhaps a child? And do you have a specific color palette i..."
+    },
+    {
+      "id": "tc_02_cocktail_blazer",
+      "name": "Rooftop Cocktail Party (Evening Formality)",
+      "input_message": "Recommend a sharp evening look or structured blazer for a summer rooftop cocktail party.",
+      "execution_time_sec": 1.06,
+      "route_correct": false,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 3.0,
+        "persona": 6.0,
+        "recommendation": 0.0,
+        "helpfulness": 2.0,
+        "overall_average": 2.75
+      },
+      "passed": false,
+      "critique": "The agent failed to meet the core requirements of the test scenario. The user provided a clear request for a recommendation, and the customer profile included specific constraints (luxury budget, tailored fit) that should have been utilized. Instead of providing a 'styling masterclass' or recommending a specific evening-appropriate piece, the agent asked unnecessary clarifying questions (e.g., 'shopping for yourself or a partner?') despite the context implying a personal request. The intent extraction correctly identified the occasion but flagged 'is_ready_to_recommend' as false, leading to a null product recommendation. This results in a low score for relevance and helpfulness, as the user received no actionable advice or product suggestions.",
+      "anchor_sku": null,
+      "product_title": null,
+      "response_preview": "I\u2019d love to help you nail that rooftop look. Are you shopping for yourself, or perhaps for a partner or child? And when you say \"sharp,\" are you leaning more toward a classic navy ..."
+    },
+    {
+      "id": "tc_03_skincare_moisturizer",
+      "name": "Skincare & Hydration (Cross-Category Beauty)",
+      "input_message": "I have dry skin and need a deeply hydrating facial moisturizer for daily daily glow.",
+      "execution_time_sec": 18.99,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 0.0,
+        "persona": 0.0,
+        "recommendation": 0.0,
+        "helpfulness": 0.0,
+        "overall_average": 0.0
+      },
+      "passed": false,
+      "critique": "The agent completely failed to address the user's request. The user explicitly asked for a facial moisturizer for dry skin (Beauty category), but the agent recommended a Nike Dri-FIT T-shirt (Fashion category). This is a severe semantic mismatch and category error. The response is irrelevant, unhelpful, and fails to meet any of the key evaluation criteria regarding skincare or product fidelity.",
+      "anchor_sku": "SKU_067",
+      "product_title": "Dry-Fit Performance Tee",
+      "response_preview": "The Dry-Fit Performance Tee solves your daily comfort needs with its 170 GSM Dri-FIT fabric, offering perfect breathability for temperate weather without sacrificing durability. Pa..."
+    },
+    {
+      "id": "tc_04_wireless_audio",
+      "name": "Wireless Audio Headphones (Electronics)",
+      "input_message": "Suggest top-notch wireless bluetooth headphones for workouts and daily commuting.",
+      "execution_time_sec": 28.53,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 0.0,
+        "persona": 2.0,
+        "recommendation": 0.0,
+        "helpfulness": 1.0,
+        "overall_average": 0.75
+      },
+      "passed": false,
+      "critique": "The agent completely failed to address the user's request. The user asked for wireless Bluetooth headphones (Electronics), but the agent recommended Flyknit Low-Top Sneakers (Fashion/Shoes). This is a critical semantic error where the agent ignored the core product category and instead hallucinated a fashion recommendation based on a misinterpreted intent (likely confusing 'workouts' with general lifestyle dressing). The response is irrelevant, unhelpful, and fails all key evaluation criteria regarding semantic precision and feature highlighting for audio devices.",
+      "anchor_sku": "SKU_030",
+      "product_title": "Flyknit Low-Top Sneakers",
+      "response_preview": "The Flyknit Low-Top Sneakers deliver ergonomic, breathable comfort ideal for temperate fluctuations, eliminating foot fatigue while maintaining a streamlined silhouette. Pair them ..."
+    },
+    {
+      "id": "tc_05_vague_needs_clarification",
+      "name": "Ambiguous Query (Clarifier Routing)",
+      "input_message": "Hi, I just want something nice to buy today.",
+      "execution_time_sec": 15.34,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 8.0,
+        "persona": 8.0,
+        "recommendation": 8.0,
+        "helpfulness": 8.0,
+        "overall_average": 8.0
+      },
+      "passed": true,
+      "critique": "Evaluator completed successfully with standard quality thresholds.",
+      "anchor_sku": null,
+      "product_title": null,
+      "response_preview": "Hi there! To help me find the perfect piece for you, are you shopping for yourself, a partner, or maybe a little one? Also, is this for a specific occasion, or just something to el..."
+    },
+    {
+      "id": "tc_06_discount_coupon",
+      "name": "Discount Hunter (STYLE20 Coupon)",
+      "input_message": "Show me trending fashion pieces eligible for the STYLE20 discount coupon.",
+      "execution_time_sec": 6.1,
+      "route_correct": false,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 1.0,
+        "persona": 6.0,
+        "recommendation": 0.0,
+        "helpfulness": 2.0,
+        "overall_average": 2.25
+      },
+      "passed": false,
+      "critique": "The agent failed to address the user's explicit request for trending fashion pieces eligible for a specific coupon. Instead of retrieving products or acknowledging the STYLE20 discount, it asked unnecessary clarifying questions (shopping for whom, occasion) despite the user providing a clear intent and the profile containing sufficient data (relaxed fit, mid-budget). The response is non-responsive to the core task, resulting in a failure to meet the key evaluation criteria for discount computation and coupon acknowledgement.",
+      "anchor_sku": null,
+      "product_title": null,
+      "response_preview": "I\u2019d love to pull up the best trending pieces for you\u2014quickly, are you shopping for yourself, your partner, or a little one? And what\u2019s the vibe you\u2019re going for, something for a sp..."
+    }
+  ]
+}
