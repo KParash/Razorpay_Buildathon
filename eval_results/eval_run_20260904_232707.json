@@ -1,0 +1,135 @@
+{
+  "timestamp": "2026-09-04T23:27:07.213713",
+  "total_scenarios": 6,
+  "passed_count": 2,
+  "pass_rate_pct": 33.3,
+  "mean_scores": {
+    "relevance": 3.92,
+    "persona": 5.92,
+    "recommendation": 1.25,
+    "helpfulness": 3.58,
+    "composite": 3.67
+  },
+  "results": [
+    {
+      "id": "tc_01_beach_wedding",
+      "name": "Beach Wedding in Goa (Budget & Climate Constraint)",
+      "input_message": "I need a breathable linen outfit for an outdoor beach wedding in Goa under 4000.",
+      "execution_time_sec": 17.57,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 9.0,
+        "persona": 9.0,
+        "recommendation": 7.5,
+        "helpfulness": 8.5,
+        "overall_average": 8.5
+      },
+      "passed": true,
+      "critique": "The agent successfully adheres to the budget (\u20b92,499 < \u20b94,000) and fabric constraints (100% Linen). The persona is strong, using evocative language ('breathes effortlessly', 'effortless, refined vibe') that fits the elite boutique stylist criteria. However, the recommendation quality is slightly compromised by the styling advice: suggesting 'neutral tailored shorts' for a wedding, even a beach one, is generally considered too casual and potentially disrespectful in many cultural contexts, including Indian weddings where trousers or chinos are preferred. Additionally, the response lacks a specific size recommendation in the text, despite the swarm evaluation identifying 'L' as the correct size, which reduces helpfulness for a user who needs to know what to buy.",
+      "anchor_sku": "SKU_043",
+      "product_title": "Linen Mandarin Collar Shirt",
+      "response_preview": "The 150 GSM linen breathes effortlessly in coastal humidity, offering a relaxed silhouette that remains polished without the stiffness of formal wear. Pair it with neutral tailored..."
+    },
+    {
+      "id": "tc_02_cocktail_blazer",
+      "name": "Rooftop Cocktail Party (Evening Formality)",
+      "input_message": "Recommend a sharp evening look or structured blazer for a summer rooftop cocktail party.",
+      "execution_time_sec": 1.38,
+      "route_correct": false,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 2.0,
+        "persona": 6.0,
+        "recommendation": 0.0,
+        "helpfulness": 1.0,
+        "overall_average": 2.25
+      },
+      "passed": false,
+      "critique": "The agent failed to utilize the provided customer profile (which includes size, fit preference, and budget tier) to make a direct recommendation. Instead, it asked a redundant clarifying question ('styling for you or someone else?') despite the user's input ('Recommend a sharp evening look... for a summer rooftop cocktail party') and the profile data implying a self-purchase context. This resulted in zero product recommendations and no styling advice, failing both key evaluation criteria (formality match and styling masterclass). The response is unhelpful for a luxury concierge persona which should proactively offer solutions based on known data.",
+      "anchor_sku": null,
+      "product_title": null,
+      "response_preview": "I\u2019d love to help you nail that summer rooftop vibe. Are we styling this for you, or are you shopping for someone else?..."
+    },
+    {
+      "id": "tc_03_skincare_moisturizer",
+      "name": "Skincare & Hydration (Cross-Category Beauty)",
+      "input_message": "I have dry skin and need a deeply hydrating facial moisturizer for daily daily glow.",
+      "execution_time_sec": 16.79,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 0.0,
+        "persona": 0.0,
+        "recommendation": 0.0,
+        "helpfulness": 0.0,
+        "overall_average": 0.0
+      },
+      "passed": false,
+      "critique": "The agent completely failed to address the user's request. The user asked for a facial moisturizer for dry skin (Beauty category), but the agent recommended a Nike Dri-FIT t-shirt (Fashion category). The response text discusses fabric GSM and fit, which is irrelevant to skincare. This is a total category mismatch and semantic failure.",
+      "anchor_sku": "SKU_067",
+      "product_title": "Dry-Fit Performance Tee",
+      "response_preview": "The 170 GSM Dri-FIT polyester strikes the perfect balance for your temperate daily routine, offering breathable moisture management without sacrificing structure. Pair it with Stre..."
+    },
+    {
+      "id": "tc_04_wireless_audio",
+      "name": "Wireless Audio Headphones (Electronics)",
+      "input_message": "Suggest top-notch wireless bluetooth headphones for workouts and daily commuting.",
+      "execution_time_sec": 8.17,
+      "route_correct": false,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 1.0,
+        "persona": 6.0,
+        "recommendation": 0.0,
+        "helpfulness": 2.0,
+        "overall_average": 2.25
+      },
+      "passed": false,
+      "critique": "The agent failed to meet the core requirements of the test scenario. The scenario explicitly targets 'Electronics & Gadgets' and requires the retrieval of audio/headphones with specific feature highlighting (battery, wireless fidelity, ergonomic fit). Instead, the agent incorrectly identified itself as a 'fashion and beauty house' and refused to handle the electronics request, resulting in a null recommendation. While the tone was polite, the response was irrelevant to the user's specific request for headphones and failed the semantic precision and feature highlighting criteria entirely.",
+      "anchor_sku": null,
+      "product_title": null,
+      "response_preview": "I need to pause for a moment because KAZU is strictly a fashion and beauty house, so I don't carry electronics like headphones. However, I can definitely help you find the perfect ..."
+    },
+    {
+      "id": "tc_05_vague_needs_clarification",
+      "name": "Ambiguous Query (Clarifier Routing)",
+      "input_message": "Hi, I just want something nice to buy today.",
+      "execution_time_sec": 12.31,
+      "route_correct": true,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 8.5,
+        "persona": 6.5,
+        "recommendation": 0.0,
+        "helpfulness": 8.0,
+        "overall_average": 5.75
+      },
+      "passed": true,
+      "critique": "The agent correctly identified the ambiguity in the user's request and routed it to a clarifier rather than attempting a premature recommendation or checkout. The response is concise, polite, and asks relevant questions (recipient, occasion) to narrow down the search. However, the tone is somewhat generic and lacks the 'evocative, inspiring' quality expected of a high-end luxury stylist. It feels more like a standard customer service bot than a boutique concierge. Additionally, it failed to leverage the available customer profile data (e.g., 'relaxed' fit preference or 'mid' budget tier) to make the inquiry more personalized or sophisticated. While it meets the functional requirements of the scenario, it falls short on the persona and evocative styling criteria.",
+      "anchor_sku": null,
+      "product_title": null,
+      "response_preview": "Hey! I\u2019d love to help you find something special. Are you looking for something for yourself, a partner, or maybe a little one? And is there a specific occasion you have in mind, o..."
+    },
+    {
+      "id": "tc_06_discount_coupon",
+      "name": "Discount Hunter (STYLE20 Coupon)",
+      "input_message": "Show me trending fashion pieces eligible for the STYLE20 discount coupon.",
+      "execution_time_sec": 13.28,
+      "route_correct": false,
+      "budget_compliant": true,
+      "scores": {
+        "relevance": 3.0,
+        "persona": 8.0,
+        "recommendation": 0.0,
+        "helpfulness": 2.0,
+        "overall_average": 3.25
+      },
+      "passed": false,
+      "critique": "The agent failed to execute the core task of the scenario. The user explicitly requested to see trending fashion pieces eligible for a specific coupon, and the customer profile provided sufficient data (pincode, size, budget) to generate recommendations. Instead of retrieving products and applying the discount as required by the 'discount_computation' and 'coupon_acknowledgement' criteria, the agent asked for clarification on gender and occasion. This is a failure to utilize available context and a failure to perform the requested action, resulting in no products, no pricing, and no coupon application.",
+      "anchor_sku": null,
+      "product_title": null,
+      "response_preview": "I\u2019d love to pull up those STYLE20 deals for you. Are we looking at men\u2019s, women\u2019s, or kids\u2019 fashion today? And is there a specific occasion or vibe you\u2019re aiming for?..."
+    }
+  ]
+}

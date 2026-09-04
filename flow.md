@@ -47,7 +47,7 @@
 
 ### 1.2 Step-by-Step User Interaction Flow
 
-1. **Page Load (`/`):** `App.tsx` fires `fetch('/api/products')`. The backend calls `get_all_catalog_products()`, which returns the 50-item JSON catalog from ChromaDB's in-memory collection. Products render as a grid of `ProductCard` components.
+1. **Page Load (`/`):** `App.tsx` fires `fetch('/api/products')`. The backend calls `get_all_catalog_products()`, which returns the active product catalog from PostgreSQL via `catalog_store.py`. Products render as a grid of `ProductCard` components.
 
 2. **Product Discovery:** The user browses the grid. `Home.tsx` provides **dynamic category filters** (derived from catalog metadata) and a **search bar** that filters products client-side by title, category, fabric, and color.
 
@@ -90,8 +90,8 @@
     ┌────────────┐ ┌──────────┐ ┌───────────┐
     │  clarifier │ │ retriever│ │  checkout  │
     │            │ │          │ │            │
-    │ Evocative  │ │ ChromaDB │ │ Razorpay   │
-    │ styling Qs │ │ semantic │ │ order      │
+    │ Evocative  │ │ Postgres │ │ Razorpay   │
+    │ styling Qs │ │ ranking  │ │ order      │
     └─────┬──────┘ │ search   │ │ freeze     │
           │        └────┬─────┘ └──────┬─────┘
           ▼             │              │
@@ -246,8 +246,8 @@ eval_pipeline.py
 | Boundary | Current State | Production Risk |
 |---|---|---|
 | **Product images** | Hardcoded `SKU_IMAGES` dictionary in [`product.ts`](file:///e:/Buildathon/Razorpay_Buildathon/frontend/src/types/product.ts) maps 8 SKU IDs to Unsplash URLs. The 50-product catalog (`new_catalog.json`) includes `image_url` fields, but `getProductImage()` falls back to Unsplash for any SKU not in the map. | **42 of 50 products display the same fallback image.** Product discovery is visually broken for the majority of the catalog. |
-| **ChromaDB ephemeral mode** | `chromadb.Client()` — in-memory, zero persistence. Collection re-indexed on each process restart. | Not viable beyond single-process development. Requires migration to `chromadb.PersistentClient()` or a hosted vector DB (Qdrant is already in `requirements.txt`). |
-| **`MemorySaver` checkpointer** | In-memory. All multi-turn conversation state is lost on server restart. | Production requires `PostgresSaver` or `RedisSaver` for durable checkpoints. |
+| **Postgres-backed catalog search** | `catalog_store.py` ranks active products directly from PostgreSQL using deterministic query-token matching and optional segment/budget filters. | Not viable beyond single-process development. No local vector index to warm up or rebuild. The trade-off is simpler ranking rather than learned semantic similarity. |
+| **`PostgresSaver` checkpointer** | Backed by Supabase PostgreSQL. All multi-turn conversation state survives restarts while the database remains available. | Production still needs backups and connection monitoring, but no local state file. |
 | **`chat_history.json` file store** | Single flat JSON file. No file-level locking. No rotation or pruning. | Concurrent requests can corrupt the file. Unbounded growth over time. |
 | **Groq free-tier rate limits** | `qwen/qwen3.8-27b` via Groq. 30 RPM on free tier. The worker swarm fires 3 concurrent calls per recommendation. | Under concurrent users, rate limit exhaustion triggers cascading `except` fallbacks, degrading recommendation quality silently. |
 
@@ -257,8 +257,8 @@ eval_pipeline.py
 |---|---|---|
 | **Razorpay signature verification** | `POST /api/checkout/verify` returns `{"status": "success"}` unconditionally without validating `razorpay_signature` against `RAZORPAY_KEY_SECRET`. | **Critical security vulnerability.** An attacker can forge payment confirmation. |
 | **Inventory management** | No stock tracking. "Frozen order" does not decrement inventory. | Double-selling of out-of-stock items in multi-user scenarios. |
-| **No catalog category pre-filter** | ChromaDB `query()` searches the full 50-item collection by embedding similarity. No `where` clause filters by `metadata.category`. | Cross-category semantic bleeding: a query for "moisturizer" may surface fashion items with similar adjectives (e.g., "hydrating linen"). |
-| **FALLBACK_PRODUCTS in App.tsx** | [`App.tsx`](file:///e:/Buildathon/Razorpay_Buildathon/frontend/src/App.tsx) contains a hardcoded 8-item `FALLBACK_PRODUCTS` array (lines 9–114) used when `/api/products` fails. These are the original seed catalog SKUs, not the current 50-item catalog. | If the backend is unreachable, the frontend displays stale products that may not exist in ChromaDB. |
+| **No semantic vector filter** | The current ranking layer searches the active product catalog directly from PostgreSQL using deterministic query-token matching and optional segment/budget filters. | Cross-category semantic bleeding: a query for "moisturizer" may surface fashion items with similar adjectives (e.g., "hydrating linen"). |
+| **FALLBACK_PRODUCTS in App.tsx** | [`App.tsx`](file:///e:/Buildathon/Razorpay_Buildathon/frontend/src/App.tsx) contains a hardcoded 8-item `FALLBACK_PRODUCTS` array (lines 9–114) used when `/api/products` fails. These are the original seed catalog SKUs, not the current 50-item catalog. | If the backend is unreachable, the frontend displays stale products that may not exist in the current catalog cache. |
 | **OpenAI-compat endpoint profile** | `POST /v1/chat/completions` uses a hardcoded `default_profile` (lines 206–213) with `fit_preference: "relaxed"` and `budget_tier: "mid"`. LibreChat users cannot customize their profile. | All LibreChat sessions produce recommendations calibrated for a single persona. |
 
 ### 4.3 Data Flow Boundaries
@@ -290,7 +290,7 @@ eval_pipeline.py
 │  new_catalog.json      → 50-product source-of-truth catalog  │
 │  eval_results/*.json   → Timestamped benchmark run data      │
 │  eval_results/*.md     → Human-readable evaluation reports   │
-│  ChromaDB (in-memory)  → Ephemeral vector index              │
-│  MemorySaver (in-mem)  → LangGraph multi-turn checkpoints    │
+│  PostgreSQL-backed catalog search → Ranked product results   │
+│  PostgresSaver         → LangGraph multi-turn checkpoints    │
 └──────────────────────────────────────────────────────────────┘
 ```

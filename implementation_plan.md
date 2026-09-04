@@ -1,4 +1,4 @@
-# Architectural Refactoring Plan: Persistence, Token Tracking, & State Consistency
+# Architectural Refactoring Plan: Postgres Persistence, Token Tracking, & State Consistency
 
 This plan outlines the design changes to address your goals of persisting conversations to a database, tracking token usage across all LLM nodes, and ensuring nodes have consistent access to the data they need.
 
@@ -9,15 +9,15 @@ This plan outlines the design changes to address your goals of persisting conver
 
 ### 1. Database Persistence for LangGraph (MVP)
 
-To ensure conversations survive server restarts during this MVP phase, we will swap the in-memory `MemorySaver` with a SQL-backed checkpointer using SQLite. (We will migrate to a production database later).
+To ensure conversations survive server restarts during this MVP phase, we will use the existing Postgres-backed LangGraph checkpointer via Supabase.
 
 #### [MODIFY] `graph.py`
-- Replace `MemorySaver` with `SqliteSaver` (from the `langgraph-checkpoint-sqlite` package).
-- Initialize a local `state.db` SQLite connection.
-- Pass the `SqliteSaver` to the graph compilation step (`builder.compile(checkpointer=sqlite_saver)`).
+- Use `PostgresSaver` (from the `langgraph-checkpoint-postgres` package).
+- Initialize it from the existing `DATABASE_URL` Supabase connection string.
+- Pass the `PostgresSaver` to the graph compilation step (`builder.compile(checkpointer=postgres_saver)`).
 
 #### [MODIFY] `requirements.txt`
-- Add `langgraph-checkpoint-sqlite` to the dependencies.
+- Keep `langgraph-checkpoint-postgres`; remove any outdated local checkpoint dependency if present.
 
 ---
 
@@ -73,7 +73,7 @@ To ensure each node receives precisely the data it needs to do its job, we will 
 
 ### 4. State Pruning (Context Window Management)
 
-To ensure the LLM does not crash due to exceeding its token limit in long-running conversations stored in SQLite, we will implement a state pruning mechanism.
+To ensure the LLM does not crash due to exceeding its token limit in long-running conversations stored in Postgres-backed checkpoints, we will implement a state pruning mechanism.
 
 #### [MODIFY] `schema.py` / `graph.py`
 - Add a new node or function (`prune_messages_node`) before the `master_router_node` that inspects the `messages` array in the state.
@@ -88,6 +88,6 @@ To ensure the LLM does not crash due to exceeding its token limit in long-runnin
 
 ### Manual Verification
 1. Start the server and initiate a chat via the frontend or API.
-2. Restart the server and send a follow-up message using the same `session_id`. Verify that the agent remembers the context (confirming SQLite persistence).
+2. Restart the server and send a follow-up message using the same `session_id`. Verify that the agent remembers the context (confirming Postgres-backed persistence).
 3. Inspect the JSON response payload from `/api/chat` or `/v1/chat/completions` and verify that `total_tokens` dynamically increases based on the conversation complexity, accurately reflecting Groq's token metadata.
 4. Verify the worker nodes reject items appropriately if `disliked_colors` are violated by updating the stylist prompt.

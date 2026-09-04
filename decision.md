@@ -89,13 +89,13 @@ Additionally, two **deterministic checks** are applied per scenario:
 
 ### 3.1 LangGraph for DAG Orchestration
 
-**What.** The agent pipeline is a **LangGraph `StateGraph`** compiled with a `MemorySaver` checkpointer for multi-turn state persistence. The graph has 7 nodes:
+**What.** The agent pipeline is a **LangGraph `StateGraph`** compiled with a `PostgresSaver` checkpointer backed by Supabase for multi-turn state persistence. The graph has 7 nodes:
 
 | Node           | Function                                                                                      | LLM Used             |
 | -------------- | --------------------------------------------------------------------------------------------- | -------------------- |
 | `router`       | `master_router_node` — Structured intent extraction via `IntentParser` Pydantic model         | `master_llm` (T=0.3) |
 | `clarifier`    | `clarifier_node` — Evocative styling questions for ambiguous queries                          | `master_llm` (T=0.3) |
-| `retriever`    | `retriever_node` — ChromaDB semantic search using `search_query` from intent                  | None (deterministic) |
+| `retriever`    | `retriever_node` — Postgres-backed catalog search using `search_query` from intent                  | None (deterministic) |
 | `worker_swarm` | `worker_swarm_node` — 3 parallel sub-agents: `size_worker`, `fabric_worker`, `stylist_worker` | `worker_llm` (T=0.1) |
 | `pricing`      | `pricing_node` — Deterministic coupon/discount computation                                    | None (deterministic) |
 | `synthesis`    | `synthesis_node` — Category-aware prose generation with styling masterclass                   | `master_llm` (T=0.3) |
@@ -105,12 +105,12 @@ Additionally, two **deterministic checks** are applied per scenario:
 
 1. **Conditional routing:** `route_after_input()` inspects `intent.is_ready_to_recommend` and `intent.is_checkout_requested` to branch the DAG. This three-way conditional edge (`clarifier` / `retriever` / `checkout`) is a first-class primitive in LangGraph but requires manual orchestration in `AgentExecutor`.
 2. **Parallel execution:** `worker_swarm_node` uses `asyncio.gather()` to run size, fabric, and stylist sub-agents concurrently. LangGraph's async-native execution model supports this natively.
-3. **Stateful multi-turn:** `MemorySaver` checkpoints the full `AgentState` keyed by `thread_id` (session ID). Subsequent messages in the same session carry forward `candidate_skus`, `evaluations`, and `outfit` — enabling the checkout node to reference a previously recommended anchor SKU without re-retrieval.
+3. **Stateful multi-turn:** `PostgresSaver` checkpoints the full `AgentState` keyed by `thread_id` (session ID). Subsequent messages in the same session carry forward `candidate_skus`, `evaluations`, and `outfit` — enabling the checkout node to reference a previously recommended anchor SKU without re-retrieval.
 
 **Trade-offs.**
 
-- **In-memory checkpointer:** `MemorySaver()` is ephemeral. Server restarts lose all multi-turn state. A production deployment requires `PostgresSaver` or `RedisSaver`.
-- **No re-ranking:** The retriever selects `anchor_sku = candidates[0]` — the top-1 result from ChromaDB cosine similarity. There is no LLM-powered re-ranking step to verify that the top candidate actually matches the extracted intent before passing it to the worker swarm.
+- **Postgres-backed checkpointer:** `PostgresSaver()` persists multi-turn state across restarts, but it depends on the Supabase database being available. If you need a separate cache tier, Redis remains an option later.
+- **No re-ranking:** The retriever selects `anchor_sku = candidates[0]` — the top-scoring result from the Postgres-backed ranking layer. There is no LLM-powered re-ranking step to verify that the top candidate actually matches the extracted intent before passing it to the worker swarm.
 
 ---
 
@@ -131,14 +131,15 @@ Additionally, two **deterministic checks** are applied per scenario:
 
 ### 3.3 Catalog & Retrieval Layer
 
-**What.** [`catalog_store.py`](file:///e:/Buildathon/Razorpay_Buildathon/catalog_store.py) loads a 50-product JSON catalog (`new_catalog.json`) sourced from an [external API](https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/products.json) into an **ephemeral ChromaDB** collection (`ecommerce_catalog_v5`). Embeddings are computed by **`all-MiniLM-L6-v2`** via `sentence-transformers` (CPU, zero API cost). Search uses cosine similarity with post-retrieval budget filtering.
+**What.** [`catalog_store.py`](file:///e:/Buildathon/Razorpay_Buildathon/catalog_store.py) loads active products from PostgreSQL (Supabase) and ranks them in Python using query-token matches across title, description, brand, and catalog metadata. The `products` table is the source of truth, with optional segment and budget filters.
 
-**Why.** ChromaDB ephemeral mode eliminates infrastructure dependencies for local development and hackathon demos. The `all-MiniLM-L6-v2` encoder is 80MB, runs in <100ms on CPU, and produces 384-dimensional embeddings that perform well on short product descriptions.
+**Why.** This keeps search simple, removes the local vector DB dependency, and aligns the retrieval layer with the same Supabase database used for persistence.
 
 **Trade-offs.**
 
-- **Cold start on every process restart:** The collection is re-indexed on first query via `_seed_if_empty()`. With 50 products this takes ~3 seconds; at scale this is untenable.
-- **No category-aware retrieval:** The embedding space conflates categories — a query for "hydrating moisturizer" may surface fashion items with similar adjectives. The `search_query` field in `IntentParser` partially mitigates this, but there is no metadata pre-filter by `category` on the ChromaDB query.
+- **Query-time ranking:** Results are scored at request time instead of being pre-indexed in a local vector store.
+- **No embedding stack:** The app no longer depends on a local vector index or embedding runtime, reducing startup overhead and package complexity.
+- **Deterministic matching:** The ranking is simpler than learned vector similarity, so it is easier to reason about but less semantically flexible.
 
 ---
 
@@ -151,7 +152,7 @@ Additionally, two **deterministic checks** are applied per scenario:
 **Trade-offs.**
 
 - **No concurrency safety:** Multiple simultaneous requests can cause read-write races on `chat_history.json`. File-level locking is not implemented.
-- **Unbounded growth:** The file grows monotonically. At ~45KB after moderate testing, it is manageable, but production use requires rotation or migration to SQLite/PostgreSQL.
+- **Unbounded growth:** The file grows monotonically. At ~45KB after moderate testing, it is manageable, but production use requires rotation or rotation or migration to a database-backed store.
 
 ---
 
@@ -166,14 +167,30 @@ Additionally, two **deterministic checks** are applied per scenario:
 - **Payment verification is stubbed:** `POST /api/checkout/verify` always returns `{"status": "success"}` without actually validating the Razorpay signature. This is a **critical security gap** for production.
 - **No inventory lock:** The "frozen order" does not decrement stock or reserve inventory. In a multi-user environment, two users could checkout the same last-in-stock item.
 
+---
+
+### 3.6 Groq Rate Limit (OTPM) Mitigation via Output Token Bounding
+
+**What.** Configured explicit, strict `max_tokens` (and output token reservation) limits across all `ChatOpenAI` instances in the codebase (`master_llm` is limited to `500` tokens, `worker_llm` to `250` tokens, and the evaluation `judge_llm` to `400` tokens) in `nodes.py` and `eval_pipeline.py`.
+
+**Why.** Groq enforces a strict Output Tokens Per Minute (OTPM) limit of **1,000 tokens** on its free and lower tiers. When LangChain's `ChatOpenAI` model wrapper is instantiated without an explicit `max_tokens` limit, the client omits any maximum token specification in the API payload. Consequently, Groq's gateway assumes a worst-case default output reservation (typically 4,096 tokens) for each request to prevent midway failures. 
+
+Since 4,096 exceeds 1,000, **even a single un-bounded request** immediately triggered an OTPM `429 Rate Limit Exceeded` error and crashed the graph. This was highly severe in the parallel `worker_swarm_node`, which runs three sub-agent tasks concurrently (sizing, fabric, and styling). By hard-bounding output limits:
+- **Master Stylist (`master_llm`)**: Limit of `500` tokens provides plenty of room for intent parsing, clarifier dialogue, and final concise synthesis responses, while preventing the main model from monopolizing the rate limit.
+- **Worker Swarm (`worker_llm`)**: Limit of `250` tokens ensures that the parallel execution of the three swarm sub-agents has a combined peak reservation of `3 * 250 = 750` tokens, which is safely below the 1,000 OTPM ceiling. Sizing, fabric, and styling task JSON schemas are highly concise and fit comfortably in this 250 token boundary.
+- **Judge Model (`judge_llm`)**: Limit of `400` tokens ensures structured evaluation runs smoothly.
+
+**Trade-offs.**
+- **Response Truncation Risk**: If any model outputs a verbose response, it could get truncated. However, because our worker swarm tasks and evaluation judge return tightly structures, small JSON blobs, and the stylist synthesis is prompted to be highly concise, the token footprint is small and perfectly suited to these limits.
+
 # Architecture Decisions Log
 
 This document tracks major technical decisions made during the development of the AI Stylist Agent.
 
 ## 1. Database Persistence for State Tracking
 
-- **Decision:** Use SQLite (`langgraph-checkpoint-sqlite`) via LangGraph's `SqliteSaver`.
-- **Rationale:** The MVP needs multi-turn memory without the overhead of standing up PostgreSQL or Redis. SQLite is file-based and perfectly adequate for local state testing. We will migrate to a production database (like Postgres) later.
+- **Decision:** Use `PostgresSaver` via LangGraph's PostgreSQL checkpoint package.
+- **Rationale:** The MVP needs multi-turn memory backed by the existing Supabase database, so the checkpointer stays aligned with the same Postgres store used by the app.
 
 ## 2. Token Tracking
 
@@ -183,7 +200,7 @@ This document tracks major technical decisions made during the development of th
 ## 3. State Pruning (Context Window Management)
 
 - **Decision:** Implement a `prune_messages_node` before the router. We will use `tiktoken` (or simple heuristic) to roughly calculate history size and use LangGraph's `RemoveMessage` to delete older messages if they exceed safe token bounds.
-- **Rationale:** SQLite storage grows indefinitely, but the LLM has a finite context window. Truncating old messages prevents API crash loops when the token limit is exceeded.
+- **Rationale:** Persistent checkpoints can still grow over time, but the LLM has a finite context window. Truncating old messages prevents API crash loops when the token limit is exceeded.
 
 ## 4. Embedding Model
 

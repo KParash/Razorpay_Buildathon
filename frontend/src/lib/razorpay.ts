@@ -24,7 +24,13 @@ export async function openRazorpayCheckout(orderData: {
   currency: string;
   razorpay_key_id?: string;
   is_mock?: boolean;
+  prefill?: {
+    name?: string;
+    email?: string;
+    contact?: string;
+  };
   onSuccess?: (paymentRes: any) => void;
+  onError?: (error: any) => void;
 }) {
   const loaded = await loadRazorpayScript();
   if (!loaded && !orderData.is_mock) {
@@ -51,14 +57,36 @@ export async function openRazorpayCheckout(orderData: {
     name: 'AURA AI Fashion Store',
     description: 'Personalized Outfit Checkout',
     order_id: orderData.id,
-    handler: function (response: any) {
-      alert(`✅ Payment Successful!\nPayment ID: ${response.razorpay_payment_id}`);
-      if (orderData.onSuccess) orderData.onSuccess(response);
+    handler: async function (response: any) {
+      try {
+        // Cryptographically verify payment on the backend
+        const verifyRes = await fetch('/api/checkout/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          }),
+        });
+
+        const verifyData = await verifyRes.json();
+        if (verifyRes.ok && verifyData.status === 'success') {
+          if (orderData.onSuccess) orderData.onSuccess(response);
+        } else {
+          alert(`Payment signature verification failed: ${verifyData.detail || 'Security check rejected'}`);
+          if (orderData.onError) orderData.onError(verifyData);
+        }
+      } catch (err: any) {
+        console.error('Error verifying payment:', err);
+        alert('Payment verification could not be completed with server.');
+        if (orderData.onError) orderData.onError(err);
+      }
     },
     prefill: {
-      name: 'Guest User',
-      email: 'customer@example.com',
-      contact: '9999999999',
+      name: orderData.prefill?.name || 'Guest User',
+      email: orderData.prefill?.email || '',
+      contact: orderData.prefill?.contact || '',
     },
     theme: {
       color: '#9333ea',
@@ -68,3 +96,4 @@ export async function openRazorpayCheckout(orderData: {
   const rzp = new window.Razorpay(options);
   rzp.open();
 }
+

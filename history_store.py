@@ -1,107 +1,143 @@
 """
-history_store.py — JSON-based store for user chat sessions and interaction history.
-Maintains session metadata (title, timestamps) and detailed message logs for full multi-turn context.
+history_store.py — Database-backed store for user chat sessions and interaction history.
+
+Persists conversations in the SQLAlchemy `conversations` table in PostgreSQL (Supabase).
+Maintains backward compatibility with endpoints returning `session_id`, `title`, and `messages`.
 """
 
-import os
-import json
 import time
 from typing import List, Dict, Any, Optional
+from db import SessionLocal, Conversation, User
 
-HISTORY_FILE_PATH = os.path.join(os.path.dirname(__file__), "chat_history.json")
 
-
-def _read_db() -> Dict[str, Any]:
-    if not os.path.exists(HISTORY_FILE_PATH):
-        return {"sessions": {}, "messages": {}}
+def get_all_sessions(user_id: str = "usr_local_dev") -> List[Dict[str, Any]]:
+    """
+    Retrieve all sessions for a user, sorted newest to oldest.
+    Accepts usr_guest or usr_local_dev seamlessly.
+    """
+    db = SessionLocal()
     try:
-        with open(HISTORY_FILE_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {"sessions": {}, "messages": {}}
+        # Fallback to usr_local_dev if user_id is guest
+        query_user = user_id
+        if query_user == "usr_guest":
+            # Check if user exists or default to usr_local_dev
+            dev_user = db.query(User).filter_by(user_id="usr_local_dev").first()
+            if dev_user:
+                query_user = "usr_local_dev"
 
+        convs = (
+            db.query(Conversation)
+            .filter(Conversation.user_id.in_([query_user, "usr_guest", "usr_local_dev"]))
+            .order_by(Conversation.updated_at.desc())
+            .all()
+        )
 
-def _write_db(data: Dict[str, Any]) -> None:
-    try:
-        with open(HISTORY_FILE_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-    except Exception as e:
-        print(f"[history_store] Error saving history: {e}")
-
-
-def get_all_sessions(user_id: str = "usr_guest") -> List[Dict[str, Any]]:
-    """Retrieve all sessions for a user, sorted newest to oldest."""
-    db = _read_db()
-    sessions = []
-    for s_id, s_data in db.get("sessions", {}).items():
-        if s_data.get("user_id", "usr_guest") == user_id:
+        sessions = []
+        for c in convs:
+            created_ts = int(c.created_at.timestamp()) if c.created_at else int(time.time())
+            updated_ts = int(c.updated_at.timestamp()) if c.updated_at else int(time.time())
             sessions.append({
-                "session_id": s_id,
-                "title": s_data.get("title", "New Consultation"),
-                "created_at": s_data.get("created_at", int(time.time())),
-                "updated_at": s_data.get("updated_at", int(time.time())),
-                "message_count": len(db.get("messages", {}).get(s_id, []))
+                "session_id": c.conversation_id,
+                "conversation_id": c.conversation_id,
+                "title": c.title,
+                "created_at": created_ts,
+                "updated_at": updated_ts,
+                "message_count": len(c.messages) if c.messages else 0
             })
-    # Sort descending by updated_at
-    sessions.sort(key=lambda x: x["updated_at"], reverse=True)
-    return sessions
+        return sessions
+    finally:
+        db.close()
 
 
 def get_session_messages(session_id: str) -> List[Dict[str, Any]]:
-    """Get all formatted message items for a session."""
-    db = _read_db()
-    return db.get("messages", {}).get(session_id, [])
+    """Get all formatted message items for a specific conversation session."""
+    db = SessionLocal()
+    try:
+        conv = db.query(Conversation).filter_by(conversation_id=session_id).first()
+        if not conv or not conv.messages:
+            return []
+        return conv.messages
+    finally:
+        db.close()
 
 
-def save_message_to_session(session_id: str, message_item: Dict[str, Any], user_id: str = "usr_guest") -> None:
-    """Save a user or assistant message to the session."""
-    db = _read_db()
-    if "sessions" not in db:
-        db["sessions"] = {}
-    if "messages" not in db:
-        db["messages"] = {}
+def save_message_to_session(
+    session_id: str,
+    message_item: Dict[str, Any],
+    user_id: str = "usr_local_dev"
+) -> None:
+    """
+    Append a user or assistant message to the conversation thread.
+    Creates the conversation record if this is the first turn.
+    """
+    db = SessionLocal()
+    try:
+        # Normalize target user to usr_local_dev if guest
+        target_user_id = user_id
+        if target_user_id == "usr_guest":
+            target_user_id = "usr_local_dev"
 
-    current_time = int(time.time())
+        # Ensure user exists in users table
+        user = db.query(User).filter_by(user_id=target_user_id).first()
+        if not user:
+            # Fallback to usr_local_dev
+            dev_user = db.query(User).filter_by(user_id="usr_local_dev").first()
+            if dev_user:
+                target_user_id = "usr_local_dev"
+            else:
+                user = User(
+                    user_id=target_user_id,
+                    username="Guest User",
+                    email="guest@localhost"
+                )
+                db.add(user)
+                db.commit()
 
-    # Create session entry if not exists
-    if session_id not in db["sessions"]:
-        # Derive initial title from first user message if possible
-        raw_title = message_item.get("text", "New Consultation")
-        # Clean title: truncate and sanitize
-        clean_title = raw_title.replace("\n", " ").strip()
-        if len(clean_title) > 36:
-            clean_title = clean_title[:33] + "..."
-        if not clean_title:
-            clean_title = "New Consultation"
+        conv = db.query(Conversation).filter_by(conversation_id=session_id).first()
 
-        db["sessions"][session_id] = {
-            "session_id": session_id,
-            "user_id": user_id,
-            "title": clean_title,
-            "created_at": current_time,
-            "updated_at": current_time
-        }
-    else:
-        db["sessions"][session_id]["updated_at"] = current_time
+        if not conv:
+            # First message sets the title
+            raw_title = message_item.get("text", "New Consultation")
+            clean_title = raw_title.replace("\n", " ").strip()
+            if len(clean_title) > 36:
+                clean_title = clean_title[:33] + "..."
+            if not clean_title:
+                clean_title = "New Consultation"
 
-    # Append message
-    if session_id not in db["messages"]:
-        db["messages"][session_id] = []
-    
-    db["messages"][session_id].append(message_item)
-    _write_db(db)
+            conv = Conversation(
+                conversation_id=session_id,
+                user_id=target_user_id,
+                title=clean_title,
+                messages=[message_item]
+            )
+            db.add(conv)
+        else:
+            # Append new message
+            current_msgs = list(conv.messages or [])
+            current_msgs.append(message_item)
+            conv.messages = current_msgs
+
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"[history_store] Error saving message to DB: {e}")
+    finally:
+        db.close()
 
 
 def delete_session(session_id: str) -> bool:
-    """Delete a session and all its messages."""
-    db = _read_db()
-    changed = False
-    if session_id in db.get("sessions", {}):
-        del db["sessions"][session_id]
-        changed = True
-    if session_id in db.get("messages", {}):
-        del db["messages"][session_id]
-        changed = True
-    if changed:
-        _write_db(db)
-    return changed
+    """Delete a conversation session and all its messages."""
+    db = SessionLocal()
+    try:
+        conv = db.query(Conversation).filter_by(conversation_id=session_id).first()
+        if conv:
+            db.delete(conv)
+            db.commit()
+            return True
+        return False
+    except Exception as e:
+        db.rollback()
+        print(f"[history_store] Error deleting session: {e}")
+        return False
+    finally:
+        db.close()

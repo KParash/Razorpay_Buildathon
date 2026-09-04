@@ -9,6 +9,8 @@ export interface ProductMetadata {
   eligible_coupon?: string;
   category?: string;
   sub_category?: string;
+  segment?: string;        // "Men" | "Women" | "Kids" | "Beauty"
+  brand_name?: string;
   description?: string;
   image_url?: string;
 }

@@ -44,6 +44,7 @@ class AgentState(TypedDict):
     outfit: Optional[OutfitCoordination]
     evaluations: Annotated[List[ProductEvaluation], operator.add]
     pricing_result: Optional[Dict[str, Any]]
+    suggested_questions: Optional[List[str]]
     final_response: Optional[str]
     checkout_ready: bool
     razorpay_order: Optional[Dict[str, Any]]
