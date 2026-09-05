@@ -101,7 +101,7 @@ const CURATED_PROMPTS = [
 const INITIAL_WELCOME_MSG: ChatMessageItem = {
   id: 'welcome-init',
   sender: 'assistant',
-  text: "Welcome to the AURA Luxe Styling Studio. I'm your dedicated personal fashion consultant.\n\nWhether you're dressing for a tropical destination, a formal reception, or building a bespoke capsule wardrobe, I'll analyze fabric drape, climate breathability, and fit proportions to curate the perfect piece.",
+  text: "Welcome to the KAZU Styling Studio. I'm your dedicated personal fashion consultant.\n\nWhether you're dressing for a tropical destination, a formal reception, or building a bespoke capsule wardrobe, I'll analyze fabric drape, climate breathability, and fit proportions to curate the perfect piece.",
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
 };
 

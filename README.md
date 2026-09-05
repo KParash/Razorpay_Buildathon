@@ -1,3 +1,6 @@
+
+
+
 # KAZU — AI Styling Concierge
 
 ![Agentic](https://img.shields.io/badge/Powered_by-LangGraph-blueviolet)
@@ -6,7 +9,7 @@
 ![Tests](https://img.shields.io/badge/pytest-22_passing-brightgreen)
 ![Payments](https://img.shields.io/badge/Payments-Razorpay-2A5CFF)
 
-> **The invitation says dress to impress. KAZU makes sure you do.**
+> **The invitation says dress to impress. KAZU makes sure you do**
 >
 > Type the occasion — *"beach wedding in Goa, under ₹4,000"* — and **STYLO**, your AI stylist, goes to work. A swarm of specialist agents debates the fit, the fabric, and the climate on your behalf; sizes you from your history; applies the best coupon; and drops you into a secure Razorpay checkout with a complete outfit locked.
 >

@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
 from langgraph.graph import StateGraph, START, END
-import psycopg
 from langgraph.checkpoint.memory import InMemorySaver
 from schema import AgentState
 from nodes import (
@@ -23,18 +22,9 @@ if not DATABASE_URL:
         "Set it to your Supabase PostgreSQL connection string."
     )
 
-# Direct autocommit connection for LangGraph checkpointer setup/runtime
-_pg_conn = psycopg.connect(DATABASE_URL, autocommit=True)
-
-# Postgres-backed checkpointing so multi-turn agent state survives restarts;
-# fall back to in-memory if the checkpoint tables can't be provisioned.
-try:
-    from langgraph.checkpoint.postgres import PostgresSaver
-    checkpointer = PostgresSaver(_pg_conn)
-    checkpointer.setup()
-except Exception as e:
-    print(f"[graph] PostgresSaver setup failed ({e}) — falling back to in-memory checkpointing")
-    checkpointer = InMemorySaver()
+# In-memory checkpointer — supports both sync and async operations.
+# Multi-turn state persists within a running server session.
+checkpointer = InMemorySaver()
 
 # 1. Initialize StateGraph
 builder = StateGraph(AgentState)
@@ -78,5 +68,5 @@ builder.add_edge("pricing", "synthesis")
 builder.add_edge("synthesis", END)
 builder.add_edge("checkout", END)
 
-# 5. Compile Runnable Graph with Postgres-backed checkpointing (multi-turn state)
+# 5. Compile Runnable Graph with checkpointing (multi-turn state)
 fashion_agent_graph = builder.compile(checkpointer=checkpointer)

@@ -12,6 +12,7 @@ import os
 import uuid
 import time
 import json
+import traceback
 import warnings
 from contextlib import asynccontextmanager
 from typing import List, Dict, Any, Optional
@@ -25,7 +26,7 @@ from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from graph import fashion_agent_graph, _pg_conn
+import graph as agent_graph
 from catalog_store import get_all_catalog_products, search_candidate_products
 from checkout_service import create_frozen_razorpay_order, verify_razorpay_payment_signature
 import history_store
@@ -36,10 +37,7 @@ from fastapi import Depends
 
 @asynccontextmanager
 async def lifespan(app):
-    # Startup: pools already created at import time
     yield
-    # Shutdown: close the LangGraph checkpointer connection
-    _pg_conn.close()
 
 app = FastAPI(title="Agentic E-Commerce API", version="1.0.0", lifespan=lifespan)
 
@@ -317,7 +315,7 @@ async def store_chat(req: ChatRequest, _rate_limit: None = Depends(enforce_chat_
             yield f"data: {json.dumps({'type': 'start', 'session_id': session_id})}\n\n"
 
             try:
-                async for event in fashion_agent_graph.astream_events(input_state, config=config, version="v2"):
+                async for event in agent_graph.fashion_agent_graph.astream_events(input_state, config=config, version="v2"):
                     event_type = event["event"]
                     name = event["name"]
 
@@ -410,6 +408,7 @@ async def store_chat(req: ChatRequest, _rate_limit: None = Depends(enforce_chat_
                 yield "data: [DONE]\n\n"
             except Exception as e:
                 print(f"[api/chat stream] Agent run failed: {e}")
+                traceback.print_exc()
                 error_text = "Styling service temporarily unavailable. Please try again in a moment."
                 # Persist an assistant error entry so history never shows an
                 # orphaned user message with no reply.
@@ -432,9 +431,10 @@ async def store_chat(req: ChatRequest, _rate_limit: None = Depends(enforce_chat_
 
     # Non-streaming fallback
     try:
-        res = await fashion_agent_graph.ainvoke(input_state, config=config)
+        res = await agent_graph.fashion_agent_graph.ainvoke(input_state, config=config)
     except Exception as e:
         print(f"[api/chat] Agent run failed: {e}")
+        traceback.print_exc()
         # Persist an assistant error entry so history never shows an orphaned
         # user message with no reply; return a generic client-facing error.
         try:
@@ -556,7 +556,7 @@ async def openai_chat_completions(req: OpenAICompletionRequest, _rate_limit: Non
             yield f"data: {json.dumps(first_chunk)}\n\n"
 
             try:
-                async for event in fashion_agent_graph.astream_events(input_state, config=config, version="v2"):
+                async for event in agent_graph.fashion_agent_graph.astream_events(input_state, config=config, version="v2"):
                     if event["event"] == "on_chat_model_stream" and event["name"] == "synthesis_llm":
                         chunk = event["data"]["chunk"]
                         if chunk and chunk.content:
@@ -573,6 +573,7 @@ async def openai_chat_completions(req: OpenAICompletionRequest, _rate_limit: Non
                             token_usage = out["token_usage"]
             except Exception as e:
                 print(f"[v1/chat/completions] Agent stream failed: {e}")
+                traceback.print_exc()
                 error_chunk = {
                     "id": completion_id, "object": "chat.completion.chunk",
                     "created": int(time.time()), "model": model_name,
@@ -594,9 +595,10 @@ async def openai_chat_completions(req: OpenAICompletionRequest, _rate_limit: Non
         return StreamingResponse(event_generator(), media_type="text/event-stream")
 
     try:
-        res = await fashion_agent_graph.ainvoke(input_state, config=config)
+        res = await agent_graph.fashion_agent_graph.ainvoke(input_state, config=config)
     except Exception as e:
         print(f"[v1/chat/completions] Agent run failed: {e}")
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail="The styling agent encountered an error. Please try again.")
     output_text = res.get("final_response") or "What are you looking for today?"
     usage = res.get("token_usage") or {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}

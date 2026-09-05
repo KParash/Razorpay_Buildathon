@@ -172,7 +172,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
             </div>
             <div>
               <h2 className="font-black text-zinc-900 dark:text-white text-sm flex items-center gap-2 uppercase tracking-wider">
-                AURA Personal Stylist
+                KAZU Personal Stylist
                 <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
               </h2>
               <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Powered by Swarm & Razorpay</p>

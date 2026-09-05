@@ -14,7 +14,7 @@ master_llm = ChatOpenAI(
     api_key=os.getenv("GROQ_API_KEY"),
     model="qwen/qwen3.8-27b",
     temperature=0.5,
-    max_tokens=500
+    max_tokens=500,
 )
 
 # High-Throughput Worker LLM (Deterministic Tailor, Textile, and Look Tasks)
@@ -23,7 +23,7 @@ worker_llm = ChatOpenAI(
     api_key=os.getenv("GROQ_API_KEY"),
     model="qwen/qwen3.8-27b",
     temperature=0.1,
-    max_tokens=250
+    max_tokens=600,
 )
 
 # -------------------------------------------------------------
@@ -166,12 +166,13 @@ Your Task:
    - For Kids: use words like 'kids tee', 'joggers', 'sneakers', 'hoodie'
    - For Beauty: use words like 'serum', 'lipstick', 'shampoo', 'perfume', 'face wash'
 
-Return valid structured output.
+You MUST respond with ONLY a valid JSON object (no markdown, no explanation) matching this exact schema:
+{{"occasion": "string or null", "destination_climate": "string or null", "target_delivery_date": "string or null", "max_budget": number_or_null, "formality_level": "string or null", "target_segment": "Men|Women|Kids|Beauty|unknown", "search_query": "string", "is_ready_to_recommend": true_or_false, "is_add_to_cart_requested": true_or_false, "is_checkout_requested": true_or_false, "target_skus_to_add": []}}
 """
 
     router_usage = dict(ZERO_USAGE)
     try:
-        structured_router = master_llm.with_structured_output(IntentParser, include_raw=True)
+        structured_router = master_llm.with_structured_output(IntentParser, method="json_mode", include_raw=True)
         out = await structured_router.ainvoke(prompt)
         parsed = out.get("parsed")
         if parsed is None:
@@ -379,7 +380,7 @@ async def size_worker_task(sku: dict, profile: dict) -> dict:
     meta = sku.get("metadata", {})
     segment = meta.get("segment", "Men")
     prompt = f"""
-You are a product specialist. Evaluate the right size/variant for this customer. Return valid JSON only.
+You are a product specialist. Evaluate the right size/variant for this customer.
 
 Product Details:
 - Title: {meta.get('title')}
@@ -393,9 +394,12 @@ Customer Profile:
 - Size History: {profile.get('size_history', {})}
 
 For beauty/skincare, return standard size. For kids' items, infer age group if known.
+
+You MUST respond with ONLY a valid JSON object (no markdown, no explanation):
+{{"recommended_size": "M", "fit_confidence": 0.85, "reasoning": "string"}}
 """
     try:
-        llm = worker_llm.with_structured_output(SizeVerdict, include_raw=True)
+        llm = worker_llm.with_structured_output(SizeVerdict, method="json_mode", include_raw=True)
         out = await llm.ainvoke(prompt)
         if out.get("parsed") is None:
             raise ValueError(f"structured parse failed: {out.get('parsing_error')}")
@@ -416,7 +420,7 @@ async def fabric_worker_task(sku: dict, climate: str) -> dict:
     fabric_desc = meta.get("fabric", "Premium Material")
     gsm = meta.get("gsm", "N/A")
     prompt = f"""
-You are a product material specialist. Evaluate suitability for the customer's setting. Return valid JSON only.
+You are a product material specialist. Evaluate suitability for the customer's setting.
 
 Product: {meta.get('title')}
 Segment: {segment}
@@ -426,9 +430,12 @@ Customer Setting / Climate: {climate}
 For apparel: assess breathability and climate viability.
 For beauty products: climate_pass is always true. Assess shelf suitability.
 For shoes/bags: assess durability and occasion fit.
+
+You MUST respond with ONLY a valid JSON object (no markdown, no explanation):
+{{"climate_pass": true, "wrinkle_risk": "Low", "comfort_notes": "string"}}
 """
     try:
-        llm = worker_llm.with_structured_output(FabricVerdict, include_raw=True)
+        llm = worker_llm.with_structured_output(FabricVerdict, method="json_mode", include_raw=True)
         out = await llm.ainvoke(prompt)
         if out.get("parsed") is None:
             raise ValueError(f"structured parse failed: {out.get('parsing_error')}")
@@ -447,7 +454,7 @@ async def stylist_worker_task(sku: dict, occasion: str) -> dict:
     meta = sku.get("metadata", {})
     segment = meta.get("segment", "Men")
     prompt = f"""
-You are an editorial stylist and beauty advisor. Generate pairing and styling advice. Return valid JSON only.
+You are an editorial stylist and beauty advisor. Generate pairing and styling advice.
 
 Anchor Product: {meta.get('title')}
 Segment: {segment}
@@ -457,9 +464,12 @@ Occasion / Setting: {occasion}
 For apparel: suggest complementary pieces and how to wear.
 For beauty: suggest complementary products in a routine or gifting set.
 For accessories: suggest outfits or occasions this best suits.
+
+You MUST respond with ONLY a valid JSON object (no markdown, no explanation):
+{{"paired_categories": ["category1", "category2"], "styling_tips": "string", "pairing_rationale": "string"}}
 """
     try:
-        llm = worker_llm.with_structured_output(StylistVerdict, include_raw=True)
+        llm = worker_llm.with_structured_output(StylistVerdict, method="json_mode", include_raw=True)
         out = await llm.ainvoke(prompt)
         if out.get("parsed") is None:
             raise ValueError(f"structured parse failed: {out.get('parsing_error')}")
