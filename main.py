@@ -12,8 +12,13 @@ import os
 import uuid
 import time
 import json
+import warnings
 from contextlib import asynccontextmanager
 from typing import List, Dict, Any, Optional
+
+# Suppress annoying LangChain/Pydantic v2 internal tracing serialization warnings
+warnings.filterwarnings("ignore", category=UserWarning, message=".*Pydantic.*")
+
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse
@@ -24,7 +29,7 @@ from graph import fashion_agent_graph, _pg_conn
 from catalog_store import get_all_catalog_products, search_candidate_products
 from checkout_service import create_frozen_razorpay_order, verify_razorpay_payment_signature
 import history_store
-from db import get_db, User, SubCategory, Product, Order, CartItem
+from db import get_db, User, SubCategory, Product, Order, CartItem, SessionLocal
 from sqlalchemy.orm import Session
 from fastapi import Depends
 
@@ -185,6 +190,17 @@ async def store_chat(req: ChatRequest):
 
     profile = (req.customer_profile or CustomerProfileInput()).model_dump()
     user_id = profile.get("user_id", "usr_guest")
+
+    # Fetch user's active cart items from DB and inject into profile for LLM context awareness
+    db_session = SessionLocal()
+    try:
+        db_cart = db_session.query(CartItem).filter_by(user_id=user_id).all()
+        profile["cart"] = [{"product_id": item.product_id, "size": item.size, "quantity": item.quantity} for item in db_cart]
+    except Exception as e:
+        print("Failed to load active cart for LLM profile context:", e)
+        profile["cart"] = []
+    finally:
+        db_session.close()
     
     # Save User message to history store
     user_msg_item = {
@@ -218,11 +234,29 @@ async def store_chat(req: ChatRequest):
             yield f"data: {json.dumps({'type': 'start', 'session_id': session_id})}\n\n"
 
             try:
-                async for event in fashion_agent_graph.astream(input_state, config=config, stream_mode="updates"):
-                    for node_name, node_output in event.items():
-                        accumulated_state.update(node_output)
-                        label = node_labels.get(node_name, f"Executing {node_name}...")
-                        yield f"data: {json.dumps({'type': 'step', 'node': node_name, 'label': label})}\n\n"
+                async for event in fashion_agent_graph.astream_events(input_state, config=config, version="v2"):
+                    event_type = event["event"]
+                    name = event["name"]
+
+                    # 1. Capture dynamic LLM tokens of the synthesis run
+                    if event_type == "on_chat_model_stream" and name == "synthesis_llm":
+                        chunk = event["data"]["chunk"]
+                        if chunk and chunk.content:
+                            yield f"data: {json.dumps({'type': 'token', 'text': chunk.content})}\n\n"
+
+                    # 2. Capture completed node transitions
+                    elif event_type == "on_chain_end" and name in node_labels:
+                        node_output = event["data"].get("output", {})
+                        if isinstance(node_output, dict):
+                            accumulated_state.update(node_output)
+                        label = node_labels.get(name, f"Executing {name}...")
+                        yield f"data: {json.dumps({'type': 'step', 'node': name, 'label': label})}\n\n"
+
+                    # 3. Capture overall final chain end state
+                    elif event_type == "on_chain_end" and name == "LangGraph":
+                        chain_output = event["data"].get("output", {})
+                        if isinstance(chain_output, dict):
+                            accumulated_state.update(chain_output)
             except Exception as e:
                 yield f"data: {json.dumps({'type': 'error', 'detail': str(e)})}\n\n"
                 return
@@ -249,6 +283,17 @@ async def store_chat(req: ChatRequest):
                     "image_url": anchor_meta.get("image_url")
                 }
 
+            intent = accumulated_state.get("intent") or {}
+            is_add_to_cart = intent.get("is_add_to_cart_requested", False)
+            add_to_cart_skus = []
+            if is_add_to_cart:
+                if accumulated_state.get("anchor_sku"):
+                    add_to_cart_skus.append(accumulated_state["anchor_sku"]["sku_id"])
+                paired_items = (accumulated_state.get("outfit") or {}).get("paired_skus", [])
+                for item in paired_items:
+                    if item.get("sku_id"):
+                        add_to_cart_skus.append(item["sku_id"])
+
             # Save Assistant message to history store
             asst_msg_item = {
                 "id": f"asst-{int(time.time()*1000)}",
@@ -261,7 +306,9 @@ async def store_chat(req: ChatRequest):
                 "pricing_result": accumulated_state.get("pricing_result"),
                 "suggested_questions": accumulated_state.get("suggested_questions", []),
                 "checkout_ready": accumulated_state.get("checkout_ready", False),
-                "razorpay_order": accumulated_state.get("razorpay_order")
+                "razorpay_order": accumulated_state.get("razorpay_order"),
+                "add_to_cart_triggered": is_add_to_cart,
+                "add_to_cart_skus": add_to_cart_skus
             }
             history_store.save_message_to_session(session_id, asst_msg_item, user_id=user_id)
 
@@ -278,7 +325,9 @@ async def store_chat(req: ChatRequest):
                 "pricing_result": accumulated_state.get("pricing_result"),
                 "suggested_questions": accumulated_state.get("suggested_questions", []),
                 "checkout_ready": accumulated_state.get("checkout_ready", False),
-                "razorpay_order": accumulated_state.get("razorpay_order")
+                "razorpay_order": accumulated_state.get("razorpay_order"),
+                "add_to_cart_triggered": is_add_to_cart,
+                "add_to_cart_skus": add_to_cart_skus
             }
 
             yield f"data: {json.dumps(final_payload)}\n\n"
@@ -314,6 +363,17 @@ async def store_chat(req: ChatRequest):
             "image_url": anchor_meta.get("image_url")
         }
 
+    intent_obj = res.get("intent") or {}
+    is_add_to_cart_res = intent_obj.get("is_add_to_cart_requested", False)
+    add_to_cart_skus_res = []
+    if is_add_to_cart_res:
+        if res.get("anchor_sku"):
+            add_to_cart_skus_res.append(res["anchor_sku"]["sku_id"])
+        paired_items = (res.get("outfit") or {}).get("paired_skus", [])
+        for item in paired_items:
+            if item.get("sku_id"):
+                add_to_cart_skus_res.append(item["sku_id"])
+
     # Save Assistant message to history store
     asst_msg_item = {
         "id": f"asst-{int(time.time()*1000)}",
@@ -325,7 +385,9 @@ async def store_chat(req: ChatRequest):
         "evaluations": res.get("evaluations", []),
         "pricing_result": res.get("pricing_result"),
         "checkout_ready": res.get("checkout_ready", False),
-        "razorpay_order": res.get("razorpay_order")
+        "razorpay_order": res.get("razorpay_order"),
+        "add_to_cart_triggered": is_add_to_cart_res,
+        "add_to_cart_skus": add_to_cart_skus_res
     }
     history_store.save_message_to_session(session_id, asst_msg_item, user_id=user_id)
 
@@ -340,7 +402,9 @@ async def store_chat(req: ChatRequest):
         "evaluations": res.get("evaluations", []),
         "pricing_result": res.get("pricing_result"),
         "checkout_ready": res.get("checkout_ready", False),
-        "razorpay_order": res.get("razorpay_order")
+        "razorpay_order": res.get("razorpay_order"),
+        "add_to_cart_triggered": is_add_to_cart_res,
+        "add_to_cart_skus": add_to_cart_skus_res
     }
 
 

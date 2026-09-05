@@ -177,6 +177,11 @@ export const ChatPage: React.FC<ChatPageProps> = ({
   // Sync currentSessionId and load messages when URL session_id changes
   useEffect(() => {
     if (session_id) {
+      // If the state is already loaded with this session's messages, skip re-fetching and avoid flickering
+      if (session_id === currentSessionId && messages.length > 1) {
+        return;
+      }
+
       setCurrentSessionId(session_id);
       setIsLoadingHistory(true);
       
@@ -197,10 +202,13 @@ export const ChatPage: React.FC<ChatPageProps> = ({
           setIsLoadingHistory(false);
         });
     } else {
-      // No session_id in URL, start with welcome screen
-      setMessages([INITIAL_WELCOME_MSG]);
+      // No session_id in URL, check if we are currently loading an initial prompt
+      const hasInitialPrompt = location.state && (location.state as any).initialPrompt;
+      if (!hasInitialPrompt) {
+        setMessages([INITIAL_WELCOME_MSG]);
+      }
     }
-  }, [session_id]);
+  }, [session_id, currentSessionId]);
 
   // Switch / Load Session History
   const handleSelectSession = (sessionId: string) => {
@@ -296,6 +304,25 @@ export const ChatPage: React.FC<ChatPageProps> = ({
             const parsed = JSON.parse(dataStr);
             if (parsed.type === 'step') {
               setActiveAgentStep(parsed.label);
+            } else if (parsed.type === 'token') {
+              setMessages((prev) => {
+                const existing = prev.find((m) => m.id === 'streaming-asst');
+                if (existing) {
+                  return prev.map((m) =>
+                    m.id === 'streaming-asst' ? { ...m, text: m.text + parsed.text } : m
+                  );
+                } else {
+                  return [
+                    ...prev,
+                    {
+                      id: 'streaming-asst',
+                      sender: 'assistant',
+                      text: parsed.text,
+                      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    },
+                  ];
+                }
+              });
             } else if (parsed.type === 'final') {
               finalDataReceived = parsed;
             } else if (parsed.type === 'error') {
@@ -341,12 +368,29 @@ export const ChatPage: React.FC<ChatPageProps> = ({
           razorpay_order: data.razorpay_order,
         };
 
-        setMessages((prev) => [...prev, assistantMsg]);
+        setMessages((prev) => {
+          const filtered = prev.filter((m) => m.id !== 'streaming-asst');
+          return [...filtered, assistantMsg];
+        });
         fetchSessions();
 
         // If they were on a new blank session ('/chat'), update URL to '/chat/:session_id'
         if (!session_id) {
           navigate(`/chat/${currentSessionId}`, { replace: true });
+        }
+
+        // If the chatbot triggered adding items to the cart
+        if (data.add_to_cart_triggered && Array.isArray(data.add_to_cart_skus)) {
+          data.add_to_cart_skus.forEach((skuId: string) => {
+            const isInCart = cart.some((c) => c.sku_id === skuId);
+            if (!isInCart) {
+              const fullProduct = products.find((p) => p.sku_id === skuId);
+              if (fullProduct) {
+                const sizeVerdict = data.evaluations?.[0]?.size_verdict?.recommended_size || 'L';
+                onAddToCart(fullProduct, sizeVerdict);
+              }
+            }
+          });
         }
 
         // Auto-launch Razorpay modal if client explicitly requested checkout

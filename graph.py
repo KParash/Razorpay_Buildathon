@@ -46,7 +46,7 @@ def route_after_input(state: AgentState) -> str:
     # Only allow checkout if evaluations exist (i.e., a recommendation was made)
     if intent.get("is_checkout_requested") and state.get("evaluations"):
         return "checkout"
-    if intent.get("is_ready_to_recommend"):
+    if intent.get("is_ready_to_recommend") or intent.get("is_add_to_cart_requested"):
         return "retriever"
     return "clarifier"
 
