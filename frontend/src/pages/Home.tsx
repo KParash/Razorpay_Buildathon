@@ -34,15 +34,6 @@ export const Home: React.FC<HomeProps> = ({
   };
 
   const filteredProducts = products.filter((p) => {
-    const q = searchQuery.toLowerCase();
-    const titleMatch = p.metadata.title?.toLowerCase().includes(q) || false;
-    const catMatch = p.metadata.category?.toLowerCase().includes(q) || false;
-    const subMatch = p.metadata.sub_category?.toLowerCase().includes(q) || false;
-    const descMatch = p.metadata.description?.toLowerCase().includes(q) || false;
-    const fabricMatch = p.metadata.fabric?.toLowerCase().includes(q) || false;
-
-    const matchesSearch = !q || titleMatch || catMatch || subMatch || descMatch || fabricMatch;
-    
     // Segment filter using the `segment` metadata field
     let matchesSegment = true;
     if (activeSegment && activeSegment !== 'all') {
@@ -50,7 +41,7 @@ export const Home: React.FC<HomeProps> = ({
       matchesSegment = productSegment === activeSegment.toLowerCase();
     }
 
-    return matchesSearch && matchesSegment;
+    return matchesSegment;
   });
 
   return (

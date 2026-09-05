@@ -6,6 +6,7 @@ import { Home } from './pages/Home';
 import { ChatPage } from './pages/ChatPage';
 import { ProductDetailsPage } from './pages/ProductDetailsPage';
 import { OrdersPage } from './pages/OrdersPage';
+import { SearchPage } from './pages/SearchPage';
 import { Product } from './types/product';
 
 
@@ -212,6 +213,18 @@ export function App() {
           path="/orders"
           element={
             <OrdersPage />
+          }
+        />
+        <Route
+          path="/search"
+          element={
+            <SearchPage
+              products={products}
+              cart={cart}
+              onAddToCart={handleAddToCart}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+            />
           }
         />
       </Routes>
