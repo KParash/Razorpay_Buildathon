@@ -28,6 +28,37 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Intermediate palette steps used throughout the design system that are not
+   part of Tailwind's default 50–950 scale — interpolated from stock values so
+   classes like `border-zinc-850` actually generate CSS instead of no-opping. */
+@theme {
+  --color-zinc-150: #ececee; /* 100 → 200 */
+  --color-zinc-250: #dcdcdf; /* 200 → 300 */
+  --color-zinc-350: #bbbbc1; /* 300 → 400 */
+  --color-zinc-405: #9898a2; /* 400 → 500 */
+  --color-zinc-450: #898992; /* 400 → 500 */
+  --color-zinc-505: #6d6d76; /* 500 → 600 */
+  --color-zinc-550: #62626a; /* 500 → 600 */
+  --color-zinc-555: #5f5f68; /* 500 → 600 */
+  --color-zinc-650: #494951; /* 600 → 700 */
+  --color-zinc-655: #46464d; /* 600 → 700 */
+  --color-zinc-805: #262629; /* 800 → 900 */
+  --color-zinc-850: #1f1f22; /* 800 → 900 */
+  --color-zinc-855: #1e1e21; /* 800 → 900 */
+  --color-zinc-905: #17171a; /* 900 → 950 */
+
+  --color-purple-450: #b46dfa; /* 400 → 500 */
+  --color-purple-750: #7522bb; /* 700 → 800 */
+  --color-purple-850: #621e97; /* 800 → 900 */
+
+  --color-emerald-250: #8aedc4; /* 200 → 300 */
+  --color-emerald-450: #22c68d; /* 400 → 500 */
+  --color-emerald-850: #065741; /* 800 → 900 */
+
+  --color-red-450: #f35b5b;    /* 400 → 500 */
+  --color-rose-550: #eb2e53;   /* 500 → 600 */
+}
+
 body {
   @apply bg-[#f4f2ee] text-[#121212] dark:bg-[#0c0c0d] dark:text-[#f2f2f0] transition-colors duration-300;
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;

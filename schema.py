@@ -34,6 +34,11 @@ class ProductEvaluation(TypedDict):
     is_disqualified: bool
     rejection_reason: Optional[str]
 
+class TokenUsage(TypedDict, total=False):
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+
 class AgentState(TypedDict):
     # Appends new messages to chat log
     messages: Annotated[List[Dict[str, str]], operator.add]
@@ -42,9 +47,15 @@ class AgentState(TypedDict):
     candidate_skus: List[Dict[str, Any]]
     anchor_sku: Optional[Dict[str, Any]]
     outfit: Optional[OutfitCoordination]
-    evaluations: Annotated[List[ProductEvaluation], operator.add]
+    # Overwritten per turn (NOT appended) so synthesis/checkout always see the
+    # current turn's verdicts; persists across turns via the checkpointer when
+    # no node emits it (needed by the checkout-route guard).
+    evaluations: List[ProductEvaluation]
     pricing_result: Optional[Dict[str, Any]]
     suggested_questions: Optional[List[str]]
     final_response: Optional[str]
     checkout_ready: bool
     razorpay_order: Optional[Dict[str, Any]]
+    # Per-TURN token accounting (plain overwrite channel): the router resets it
+    # each turn; downstream nodes merge their own usage onto the running total.
+    token_usage: TokenUsage

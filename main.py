@@ -19,7 +19,7 @@ from typing import List, Dict, Any, Optional
 # Suppress annoying LangChain/Pydantic v2 internal tracing serialization warnings
 warnings.filterwarnings("ignore", category=UserWarning, message=".*Pydantic.*")
 
-from fastapi import FastAPI, HTTPException, Body
+from fastapi import FastAPI, HTTPException, Body, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -43,14 +43,63 @@ async def lifespan(app):
 
 app = FastAPI(title="Agentic E-Commerce API", version="1.0.0", lifespan=lifespan)
 
-# Enable CORS for Vite frontend & external clients (e.g., LibreChat)
+# CORS: explicit allowlist (wildcard + credentials is invalid per the CORS spec).
+# Override in production via FRONTEND_ORIGINS="https://app.example.com,https://...".
+_allowed_origins_env = os.getenv("FRONTEND_ORIGINS", "")
+ALLOWED_ORIGINS = (
+    [o.strip() for o in _allowed_origins_env.split(",") if o.strip()]
+    or [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
+)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# -------------------------------------------------------------------
+# In-Memory Rate Limiting (chat endpoints burn external LLM quota)
+# -------------------------------------------------------------------
+class RateLimiter:
+    """Simple in-memory sliding-window rate limiter keyed by client identity."""
+
+    def __init__(self, max_requests: int = 20, window_seconds: int = 60):
+        self.max_requests = max_requests
+        self.window_seconds = window_seconds
+        self._hits: Dict[str, List[float]] = {}
+
+    def check(self, key: str) -> bool:
+        now = time.time()
+        hits = [t for t in self._hits.get(key, []) if now - t < self.window_seconds]
+        if len(hits) >= self.max_requests:
+            self._hits[key] = hits
+            return False
+        hits.append(now)
+        self._hits[key] = hits
+        # Opportunistic cleanup so the map doesn't grow unboundedly
+        if len(self._hits) > 1000:
+            cutoff = now - self.window_seconds
+            self._hits = {k: v for k, v in self._hits.items() if any(t > cutoff for t in v)}
+        return True
+
+
+chat_rate_limiter = RateLimiter(
+    max_requests=int(os.getenv("CHAT_RATE_LIMIT_PER_MIN", "20")),
+    window_seconds=60,
+)
+
+
+def enforce_chat_rate_limit(request: Request):
+    client_ip = request.client.host if request.client else "unknown"
+    if not chat_rate_limiter.check(client_ip):
+        raise HTTPException(status_code=429, detail="Too many requests — please slow down and retry in a minute.")
 
 # -------------------------------------------------------------------
 # Request / Response Schemas
@@ -93,7 +142,7 @@ class VerifyPaymentRequest(BaseModel):
 class AddCartItemRequest(BaseModel):
     user_id: str = "usr_guest"
     product_id: str
-    quantity: Optional[int] = 1
+    quantity: int = Field(1, ge=1, le=99)
     size: Optional[str] = "L"
 
 class RemoveCartItemRequest(BaseModel):
@@ -107,6 +156,36 @@ class ClearCartRequest(BaseModel):
 class SaveSearchRequest(BaseModel):
     user_id: str = "usr_guest"
     query: str
+
+
+def _compute_add_to_cart_skus(intent: Dict[str, Any], state_dict: Dict[str, Any]) -> List[str]:
+    """
+    Determine which SKUs to add to the cart when the user asked for it.
+
+    Honors the LLM's selective `target_skus_to_add`; falls back to the anchor
+    plus all paired outfit pieces only when no explicit selection was made or
+    the selection matched nothing the agent actually surfaced.
+    """
+    if not intent.get("is_add_to_cart_requested"):
+        return []
+
+    anchor = state_dict.get("anchor_sku") or {}
+    anchor_id = anchor.get("sku_id")
+    paired_ids = [
+        p.get("sku_id")
+        for p in (state_dict.get("outfit") or {}).get("paired_skus", [])
+        if p.get("sku_id")
+    ]
+    candidate_ids = [c.get("sku_id") for c in state_dict.get("candidate_skus", []) if c.get("sku_id")]
+    known_ids = set(candidate_ids) | set(paired_ids) | ({anchor_id} if anchor_id else set())
+
+    requested = intent.get("target_skus_to_add") or []
+    if isinstance(requested, list) and requested:
+        selected = [sku for sku in dict.fromkeys(requested) if sku in known_ids]
+        if selected:
+            return selected
+
+    return ([anchor_id] if anchor_id else []) + [sku for sku in paired_ids if sku != anchor_id]
 
 
 
@@ -167,19 +246,23 @@ async def get_sessions(user_id: str = "usr_guest"):
     return {"status": "success", "sessions": sessions}
 
 @app.get("/api/chat/history/{session_id}")
-async def get_chat_history(session_id: str):
-    """Retrieve all messages for a specific session."""
-    messages = history_store.get_session_messages(session_id)
+async def get_chat_history(session_id: str, user_id: str = "usr_guest"):
+    """Retrieve all messages for a specific session (owner only)."""
+    messages = history_store.get_session_messages(session_id, user_id=user_id)
+    if messages is None:
+        raise HTTPException(status_code=404, detail="Session not found or access denied")
     return {"status": "success", "session_id": session_id, "messages": messages}
 
 @app.delete("/api/chat/sessions/{session_id}")
-async def delete_chat_session(session_id: str):
-    """Delete a chat session."""
-    deleted = history_store.delete_session(session_id)
-    return {"status": "success", "deleted": deleted}
+async def delete_chat_session(session_id: str, user_id: str = "usr_guest"):
+    """Delete a chat session (owner only)."""
+    deleted = history_store.delete_session(session_id, user_id=user_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Session not found or access denied")
+    return {"status": "success", "deleted": True}
 
 @app.post("/api/chat")
-async def store_chat(req: ChatRequest):
+async def store_chat(req: ChatRequest, _rate_limit: None = Depends(enforce_chat_rate_limit)):
     """
     Main Chat API invoked by the frontend chat drawer and studio widget.
     Executes fashion_agent_graph with session memory checkpointer and persists message history.
@@ -257,81 +340,93 @@ async def store_chat(req: ChatRequest):
                         chain_output = event["data"].get("output", {})
                         if isinstance(chain_output, dict):
                             accumulated_state.update(chain_output)
-            except Exception as e:
-                yield f"data: {json.dumps({'type': 'error', 'detail': str(e)})}\n\n"
-                return
 
-            # Extract final text response
-            final_response = accumulated_state.get("final_response") or ""
-            if not final_response and accumulated_state.get("messages"):
-                final_response = accumulated_state["messages"][-1].get("content", "")
+                # Payload assembly & persistence live INSIDE the try so a failure
+                # mid-stream still produces a terminal error event instead of an
+                # abruptly truncated SSE stream.
+                final_response = accumulated_state.get("final_response") or ""
+                if not final_response and accumulated_state.get("messages"):
+                    final_response = accumulated_state["messages"][-1].get("content", "")
 
-            anchor = accumulated_state.get("anchor_sku")
-            anchor_meta = anchor.get("metadata") if anchor else None
+                anchor = accumulated_state.get("anchor_sku")
+                anchor_meta = anchor.get("metadata") if anchor else None
 
-            # Prepare recommendation object for frontend rendering & persistence
-            recommendation_obj = None
-            if anchor_meta:
-                recommendation_obj = {
-                    "sku_id": anchor.get("sku_id"),
-                    "title": anchor_meta.get("title"),
-                    "price": float(anchor_meta.get("price", 0)),
-                    "fit_type": anchor_meta.get("fit_type"),
-                    "fabric": anchor_meta.get("fabric"),
-                    "gsm": anchor_meta.get("gsm"),
-                    "color": anchor_meta.get("color"),
-                    "image_url": anchor_meta.get("image_url")
+                # Prepare recommendation object for frontend rendering & persistence
+                recommendation_obj = None
+                if anchor_meta:
+                    recommendation_obj = {
+                        "sku_id": anchor.get("sku_id"),
+                        "title": anchor_meta.get("title"),
+                        "price": float(anchor_meta.get("price", 0)),
+                        "fit_type": anchor_meta.get("fit_type"),
+                        "fabric": anchor_meta.get("fabric"),
+                        "gsm": anchor_meta.get("gsm"),
+                        "color": anchor_meta.get("color"),
+                        "image_url": anchor_meta.get("image_url")
+                    }
+
+                intent = accumulated_state.get("intent") or {}
+                is_add_to_cart = intent.get("is_add_to_cart_requested", False)
+                add_to_cart_skus = _compute_add_to_cart_skus(intent, accumulated_state)
+
+                # Save Assistant message to history store
+                asst_msg_item = {
+                    "id": f"asst-{int(time.time()*1000)}",
+                    "sender": "assistant",
+                    "text": final_response or "Here is my tailored recommendation for you.",
+                    "timestamp": time.strftime("%I:%M %p"),
+                    "recommendation": recommendation_obj,
+                    "candidate_skus": accumulated_state.get("candidate_skus", []),
+                    "evaluations": accumulated_state.get("evaluations", []),
+                    "pricing_result": accumulated_state.get("pricing_result"),
+                    "suggested_questions": accumulated_state.get("suggested_questions", []),
+                    "checkout_ready": accumulated_state.get("checkout_ready", False),
+                    "razorpay_order": accumulated_state.get("razorpay_order"),
+                    "add_to_cart_triggered": is_add_to_cart,
+                    "add_to_cart_skus": add_to_cart_skus
+                }
+                history_store.save_message_to_session(session_id, asst_msg_item, user_id=user_id)
+
+                final_payload = {
+                    "type": "final",
+                    "status": "success",
+                    "session_id": session_id,
+                    "message": final_response,
+                    "intent": accumulated_state.get("intent"),
+                    "anchor_sku": accumulated_state.get("anchor_sku"),
+                    "candidate_skus": accumulated_state.get("candidate_skus", []),
+                    "outfit": accumulated_state.get("outfit"),
+                    "evaluations": accumulated_state.get("evaluations", []),
+                    "pricing_result": accumulated_state.get("pricing_result"),
+                    "suggested_questions": accumulated_state.get("suggested_questions", []),
+                    "checkout_ready": accumulated_state.get("checkout_ready", False),
+                    "razorpay_order": accumulated_state.get("razorpay_order"),
+                    "add_to_cart_triggered": is_add_to_cart,
+                    "add_to_cart_skus": add_to_cart_skus,
+                    "token_usage": accumulated_state.get("token_usage")
                 }
 
-            intent = accumulated_state.get("intent") or {}
-            is_add_to_cart = intent.get("is_add_to_cart_requested", False)
-            add_to_cart_skus = []
-            if is_add_to_cart:
-                if accumulated_state.get("anchor_sku"):
-                    add_to_cart_skus.append(accumulated_state["anchor_sku"]["sku_id"])
-                paired_items = (accumulated_state.get("outfit") or {}).get("paired_skus", [])
-                for item in paired_items:
-                    if item.get("sku_id"):
-                        add_to_cart_skus.append(item["sku_id"])
-
-            # Save Assistant message to history store
-            asst_msg_item = {
-                "id": f"asst-{int(time.time()*1000)}",
-                "sender": "assistant",
-                "text": final_response or "Here is my tailored recommendation for you.",
-                "timestamp": time.strftime("%I:%M %p"),
-                "recommendation": recommendation_obj,
-                "candidate_skus": accumulated_state.get("candidate_skus", []),
-                "evaluations": accumulated_state.get("evaluations", []),
-                "pricing_result": accumulated_state.get("pricing_result"),
-                "suggested_questions": accumulated_state.get("suggested_questions", []),
-                "checkout_ready": accumulated_state.get("checkout_ready", False),
-                "razorpay_order": accumulated_state.get("razorpay_order"),
-                "add_to_cart_triggered": is_add_to_cart,
-                "add_to_cart_skus": add_to_cart_skus
-            }
-            history_store.save_message_to_session(session_id, asst_msg_item, user_id=user_id)
-
-            final_payload = {
-                "type": "final",
-                "status": "success",
-                "session_id": session_id,
-                "message": final_response,
-                "intent": accumulated_state.get("intent"),
-                "anchor_sku": accumulated_state.get("anchor_sku"),
-                "candidate_skus": accumulated_state.get("candidate_skus", []),
-                "outfit": accumulated_state.get("outfit"),
-                "evaluations": accumulated_state.get("evaluations", []),
-                "pricing_result": accumulated_state.get("pricing_result"),
-                "suggested_questions": accumulated_state.get("suggested_questions", []),
-                "checkout_ready": accumulated_state.get("checkout_ready", False),
-                "razorpay_order": accumulated_state.get("razorpay_order"),
-                "add_to_cart_triggered": is_add_to_cart,
-                "add_to_cart_skus": add_to_cart_skus
-            }
-
-            yield f"data: {json.dumps(final_payload)}\n\n"
-            yield "data: [DONE]\n\n"
+                yield f"data: {json.dumps(final_payload)}\n\n"
+                yield "data: [DONE]\n\n"
+            except Exception as e:
+                print(f"[api/chat stream] Agent run failed: {e}")
+                error_text = "Styling service temporarily unavailable. Please try again in a moment."
+                # Persist an assistant error entry so history never shows an
+                # orphaned user message with no reply.
+                try:
+                    history_store.save_message_to_session(
+                        session_id,
+                        {
+                            "id": f"asst-err-{int(time.time()*1000)}",
+                            "sender": "assistant",
+                            "text": f"⚠️ {error_text}",
+                            "timestamp": time.strftime("%I:%M %p")
+                        },
+                        user_id=user_id,
+                    )
+                except Exception as save_err:
+                    print(f"[api/chat stream] Failed to persist error message: {save_err}")
+                yield f"data: {json.dumps({'type': 'error', 'detail': error_text})}\n\n"
 
         return StreamingResponse(chat_event_stream(), media_type="text/event-stream")
 
@@ -339,7 +434,23 @@ async def store_chat(req: ChatRequest):
     try:
         res = await fashion_agent_graph.ainvoke(input_state, config=config)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Agent error: {str(e)}")
+        print(f"[api/chat] Agent run failed: {e}")
+        # Persist an assistant error entry so history never shows an orphaned
+        # user message with no reply; return a generic client-facing error.
+        try:
+            history_store.save_message_to_session(
+                session_id,
+                {
+                    "id": f"asst-err-{int(time.time()*1000)}",
+                    "sender": "assistant",
+                    "text": "⚠️ Styling service temporarily unavailable. Please try again in a moment.",
+                    "timestamp": time.strftime("%I:%M %p")
+                },
+                user_id=user_id,
+            )
+        except Exception as save_err:
+            print(f"[api/chat] Failed to persist error message: {save_err}")
+        raise HTTPException(status_code=500, detail="The styling agent encountered an error. Please try again.")
 
     # Extract final text response
     final_response = res.get("final_response") or ""
@@ -365,14 +476,7 @@ async def store_chat(req: ChatRequest):
 
     intent_obj = res.get("intent") or {}
     is_add_to_cart_res = intent_obj.get("is_add_to_cart_requested", False)
-    add_to_cart_skus_res = []
-    if is_add_to_cart_res:
-        if res.get("anchor_sku"):
-            add_to_cart_skus_res.append(res["anchor_sku"]["sku_id"])
-        paired_items = (res.get("outfit") or {}).get("paired_skus", [])
-        for item in paired_items:
-            if item.get("sku_id"):
-                add_to_cart_skus_res.append(item["sku_id"])
+    add_to_cart_skus_res = _compute_add_to_cart_skus(intent_obj, res)
 
     # Save Assistant message to history store
     asst_msg_item = {
@@ -404,7 +508,8 @@ async def store_chat(req: ChatRequest):
         "checkout_ready": res.get("checkout_ready", False),
         "razorpay_order": res.get("razorpay_order"),
         "add_to_cart_triggered": is_add_to_cart_res,
-        "add_to_cart_skus": add_to_cart_skus_res
+        "add_to_cart_skus": add_to_cart_skus_res,
+        "token_usage": res.get("token_usage")
     }
 
 
@@ -412,7 +517,7 @@ async def store_chat(req: ChatRequest):
 # 3. OpenAI-Compatible API Endpoint (For LibreChat Integration)
 # -------------------------------------------------------------------
 @app.post("/v1/chat/completions")
-async def openai_chat_completions(req: OpenAICompletionRequest):
+async def openai_chat_completions(req: OpenAICompletionRequest, _rate_limit: None = Depends(enforce_chat_rate_limit)):
     """
     OpenAI-compatible endpoint allowing LibreChat or any OpenAI API client
     to communicate directly with fashion_agent_graph.
@@ -435,46 +540,79 @@ async def openai_chat_completions(req: OpenAICompletionRequest):
         "customer_profile": default_profile
     }
 
+    completion_id = f"chatcmpl-{uuid.uuid4().hex[:12]}"
+    model_name = req.model or "fashion-recommendation-agent"
+
     if req.stream:
         async def event_generator():
-            res = await fashion_agent_graph.ainvoke(input_state, config=config)
-            output_text = res.get("final_response") or "What are you looking for today?"
-            
-            chunk = {
-                "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
-                "object": "chat.completion.chunk",
-                "created": int(time.time()),
-                "model": req.model or "fashion-recommendation-agent",
-                "choices": [{
-                    "index": 0,
-                    "delta": {"role": "assistant", "content": output_text},
-                    "finish_reason": "stop"
-                }]
+            # Real token streaming: forward synthesis LLM chunks as they arrive
+            token_usage: Dict[str, int] = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+
+            first_chunk = {
+                "id": completion_id, "object": "chat.completion.chunk",
+                "created": int(time.time()), "model": model_name,
+                "choices": [{"index": 0, "delta": {"role": "assistant"}, "finish_reason": None}]
             }
-            yield f"data: {json.dumps(chunk)}\n\n"
+            yield f"data: {json.dumps(first_chunk)}\n\n"
+
+            try:
+                async for event in fashion_agent_graph.astream_events(input_state, config=config, version="v2"):
+                    if event["event"] == "on_chat_model_stream" and event["name"] == "synthesis_llm":
+                        chunk = event["data"]["chunk"]
+                        if chunk and chunk.content:
+                            payload = {
+                                "id": completion_id, "object": "chat.completion.chunk",
+                                "created": int(time.time()), "model": model_name,
+                                "choices": [{"index": 0, "delta": {"content": chunk.content}, "finish_reason": None}]
+                            }
+                            yield f"data: {json.dumps(payload)}\n\n"
+                    elif event["event"] == "on_chain_end":
+                        # Nodes emit cumulative per-turn token_usage — last writer wins
+                        out = event["data"].get("output", {})
+                        if isinstance(out, dict) and isinstance(out.get("token_usage"), dict):
+                            token_usage = out["token_usage"]
+            except Exception as e:
+                print(f"[v1/chat/completions] Agent stream failed: {e}")
+                error_chunk = {
+                    "id": completion_id, "object": "chat.completion.chunk",
+                    "created": int(time.time()), "model": model_name,
+                    "choices": [{"index": 0, "delta": {"content": "Styling service temporarily unavailable. Please try again."}, "finish_reason": "stop"}]
+                }
+                yield f"data: {json.dumps(error_chunk)}\n\n"
+                yield "data: [DONE]\n\n"
+                return
+
+            final_chunk = {
+                "id": completion_id, "object": "chat.completion.chunk",
+                "created": int(time.time()), "model": model_name,
+                "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+                "usage": token_usage
+            }
+            yield f"data: {json.dumps(final_chunk)}\n\n"
             yield "data: [DONE]\n\n"
 
         return StreamingResponse(event_generator(), media_type="text/event-stream")
-    else:
-        res = await fashion_agent_graph.ainvoke(input_state, config=config)
-        output_text = res.get("final_response") or "What are you looking for today?"
 
-        return {
-            "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
-            "object": "chat.completion",
-            "created": int(time.time()),
-            "model": req.model or "fashion-recommendation-agent",
-            "choices": [{
-                "index": 0,
-                "message": {"role": "assistant", "content": output_text},
-                "finish_reason": "stop"
-            }],
-            "usage": {
-                "prompt_tokens": 100,
-                "completion_tokens": 50,
-                "total_tokens": 150
-            }
-        }
+    try:
+        res = await fashion_agent_graph.ainvoke(input_state, config=config)
+    except Exception as e:
+        print(f"[v1/chat/completions] Agent run failed: {e}")
+        raise HTTPException(status_code=500, detail="The styling agent encountered an error. Please try again.")
+    output_text = res.get("final_response") or "What are you looking for today?"
+    usage = res.get("token_usage") or {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+
+    return {
+        "id": completion_id,
+        "object": "chat.completion",
+        "created": int(time.time()),
+        "model": model_name,
+        "choices": [{
+            "index": 0,
+            "message": {"role": "assistant", "content": output_text},
+            "finish_reason": "stop"
+        }],
+        "usage": usage
+    }
 
 
 # -------------------------------------------------------------------
@@ -524,37 +662,45 @@ async def add_to_cart(req: AddCartItemRequest, db: Session = Depends(get_db)):
     if not prod:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    item = db.query(CartItem).filter_by(user_id=user_id, product_id=req.product_id, size=req.size).first()
-    if item:
-        item.quantity += (req.quantity or 1)
-    else:
-        item = CartItem(
-            user_id=user_id,
-            product_id=req.product_id,
-            quantity=req.quantity or 1,
-            size=req.size or "L"
+    size = (req.size or "L").strip() or "L"
+    size_options = prod.size_options or []
+    if size_options and size not in size_options:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid size '{size}' for this product. Available: {', '.join(map(str, size_options))}"
         )
-        db.add(item)
 
+    # Atomic upsert — avoids the check-then-insert race that created duplicate rows
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+    stmt = pg_insert(CartItem).values(
+        user_id=user_id,
+        product_id=req.product_id,
+        quantity=req.quantity,
+        size=size,
+    )
+    stmt = stmt.on_conflict_do_update(
+        constraint="uq_cart_items_user_product_size",
+        set_={"quantity": CartItem.quantity + stmt.excluded.quantity},
+    )
+    db.execute(stmt)
     db.commit()
-    db.refresh(item)
-    return {"status": "success", "message": "Product added to cart", "cart_item_id": item.cart_item_id}
+
+    item = db.query(CartItem).filter_by(user_id=user_id, product_id=req.product_id, size=size).first()
+    return {"status": "success", "message": "Product added to cart", "cart_item_id": item.cart_item_id if item else None}
 
 @app.post("/api/cart/remove")
 async def remove_from_cart(req: RemoveCartItemRequest, db: Session = Depends(get_db)):
     """Remove a product item from the user's persistent cart database."""
     user_id = req.user_id or "usr_guest"
+    # Strict size match — removing "any" row with this product_id could delete
+    # the wrong size variant.
     item = db.query(CartItem).filter_by(user_id=user_id, product_id=req.product_id, size=req.size).first()
     if not item:
-        # Fallback: remove any item matching product_id regardless of size if specific size not found
-        item = db.query(CartItem).filter_by(user_id=user_id, product_id=req.product_id).first()
-    
-    if item:
-        db.delete(item)
-        db.commit()
-        return {"status": "success", "message": "Product removed from cart"}
-    
-    return {"status": "success", "message": "Product was not in cart"}
+        raise HTTPException(status_code=404, detail="Cart item not found for this product and size")
+
+    db.delete(item)
+    db.commit()
+    return {"status": "success", "message": "Product removed from cart"}
 
 @app.post("/api/cart/clear")
 async def clear_cart(req: ClearCartRequest, db: Session = Depends(get_db)):

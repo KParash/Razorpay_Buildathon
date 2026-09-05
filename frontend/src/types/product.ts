@@ -21,6 +21,12 @@ export interface Product {
   metadata: ProductMetadata;
 }
 
+/** A cart entry: product plus the user's chosen size/quantity from the DB cart. */
+export interface CartLineItem extends Product {
+  selected_size?: string;
+  quantity?: number;
+}
+
 export const SKU_IMAGES: Record<string, string> = {
   SKU_001: 'https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=800&auto=format&fit=crop&q=80',
   SKU_002: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800&auto=format&fit=crop&q=80',

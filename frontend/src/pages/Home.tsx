@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowRight, Sparkles, Truck, RefreshCw, ShieldCheck, Lock } from 'lucide-react';
 import { ProductCard } from '../components/ProductCard';
 import { Product } from '../types/product';
@@ -23,6 +23,7 @@ export const Home: React.FC<HomeProps> = ({
   setActiveSegment: externalSetSegment,
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [internalSegment, setInternalSegment] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
@@ -38,6 +39,20 @@ export const Home: React.FC<HomeProps> = ({
     setActiveSegment(seg);
     setSelectedCategory('all');
   };
+
+  // Consume deep-link navigation state from the Navbar (e.g. clicking MEN
+  // while on /chat → land on Home with that segment active + scrolled to grid)
+  useEffect(() => {
+    const target = (location.state as { targetCategory?: string } | null)?.targetCategory;
+    if (target) {
+      handleSegmentChange(target);
+      navigate(location.pathname, { replace: true, state: {} });
+      setTimeout(() => {
+        document.getElementById('catalog-grid')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
   // Derive available categories dynamically from products matching the current segment
   const availableCategories = Array.from(

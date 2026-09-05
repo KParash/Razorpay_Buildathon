@@ -27,6 +27,63 @@ worker_llm = ChatOpenAI(
 )
 
 # -------------------------------------------------------------
+# Prompt History Trimming (Context Window Management)
+# -------------------------------------------------------------
+def _trim_history(history: List[Dict[str, Any]], max_messages: int = 10, max_chars: int = 4000) -> List[Dict[str, Any]]:
+    """
+    Cap the conversation history embedded into LLM prompts so long-running
+    sessions can't overflow the context window. Keeps the newest max_messages
+    turns, further trimmed from the front until total content fits max_chars.
+    """
+    if not history:
+        return []
+    recent = history[-max_messages:]
+    total = sum(len(str(m.get("content", ""))) for m in recent)
+    while len(recent) > 1 and total > max_chars:
+        dropped = recent.pop(0)
+        total -= len(str(dropped.get("content", "")))
+    return recent
+
+
+# -------------------------------------------------------------
+# Token Usage Extraction & Per-Turn Accumulation
+# -------------------------------------------------------------
+ZERO_USAGE: Dict[str, int] = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+
+
+def _usage_dict(res: Any) -> Dict[str, int]:
+    """Extract token usage from a LangChain AIMessage response."""
+    u = getattr(res, "usage_metadata", None) or {}
+    return {
+        "prompt_tokens": int(u.get("input_tokens", 0) or 0),
+        "completion_tokens": int(u.get("output_tokens", 0) or 0),
+        "total_tokens": int(u.get("total_tokens", 0) or 0),
+    }
+
+
+def _sum_usages(usages: List[Dict[str, int]]) -> Dict[str, int]:
+    return {
+        "prompt_tokens": sum(u.get("prompt_tokens", 0) for u in usages),
+        "completion_tokens": sum(u.get("completion_tokens", 0) for u in usages),
+        "total_tokens": sum(u.get("total_tokens", 0) for u in usages),
+    }
+
+
+def _merge_usage(state: AgentState, own: Dict[str, int]) -> Dict[str, int]:
+    """
+    Accumulate this node's usage onto the running per-turn total.
+    (The router RESETS the counter instead of merging, so multi-turn
+    sessions report usage per turn, not cumulative across turns.)
+    """
+    base = state.get("token_usage") or {}
+    return {
+        "prompt_tokens": base.get("prompt_tokens", 0) + own.get("prompt_tokens", 0),
+        "completion_tokens": base.get("completion_tokens", 0) + own.get("completion_tokens", 0),
+        "total_tokens": base.get("total_tokens", 0) + own.get("total_tokens", 0),
+    }
+
+
+# -------------------------------------------------------------
 # KAZU Inventory Reference (All Segments)
 # -------------------------------------------------------------
 KAZU_INVENTORY = """
@@ -65,6 +122,7 @@ class IntentParser(BaseModel):
 async def master_router_node(state: AgentState) -> dict:
     history = state.get("messages", [])
     last_msg = history[-1]["content"] if history else ""
+    prompt_history = _trim_history(history)
     prev_intent = state.get("intent") or {}
     profile = state.get("customer_profile") or {}
     active_cart = profile.get("cart") or []
@@ -76,7 +134,7 @@ You are the Intent Resolution Engine for KAZU — a premium multi-segment fashio
 {KAZU_INVENTORY}
 
 Dialogue History:
-{history}
+{prompt_history}
 
 Latest Customer Message: "{last_msg}"
 Previously Extracted Intent: {prev_intent}
@@ -111,11 +169,19 @@ Your Task:
 Return valid structured output.
 """
 
+    router_usage = dict(ZERO_USAGE)
     try:
-        structured_router = master_llm.with_structured_output(IntentParser)
-        res = await structured_router.ainvoke(prompt)
-        intent_dict = res.model_dump()
-    except Exception:
+        structured_router = master_llm.with_structured_output(IntentParser, include_raw=True)
+        out = await structured_router.ainvoke(prompt)
+        parsed = out.get("parsed")
+        if parsed is None:
+            raise ValueError(f"structured intent parse failed: {out.get('parsing_error')}")
+        intent_dict = parsed.model_dump()
+        router_usage = _usage_dict(out.get("raw"))
+    except Exception as parse_err:
+        print(f"[router] Intent extraction failed ({parse_err}) — using heuristic fallback")
+
+  
         # Fallback heuristic parser
         is_checkout = any(w in last_msg.lower() for w in ["buy", "checkout", "order", "purchase", "pay"])
         msg_lower = last_msg.lower()
@@ -145,7 +211,9 @@ Return valid structured output.
             "target_segment": segment,
             "search_query": last_msg,
             "is_ready_to_recommend": is_direct_product or (not is_broad and segment != "unknown"),
-            "is_checkout_requested": is_checkout
+            "is_add_to_cart_requested": False,
+            "is_checkout_requested": is_checkout,
+            "target_skus_to_add": []
         }
 
     # Cumulative Intent Merge: Persist previous slots across turns
@@ -163,7 +231,8 @@ Return valid structured output.
     if intent_dict.get("is_checkout_requested"):
         merged_intent["is_checkout_requested"] = True
 
-    return {"intent": merged_intent}
+    # Reset the per-turn token counter (downstream nodes merge onto this)
+    return {"intent": merged_intent, "token_usage": router_usage}
 
 # -------------------------------------------------------------
 # 2. Targeted Clarifier Node (clarifier_node)
@@ -201,7 +270,7 @@ Core Directives:
 
     user_context = f"""
 Conversation so far:
-{history}
+{_trim_history(history)}
 
 Customer Profile:
 - Fit Preference: {profile.get('fit_preference', 'relaxed')}
@@ -221,7 +290,8 @@ Task:
 
     return {
         "messages": [{"role": "assistant", "content": res.content}],
-        "final_response": res.content
+        "final_response": res.content,
+        "token_usage": _merge_usage(state, _usage_dict(res))
     }
 
 
@@ -325,15 +395,19 @@ Customer Profile:
 For beauty/skincare, return standard size. For kids' items, infer age group if known.
 """
     try:
-        llm = worker_llm.with_structured_output(SizeVerdict)
-        res = await llm.ainvoke(prompt)
-        return res.model_dump()
-    except Exception:
+        llm = worker_llm.with_structured_output(SizeVerdict, include_raw=True)
+        out = await llm.ainvoke(prompt)
+        if out.get("parsed") is None:
+            raise ValueError(f"structured parse failed: {out.get('parsing_error')}")
+        return out["parsed"].model_dump(), _usage_dict(out.get("raw"))
+    except Exception as e:
+        print(f"[size_worker] LLM evaluation failed for {meta.get('title')}: {e} — using flagged fallback verdict")
         return {
             "recommended_size": profile.get("size_history", {}).get("tops", "M"),
-            "fit_confidence": 0.90,
-            "reasoning": f"Standard recommendation for {meta.get('fit_type', 'regular')} fit."
-        }
+            "fit_confidence": 0.5,
+            "reasoning": f"Heuristic default for {meta.get('fit_type', 'regular')} fit (specialist evaluation unavailable).",
+            "is_fallback": True
+        }, dict(ZERO_USAGE)
 
 # 5.2 Fabric & Climate Specialist
 async def fabric_worker_task(sku: dict, climate: str) -> dict:
@@ -354,15 +428,19 @@ For beauty products: climate_pass is always true. Assess shelf suitability.
 For shoes/bags: assess durability and occasion fit.
 """
     try:
-        llm = worker_llm.with_structured_output(FabricVerdict)
-        res = await llm.ainvoke(prompt)
-        return res.model_dump()
-    except Exception:
+        llm = worker_llm.with_structured_output(FabricVerdict, include_raw=True)
+        out = await llm.ainvoke(prompt)
+        if out.get("parsed") is None:
+            raise ValueError(f"structured parse failed: {out.get('parsing_error')}")
+        return out["parsed"].model_dump(), _usage_dict(out.get("raw"))
+    except Exception as e:
+        print(f"[fabric_worker] LLM evaluation failed for {meta.get('title')}: {e} — using flagged fallback verdict")
         return {
             "climate_pass": True,
             "wrinkle_risk": "Low",
-            "comfort_notes": f"Suitable {fabric_desc} for {climate} setting."
-        }
+            "comfort_notes": f"Suitable {fabric_desc} for {climate} setting (textile specialist evaluation unavailable).",
+            "is_fallback": True
+        }, dict(ZERO_USAGE)
 
 # 5.3 Stylist / Look Specialist
 async def stylist_worker_task(sku: dict, occasion: str) -> dict:
@@ -381,37 +459,41 @@ For beauty: suggest complementary products in a routine or gifting set.
 For accessories: suggest outfits or occasions this best suits.
 """
     try:
-        llm = worker_llm.with_structured_output(StylistVerdict)
-        res = await llm.ainvoke(prompt)
-        return res.model_dump()
-    except Exception:
+        llm = worker_llm.with_structured_output(StylistVerdict, include_raw=True)
+        out = await llm.ainvoke(prompt)
+        if out.get("parsed") is None:
+            raise ValueError(f"structured parse failed: {out.get('parsing_error')}")
+        return out["parsed"].model_dump(), _usage_dict(out.get("raw"))
+    except Exception as e:
+        print(f"[stylist_worker] LLM evaluation failed for {meta.get('title')}: {e} — using flagged fallback verdict")
         return {
             "paired_categories": ["complementary accessory", "classic essential"],
             "styling_tips": "Pair with minimal accessories for a clean, elevated look.",
-            "pairing_rationale": "Balances the look with clean, harmonious elements."
-        }
+            "pairing_rationale": "Balances the look with clean, harmonious elements.",
+            "is_fallback": True
+        }, dict(ZERO_USAGE)
 
 async def worker_swarm_node(state: AgentState) -> dict:
     candidates = state.get("candidate_skus", [])
     if not candidates:
-        from catalog_store import get_all_catalog_products
-        candidates = get_all_catalog_products()[:8]
-        state["candidate_skus"] = candidates
+        # Retrieval found nothing — do NOT fabricate a catalog recommendation.
+        # Return empty and let synthesis produce an honest out-of-stock response.
+        print("[worker_swarm] No candidates from retriever — skipping evaluation, honest no-match response")
+        return {"evaluations": [], "anchor_sku": None, "outfit": None, "token_usage": _merge_usage(state, ZERO_USAGE)}
 
-    anchor = state.get("anchor_sku") or (candidates[0] if candidates else None)
-    if not anchor:
-        return {"evaluations": [], "outfit": None}
+    anchor = state.get("anchor_sku") or candidates[0]
 
     profile = state.get("customer_profile", {})
     climate = state.get("intent", {}).get("destination_climate") or "temperate"
     occasion = state.get("intent", {}).get("occasion") or "curated lifestyle"
 
     # Evaluate anchor with worker swarm
-    size_res, fabric_res, stylist_res = await asyncio.gather(
+    (size_res, size_u), (fabric_res, fabric_u), (stylist_res, stylist_u) = await asyncio.gather(
         size_worker_task(anchor, profile),
         fabric_worker_task(anchor, climate),
         stylist_worker_task(anchor, occasion)
     )
+    swarm_usages = [size_u, fabric_u, stylist_u]
 
     delivery_verdict = {
         "meets_deadline": True,
@@ -426,11 +508,12 @@ async def worker_swarm_node(state: AgentState) -> dict:
         for cand in candidates[1:]:
             cand_fabric = str(cand["metadata"].get("fabric", "")).lower()
             if any(k in cand_fabric for k in ["linen", "cotton", "silk", "blend", "lightweight", "chiffon", "canvas"]):
-                alt_size, alt_fabric, alt_stylist = await asyncio.gather(
+                (alt_size, alt_su), (alt_fabric, alt_fu), (alt_stylist, alt_sku_u) = await asyncio.gather(
                     size_worker_task(cand, profile),
                     fabric_worker_task(cand, climate),
                     stylist_worker_task(cand, occasion)
                 )
+                swarm_usages.extend([alt_su, alt_fu, alt_sku_u])
                 if alt_fabric.get("climate_pass", True):
                     alternative_eval = {
                         "sku_id": anchor["sku_id"],
@@ -482,7 +565,8 @@ async def worker_swarm_node(state: AgentState) -> dict:
     return {
         "anchor_sku": anchor,
         "evaluations": eval_list,
-        "outfit": outfit
+        "outfit": outfit,
+        "token_usage": _merge_usage(state, _sum_usages(swarm_usages))
     }
 
 # -------------------------------------------------------------
@@ -496,11 +580,16 @@ async def pricing_node(state: AgentState) -> dict:
     base_price = float(anchor["metadata"].get("price", 0))
     coupon = anchor["metadata"].get("eligible_coupon", "NONE")
     
-    # Check if user mentioned a promo code in chat
-    user_msgs = " ".join([m.get("content", "") for m in state.get("messages", [])]).upper()
-    if "STYLE20" in user_msgs:
+    # Check if user mentioned a promo code in their LATEST message only —
+    # scanning the full checkpointed history made coupons stick to every
+    # subsequent recommendation in the session.
+    last_user_msg = next(
+        (str(m.get("content", "")) for m in reversed(state.get("messages", [])) if m.get("role") == "user"),
+        ""
+    ).upper()
+    if "STYLE20" in last_user_msg:
         coupon = "STYLE20"
-    elif "AURA10" in user_msgs:
+    elif "AURA10" in last_user_msg:
         coupon = "AURA10"
 
     discount = 0.20 if coupon == "STYLE20" else (0.10 if coupon == "AURA10" else 0.0)
@@ -520,6 +609,14 @@ async def pricing_node(state: AgentState) -> dict:
 # -------------------------------------------------------------
 async def synthesis_node(state: AgentState) -> dict:
     if not state.get("evaluations") or not state.get("anchor_sku"):
+        intent = state.get("intent") or {}
+        if intent.get("is_ready_to_recommend") or intent.get("is_add_to_cart_requested"):
+            # Retrieval ran but surfaced no match — be honest instead of fabricating.
+            honesty_msg = (
+                "I searched the KAZU catalog for that, but we don't currently stock a piece that fits your request. "
+                "If you'd like, I can suggest the closest alternatives from our Men's collection, or something entirely different."
+            )
+            return {"final_response": honesty_msg}
         return {"final_response": "I'm ready to curate your selection. Who are we shopping for today — yourself, a partner, kids, or are you looking for beauty essentials?"}
 
     latest_eval = state["evaluations"][0]
@@ -567,7 +664,13 @@ async def synthesis_node(state: AgentState) -> dict:
 
     cart_instruction = ""
     if intent.get("is_add_to_cart_requested"):
-        cart_instruction = f"\n- THE CLIENT HAS REQUESTED TO ADD ALL THE SELECTED ITEMS TO THEIR CART. You MUST start your response by confirming you have successfully placed the {meta.get('title')} and its complementary pieces directly into their KAZU shopping cart/bag so they can review them in the shopping bag drawer whenever they are ready."
+        cart_instruction = (
+            "\n- THE CLIENT HAS REQUESTED TO ADD ITEMS FROM THIS SELECTION TO THEIR CART. "
+            "Start your response by confirming that the pieces they asked for are now in their "
+            "KAZU shopping bag (they can review them in the shopping bag drawer). Only claim "
+            "the items they explicitly requested — do NOT claim you added every complementary piece "
+            "or any item they did not ask for."
+        )
 
     prompt = f"""
 You are a discerning {persona} for KAZU Atelier curating a selection for a private client.
@@ -635,7 +738,8 @@ Complete Look / Routine:
     return {
         "messages": [{"role": "assistant", "content": final_text}],
         "final_response": final_text,
-        "suggested_questions": suggested_questions[:3]
+        "suggested_questions": suggested_questions[:3],
+        "token_usage": _merge_usage(state, _usage_dict(res))
     }
 
 # -------------------------------------------------------------
@@ -643,22 +747,69 @@ Complete Look / Routine:
 # -------------------------------------------------------------
 async def razorpay_checkout_node(state: AgentState) -> dict:
     import time
+    import uuid
     from checkout_service import create_frozen_razorpay_order
-    
+    from db import SessionLocal, Order, User
+
     pricing = state.get("pricing_result") or {}
     final_total = pricing.get("final_price", 0)
     coupon_code = pricing.get("coupon_code", "NONE")
-    
+    anchor = state.get("anchor_sku")
+    paired_list = [
+        p.get("sku_id")
+        for p in (state.get("outfit") or {}).get("paired_skus", [])
+        if p.get("sku_id")
+    ]
+
     cart_payload = {
         "user_id": state["customer_profile"]["user_id"],
-        "anchor_sku": state["anchor_sku"]["sku_id"] if state.get("anchor_sku") else "SKU_GENERIC",
-        "paired_skus": [p.get("sku_id") for p in (state.get("outfit") or {}).get("paired_skus", [])],
+        "anchor_sku": anchor["sku_id"] if anchor else "SKU_GENERIC",
+        "paired_skus": paired_list,
         "final_total": final_total,
         "coupon": coupon_code,
         "timestamp": int(time.time())
     }
-    
+
     razorpay_order = create_frozen_razorpay_order(cart_payload)
+
+    # Persist the order history record immediately so /api/checkout/verify can
+    # resolve it and the transaction appears in /api/orders once paid.
+    try:
+        db = SessionLocal()
+        try:
+            user_id = cart_payload["user_id"] or "usr_guest"
+            if not db.query(User).filter_by(user_id=user_id).first():
+                if db.query(User).filter_by(user_id="usr_local_dev").first():
+                    user_id = "usr_local_dev"
+                else:
+                    user = User(
+                        user_id=user_id,
+                        username=f"guest_{uuid.uuid4().hex[:6]}",
+                        email=f"{user_id}@example.com"
+                    )
+                    db.add(user)
+                    db.commit()
+            db_order = Order(
+                order_id=f"ord_{uuid.uuid4().hex[:12]}",
+                user_id=user_id,
+                anchor_sku=cart_payload["anchor_sku"],
+                paired_skus=paired_list,
+                amount=float(final_total),
+                currency=razorpay_order.get("currency", "INR"),
+                status="created",
+                coupon=coupon_code,
+                razorpay_order_id=razorpay_order.get("id"),
+                receipt=razorpay_order.get("receipt"),
+                notes={"is_mock": razorpay_order.get("is_mock", False)}
+            )
+            db.add(db_order)
+            db.commit()
+        finally:
+            db.close()
+    except Exception as e:
+        # Order persistence must never crash the chat turn
+        print(f"[razorpay_checkout_node] Failed to persist order history: {e}")
+
     msg = f"Your selection is curated and your order is locked at ₹{final_total} (using code {coupon_code}). Opening KAZU secure checkout powered by Razorpay."
     
     return {

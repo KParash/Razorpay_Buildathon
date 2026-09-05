@@ -139,6 +139,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({
   const [userClimate, setUserClimate] = useState<string>('tropical');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const streamAbortRef = useRef<AbortController | null>(null);
+  const checkoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const instantBuyInFlightRef = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -147,6 +150,14 @@ export const ChatPage: React.FC<ChatPageProps> = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
+
+  // Cancel in-flight stream and pending checkout timer on unmount
+  useEffect(() => {
+    return () => {
+      streamAbortRef.current?.abort();
+      if (checkoutTimerRef.current) clearTimeout(checkoutTimerRef.current);
+    };
+  }, []);
 
   // Load all sessions on mount
   const fetchSessions = async () => {
@@ -185,7 +196,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({
       setCurrentSessionId(session_id);
       setIsLoadingHistory(true);
       
-      fetch(`/api/chat/history/${session_id}`)
+      fetch(`/api/chat/history/${session_id}?user_id=usr_guest`)
         .then((res) => res.json())
         .then((data) => {
           if (data.status === 'success' && Array.isArray(data.messages) && data.messages.length > 0) {
@@ -228,7 +239,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({
   const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await fetch(`/api/chat/sessions/${sessionId}`, { method: 'DELETE' });
+      await fetch(`/api/chat/sessions/${sessionId}?user_id=usr_guest`, { method: 'DELETE' });
       setSessions((prev) => prev.filter((s) => s.session_id !== sessionId));
       if (sessionId === currentSessionId) {
         handleNewChat();
@@ -254,10 +265,16 @@ export const ChatPage: React.FC<ChatPageProps> = ({
     setIsLoading(true);
     setActiveAgentStep('Initializing KAZU styling engine...');
 
+    // Abort any previous in-flight stream before starting a new one
+    streamAbortRef.current?.abort();
+    const controller = new AbortController();
+    streamAbortRef.current = controller;
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           message: text,
           session_id: currentSessionId,
@@ -285,8 +302,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({
       const decoder = new TextDecoder('utf-8');
       let buffer = '';
       let finalDataReceived: any = null;
+      let serverError: string | null = null;
 
-      while (true) {
+      while (!serverError) {
         const { done, value } = await reader.read();
         if (done) break;
 
@@ -300,38 +318,48 @@ export const ChatPage: React.FC<ChatPageProps> = ({
           const dataStr = trimmed.replace(/^data:\s*/, '');
           if (dataStr === '[DONE]') break;
 
+          let parsed: any;
           try {
-            const parsed = JSON.parse(dataStr);
-            if (parsed.type === 'step') {
-              setActiveAgentStep(parsed.label);
-            } else if (parsed.type === 'token') {
-              setMessages((prev) => {
-                const existing = prev.find((m) => m.id === 'streaming-asst');
-                if (existing) {
-                  return prev.map((m) =>
-                    m.id === 'streaming-asst' ? { ...m, text: m.text + parsed.text } : m
-                  );
-                } else {
-                  return [
-                    ...prev,
-                    {
-                      id: 'streaming-asst',
-                      sender: 'assistant',
-                      text: parsed.text,
-                      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    },
-                  ];
-                }
-              });
-            } else if (parsed.type === 'final') {
-              finalDataReceived = parsed;
-            } else if (parsed.type === 'error') {
-              throw new Error(parsed.detail || 'Agent execution error');
-            }
+            parsed = JSON.parse(dataStr);
           } catch (e) {
-            // Ignore parse errors on partial chunks
+            continue; // Ignore parse errors on partial chunks
+          }
+
+          if (parsed.type === 'step') {
+            setActiveAgentStep(parsed.label);
+          } else if (parsed.type === 'token') {
+            setMessages((prev) => {
+              const existing = prev.find((m) => m.id === 'streaming-asst');
+              if (existing) {
+                return prev.map((m) =>
+                  m.id === 'streaming-asst' ? { ...m, text: m.text + parsed.text } : m
+                );
+              } else {
+                return [
+                  ...prev,
+                  {
+                    id: 'streaming-asst',
+                    sender: 'assistant',
+                    text: parsed.text,
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  },
+                ];
+              }
+            });
+          } else if (parsed.type === 'final') {
+            finalDataReceived = parsed;
+          } else if (parsed.type === 'error') {
+            // Server-reported agent errors must surface, not be swallowed
+            serverError = parsed.detail || 'Agent execution error';
+            break;
           }
         }
+      }
+
+      if (serverError) {
+        // Drop any partial streaming bubble before surfacing the error
+        setMessages((prev) => prev.filter((m) => m.id !== 'streaming-asst'));
+        throw new Error(serverError);
       }
 
       if (finalDataReceived) {
@@ -395,13 +423,15 @@ export const ChatPage: React.FC<ChatPageProps> = ({
 
         // Auto-launch Razorpay modal if client explicitly requested checkout
         if (data.checkout_ready && data.razorpay_order) {
-          setTimeout(() => {
+          if (checkoutTimerRef.current) clearTimeout(checkoutTimerRef.current);
+          checkoutTimerRef.current = setTimeout(() => {
             handleRazorpayPay(data.razorpay_order);
           }, 400);
         }
 
       }
     } catch (err: any) {
+      if (err?.name === 'AbortError') return; // user navigated away mid-stream
       setMessages((prev) => [
         ...prev,
         {
@@ -843,6 +873,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({
                               variant="gradient"
                               size="sm"
                               onClick={async () => {
+                                if (instantBuyInFlightRef.current) return; // double-click guard
+                                instantBuyInFlightRef.current = true;
                                 try {
                                   const res = await fetch('/api/checkout/create', {
                                     method: 'POST',
@@ -862,6 +894,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({
                                   }
                                 } catch (e) {
                                   alert('Instant buy network error');
+                                } finally {
+                                  instantBuyInFlightRef.current = false;
                                 }
                               }}
                               className="rounded-xl gap-1.5 shadow-md cursor-pointer"

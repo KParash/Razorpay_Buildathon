@@ -24,7 +24,9 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
-  const product = products.find((p) => p.sku_id === sku_id) || products[0];
+  // No fallback to products[0] — an unknown SKU must render the Not Found state,
+  // not silently display an unrelated product.
+  const product = products.find((p) => p.sku_id === sku_id);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });

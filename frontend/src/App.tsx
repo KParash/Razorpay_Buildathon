@@ -7,7 +7,7 @@ import { ChatPage } from './pages/ChatPage';
 import { ProductDetailsPage } from './pages/ProductDetailsPage';
 import { OrdersPage } from './pages/OrdersPage';
 import { SearchPage } from './pages/SearchPage';
-import { Product } from './types/product';
+import { Product, CartLineItem } from './types/product';
 
 
 const FALLBACK_PRODUCTS: Product[] = [
@@ -84,9 +84,22 @@ const FALLBACK_PRODUCTS: Product[] = [
 export function App() {
   const [products, setProducts] = useState<Product[]>(FALLBACK_PRODUCTS);
   const [searchQuery, setSearchQuery] = useState('');
-  const [cart, setCart] = useState<Product[]>([]);
+  const [cart, setCart] = useState<CartLineItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [activeSegment, setActiveSegment] = useState('all');
+
+  // Re-sync local cart state from the database — used on mount AND for
+  // rollback when an optimistic mutation fails so UI never diverges from DB.
+  const syncCart = () => {
+    fetch('/api/cart?user_id=usr_guest')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status === 'success' && data.cart) {
+          setCart(data.cart);
+        }
+      })
+      .catch((err) => console.error('Failed to retrieve persistent cart:', err));
+  };
 
   useEffect(() => {
     fetch('/api/products')
@@ -98,47 +111,64 @@ export function App() {
       })
       .catch((err) => console.log('Using local fallback catalog data:', err));
 
-    // Fetch active persistent cart items from database
-    fetch('/api/cart?user_id=usr_guest')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === 'success' && data.cart) {
-          setCart(data.cart);
-        }
-      })
-      .catch((err) => console.error('Failed to retrieve persistent cart:', err));
+    syncCart();
   }, []);
 
-  const handleAddToCart = (product: Product, size: string = 'L') => {
-    const isAlreadyInCart = cart.some((p) => p.sku_id === product.sku_id);
-    
+  const handleAddToCart = (product: Product, size?: string) => {
+    const sizeToUse = size || 'L';
+    const isAlreadyInCart = cart.some(
+      (p) => p.sku_id === product.sku_id && (p.selected_size || 'L') === sizeToUse
+    );
+
     if (isAlreadyInCart) {
       fetch('/api/cart/remove', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: 'usr_guest', product_id: product.sku_id, size })
-      }).catch((err) => console.error('Failed to sync cart removal with backend:', err));
-      
-      setCart((prev) => prev.filter((p) => p.sku_id !== product.sku_id));
+        body: JSON.stringify({ user_id: 'usr_guest', product_id: product.sku_id, size: sizeToUse })
+      }).then((res) => {
+        if (!res.ok) throw new Error(`remove failed: ${res.status}`);
+      }).catch((err) => {
+        console.error('Failed to sync cart removal with backend:', err);
+        syncCart(); // rollback to server truth
+      });
+
+      setCart((prev) =>
+        prev.filter((p) => !(p.sku_id === product.sku_id && (p.selected_size || 'L') === sizeToUse))
+      );
     } else {
       fetch('/api/cart/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: 'usr_guest', product_id: product.sku_id, quantity: 1, size })
-      }).catch((err) => console.error('Failed to sync cart addition with backend:', err));
-      
-      setCart((prev) => [...prev, product]);
+        body: JSON.stringify({ user_id: 'usr_guest', product_id: product.sku_id, quantity: 1, size: sizeToUse })
+      }).then((res) => {
+        if (!res.ok) throw new Error(`add failed: ${res.status}`);
+      }).catch((err) => {
+        console.error('Failed to sync cart addition with backend:', err);
+        syncCart(); // rollback to server truth
+      });
+
+      setCart((prev) => [...prev, { ...product, selected_size: sizeToUse, quantity: 1 }]);
     }
   };
 
-  const handleRemoveFromCart = (skuId: string, size: string = 'L') => {
+  const handleRemoveFromCart = (skuId: string, size?: string) => {
     fetch('/api/cart/remove', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: 'usr_guest', product_id: skuId, size })
-    }).catch((err) => console.error('Failed to sync cart removal with backend:', err));
+      body: JSON.stringify({ user_id: 'usr_guest', product_id: skuId, size: size || 'L' })
+    }).then((res) => {
+      if (!res.ok) throw new Error(`remove failed: ${res.status}`);
+    }).catch((err) => {
+      console.error('Failed to sync cart removal with backend:', err);
+      syncCart(); // rollback to server truth
+    });
 
-    setCart((prev) => prev.filter((item) => item.sku_id !== skuId));
+    // Size-aware removal: a product added in two sizes loses only the matched one
+    setCart((prev) =>
+      prev.filter((item) =>
+        !(item.sku_id === skuId && (item.selected_size || 'L') === (size || 'L'))
+      )
+    );
   };
 
   const handleClearCart = () => {
@@ -146,7 +176,12 @@ export function App() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: 'usr_guest' })
-    }).catch((err) => console.error('Failed to clear cart with backend:', err));
+    }).then((res) => {
+      if (!res.ok) throw new Error(`clear failed: ${res.status}`);
+    }).catch((err) => {
+      console.error('Failed to clear cart with backend:', err);
+      syncCart();
+    });
 
     setCart([]);
   };
