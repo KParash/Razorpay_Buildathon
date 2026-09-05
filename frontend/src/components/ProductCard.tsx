@@ -25,19 +25,41 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const imageUrl = metadata.image_url || getProductImage(sku_id);
   const hasCoupon = metadata.eligible_coupon && metadata.eligible_coupon !== 'NONE';
 
+  // Only Men's products are currently available
+  const isMenProduct = metadata.segment?.toLowerCase() === 'men';
+  const tooltipText = "Only Men's collection is available right now";
+
   return (
-    <Card className="group relative flex flex-col justify-between transition-all duration-300 hover:border-purple-500/50 dark:hover:border-purple-500/40 hover:shadow-xl hover:shadow-purple-500/5 dark:hover:shadow-purple-950/10 border-zinc-200 dark:border-zinc-800">
+    <Card 
+      className={`group relative flex flex-col justify-between transition-all duration-300 border-zinc-200 dark:border-zinc-800 ${
+        isMenProduct 
+          ? 'hover:border-purple-500/50 dark:hover:border-purple-500/40 hover:shadow-xl hover:shadow-purple-500/5 dark:hover:shadow-purple-950/10'
+          : 'opacity-70 border-zinc-200 dark:border-zinc-850'
+      }`}
+      title={!isMenProduct ? tooltipText : undefined}
+    >
       
-      {/* Clickable Image Container */}
+      {/* Clickable Image Container or Disabled Image Placeholder */}
       <div className="relative aspect-[4/5] w-full overflow-hidden bg-zinc-50 dark:bg-zinc-900 rounded-t-2xl">
-        <Link to={`/product/${sku_id}`} className="block w-full h-full cursor-pointer">
-          <img
-            src={imageUrl}
-            alt={metadata.title}
-            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60 dark:opacity-80 transition-opacity group-hover:opacity-70" />
-        </Link>
+        {isMenProduct ? (
+          <Link to={`/product/${sku_id}`} className="block w-full h-full cursor-pointer">
+            <img
+              src={imageUrl}
+              alt={metadata.title}
+              className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60 dark:opacity-80 transition-opacity group-hover:opacity-70" />
+          </Link>
+        ) : (
+          <div className="block w-full h-full cursor-not-allowed" title={tooltipText}>
+            <img
+              src={imageUrl}
+              alt={metadata.title}
+              className="h-full w-full object-cover grayscale opacity-60"
+            />
+            <div className="absolute inset-0 bg-black/10 dark:bg-black/35 transition-opacity" />
+          </div>
+        )}
 
         {/* Fit Badge */}
         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10 pointer-events-none">
@@ -59,9 +81,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            onAskAI(metadata.title);
+            if (isMenProduct) onAskAI(metadata.title);
           }}
-          className="absolute bottom-3 right-3 opacity-95 hover:opacity-100 backdrop-blur-md bg-white/90 text-purple-600 hover:text-purple-700 dark:bg-zinc-950/90 dark:text-purple-400 dark:hover:text-purple-300 border border-purple-200/50 dark:border-purple-500/30 text-[9px] font-bold tracking-widest gap-1.5 shadow-md rounded-xl transition-all duration-300 transform group-hover:translate-y-[-2px] cursor-pointer z-10"
+          disabled={!isMenProduct}
+          className={`absolute bottom-3 right-3 opacity-95 text-[9px] font-bold tracking-widest gap-1.5 shadow-md rounded-xl transition-all duration-300 ${
+            isMenProduct
+              ? 'hover:opacity-100 bg-white/90 text-purple-600 hover:text-purple-700 dark:bg-zinc-950/90 dark:text-purple-400 dark:hover:text-purple-300 border border-purple-200/50 dark:border-purple-500/30 transform group-hover:translate-y-[-2px] cursor-pointer z-10'
+              : 'bg-zinc-200/50 dark:bg-zinc-900/50 text-zinc-400 dark:text-zinc-500 border-none cursor-not-allowed pointer-events-none'
+          }`}
+          title={!isMenProduct ? tooltipText : undefined}
         >
           <Sparkles className="h-3 w-3 animate-pulse" />
           Style Advisor
@@ -74,14 +102,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
         
         {/* Clickable Product Title */}
-        <h3 className="font-bold text-zinc-800 dark:text-zinc-100 text-sm line-clamp-1 hover:text-purple-600 dark:hover:text-purple-400 transition-colors uppercase tracking-wide">
-          <Link to={`/product/${sku_id}`} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer">
-            {metadata.title}
-          </Link>
+        <h3 className="font-bold text-zinc-800 dark:text-zinc-100 text-sm line-clamp-1 uppercase tracking-wide">
+          {isMenProduct ? (
+            <Link to={`/product/${sku_id}`} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer">
+              {metadata.title}
+            </Link>
+          ) : (
+            <span className="text-zinc-400 dark:text-zinc-500 cursor-not-allowed" title={tooltipText}>
+              {metadata.title}
+            </span>
+          )}
         </h3>
 
         <div className="flex items-baseline justify-between mt-2">
-          <span className="text-lg font-black text-zinc-900 dark:text-white font-mono">
+          <span className={`text-lg font-black font-mono ${isMenProduct ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-500'}`}>
             ₹{Number(metadata.price).toLocaleString('en-IN')}
           </span>
           <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
@@ -91,30 +125,42 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       </CardContent>
 
       <CardFooter className="p-5 pt-0 gap-2">
-        <Button
-          variant={isAdded ? 'outline' : 'default'}
-          className={`w-full gap-2 rounded-xl transition-all duration-300 cursor-pointer ${
-            isAdded
-              ? 'border-emerald-500 hover:border-emerald-600 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 bg-emerald-50/50 dark:bg-emerald-950/10'
-              : 'bg-zinc-900 hover:bg-black text-white dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100'
-          }`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddToCart(product);
-          }}
-        >
-          {isAdded ? (
-            <>
-              <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-              <span>Added to Cart</span>
-            </>
-          ) : (
-            <>
-              <ShoppingCart className="h-4 w-4 shrink-0" />
-              <span>Add to Cart</span>
-            </>
-          )}
-        </Button>
+        {isMenProduct ? (
+          <Button
+            variant={isAdded ? 'outline' : 'default'}
+            className={`w-full gap-2 rounded-xl transition-all duration-300 cursor-pointer ${
+              isAdded
+                ? 'border-emerald-500 hover:border-emerald-600 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 bg-emerald-50/50 dark:bg-emerald-950/10'
+                : 'bg-zinc-900 hover:bg-black text-white dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100'
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddToCart(product);
+            }}
+          >
+            {isAdded ? (
+              <>
+                <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                <span>Added to Cart</span>
+              </>
+            ) : (
+              <>
+                <ShoppingCart className="h-4 w-4 shrink-0" />
+                <span>Add to Cart</span>
+              </>
+            )}
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            disabled
+            className="w-full gap-2 rounded-xl transition-all duration-300 cursor-not-allowed bg-zinc-100 dark:bg-zinc-900/60 text-zinc-400 dark:text-zinc-500 border-zinc-200 dark:border-zinc-850"
+            title={tooltipText}
+          >
+            <ShoppingCart className="h-4 w-4 shrink-0" />
+            <span>Unavailable</span>
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

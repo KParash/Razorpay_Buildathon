@@ -497,6 +497,35 @@ async def clear_cart(req: ClearCartRequest, db: Session = Depends(get_db)):
     return {"status": "success", "message": "Cart cleared successfully"}
 
 
+@app.get("/api/orders")
+async def get_orders(user_id: str = "usr_guest", db: Session = Depends(get_db)):
+    """Retrieve all successful paid purchases for a specific user."""
+    orders = db.query(Order).filter(Order.user_id == user_id, Order.status == "paid").order_by(Order.created_at.desc()).all()
+    
+    orders_formatted = []
+    for order in orders:
+        order_dict = order.to_dict()
+        
+        # Load details for anchor_sku
+        items = []
+        if order.anchor_sku:
+            p = db.query(Product).filter_by(product_id=order.anchor_sku).first()
+            if p:
+                items.append(p.to_catalog_item())
+                
+        # Load details for any paired SKUs
+        if order.paired_skus:
+            for sku in order.paired_skus:
+                p = db.query(Product).filter_by(product_id=sku).first()
+                if p:
+                    items.append(p.to_catalog_item())
+                    
+        order_dict["items"] = items
+        orders_formatted.append(order_dict)
+        
+    return {"status": "success", "orders": orders_formatted}
+
+
 # -------------------------------------------------------------------
 # 4. Razorpay Checkout & Order Verification
 # -------------------------------------------------------------------

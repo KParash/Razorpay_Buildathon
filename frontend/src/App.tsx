@@ -5,6 +5,7 @@ import { CartDrawer } from './components/CartDrawer';
 import { Home } from './pages/Home';
 import { ChatPage } from './pages/ChatPage';
 import { ProductDetailsPage } from './pages/ProductDetailsPage';
+import { OrdersPage } from './pages/OrdersPage';
 import { Product } from './types/product';
 
 
@@ -205,6 +206,12 @@ export function App() {
               onAddToCart={handleAddToCart}
               onOpenCart={() => setIsCartOpen(true)}
             />
+          }
+        />
+        <Route
+          path="/orders"
+          element={
+            <OrdersPage />
           }
         />
       </Routes>
