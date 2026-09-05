@@ -16,7 +16,7 @@ from contextlib import asynccontextmanager
 from typing import List, Dict, Any, Optional
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -658,6 +658,20 @@ async def verify_payment(req: VerifyPaymentRequest, db: Session = Depends(get_db
         "payment_id": req.razorpay_payment_id,
         "order_status": "paid"
     }
+
+# -------------------------------------------------------------------
+# SPA Route Fallbacks (Enable browser refreshes on React routes)
+# -------------------------------------------------------------------
+@app.get("/chat")
+@app.get("/chat/{session_id}")
+@app.get("/orders")
+@app.get("/search")
+@app.get("/product/{sku_id}")
+async def serve_spa_app(session_id: Optional[str] = None, sku_id: Optional[str] = None):
+    index_path = os.path.join(frontend_dist, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    raise HTTPException(status_code=404, detail="Frontend index.html not found")
 
 # -------------------------------------------------------------------
 # Serve Built Frontend Static Files (if dist exists)

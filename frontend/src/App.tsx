@@ -199,6 +199,17 @@ export function App() {
           }
         />
         <Route
+          path="/chat/:session_id"
+          element={
+            <ChatPage
+              products={products}
+              cart={cart}
+              onAddToCart={handleAddToCart}
+              onOpenCart={() => setIsCartOpen(true)}
+            />
+          }
+        />
+        <Route
           path="/product/:sku_id"
           element={
             <ProductDetailsPage
