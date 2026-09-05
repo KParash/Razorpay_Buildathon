@@ -58,12 +58,17 @@ class IntentParser(BaseModel):
     target_segment: Optional[str] = Field(None, description="Shopping segment — must be exactly one of: 'Men', 'Women', 'Kids', 'Beauty', or 'unknown'. Infer from context: 'my daughter' → 'Kids', 'skincare routine' → 'Beauty', 'husband' → 'Men'. If completely unclear, return 'unknown'.")
     search_query: str = Field(..., description="Rich semantic catalog search keywords tailored to KAZU's inventory and the identified segment (e.g. 'linen shirt beach trousers men', 'maxi dress resort women', 'kids graphic tee jogger', 'vitamin C serum skincare')")
     is_ready_to_recommend: bool = Field(..., description="Set true ONLY if: (a) segment is known AND occasion/vibe is identified, OR (b) user explicitly names a specific product type. Set false if segment is 'unknown' or intent is too vague.")
-    is_checkout_requested: bool = Field(False, description="Set true ONLY if customer explicitly requests to purchase, buy, or checkout.")
+    is_add_to_cart_requested: bool = Field(False, description="Set true if customer explicitly requests to add the recommended products, look, or curated outfit to their cart/shopping bag.")
+    is_checkout_requested: bool = Field(False, description="Set true ONLY if customer explicitly requests to purchase, buy, or checkout directly.")
+    target_skus_to_add: List[str] = Field(default_factory=list, description="The list of specific product SKU/product IDs (e.g. ['SKU_019', 'SKU_009']) that the customer explicitly wants to add to their cart in their latest message. Read the dialogue history and the latest user request to identify which specific SKUs they want to add (e.g. the anchor product, or particular coordinate products they liked). Empty if no cart addition is requested.")
 
 async def master_router_node(state: AgentState) -> dict:
     history = state.get("messages", [])
     last_msg = history[-1]["content"] if history else ""
     prev_intent = state.get("intent") or {}
+    profile = state.get("customer_profile") or {}
+    active_cart = profile.get("cart") or []
+    active_cart_summary = ", ".join([f"{item['product_id']} (size: {item['size']})" for item in active_cart]) if active_cart else "Empty"
 
     prompt = f"""
 You are the Intent Resolution Engine for KAZU — a premium multi-segment fashion and beauty store.
@@ -75,6 +80,7 @@ Dialogue History:
 
 Latest Customer Message: "{last_msg}"
 Previously Extracted Intent: {prev_intent}
+Customer's Active Shopping Cart: {active_cart_summary}
 
 Your Task:
 1. Identify the shopping SEGMENT (Men / Women / Kids / Beauty) from conversation context.
@@ -89,8 +95,14 @@ Your Task:
 3. Set is_ready_to_recommend = true ONLY when:
    - Segment is known (not 'unknown') AND
    - There's at least one specific intent (occasion, product type, or style preference)
+   - CRITICAL OVERRIDE: If the user explicitly asks about, specifies, or names a particular product from KAZU's catalog (e.g. they say "Tell me more about...: Skinny Fit Dark Wash Jeans", "Stretch Slim Fit Chinos", etc., or name a specific SKU), you MUST set is_ready_to_recommend = true, extract the target segment from the product (e.g. 'Men' for chinos/jeans), set the search_query to that exact product title, and proceed directly to retriever. Do NOT ask clarifying questions when the user asks about a specific product.
 
-4. Synthesize a semantic search_query with 3-6 keywords that match KAZU's exact inventory.
+4. Distinguish between adding to cart and direct checkout:
+   - Set is_add_to_cart_requested = true if the customer asks to "add to cart", "add these to my bag/cart", "put all three in the cart", etc.
+   - If is_add_to_cart_requested is true, analyze the dialogue history and latest message to find exactly WHICH specific products the user requested to add (e.g. they say 'add these 2 products' or specify particular items from the prior discussion). Populate only the matching product SKU/product IDs (e.g., ['SKU_019', 'SKU_009']) in target_skus_to_add. Do NOT blindly add all paired/complementary products unless they explicitly ask to add 'all' of them.
+   - Set is_checkout_requested = true ONLY if the customer explicitly requests to "checkout", "buy", "pay", "checkout with Razorpay", or finalize the transaction immediately.
+
+5. Synthesize a semantic search_query with 3-6 keywords that match KAZU's exact inventory.
    - For Men: use words like 'shirt', 'chinos', 'polo', 'sneakers', 'sunglasses'
    - For Women: use words like 'dress', 'blouse', 'wide-leg', 'sandals', 'tote'
    - For Kids: use words like 'kids tee', 'joggers', 'sneakers', 'hoodie'
@@ -123,6 +135,7 @@ Return valid structured output.
             "hi", "hello", "hey", "help me shop", "show me", 
             "i need", "help me dress", "recommend", "something nice", "what do you have"
         ])
+        is_direct_product = "tell me more about this" in last_msg.lower() or "suggest complete styling" in last_msg.lower()
         intent_dict = {
             "occasion": prev_intent.get("occasion") or "lifestyle dressing",
             "destination_climate": prev_intent.get("destination_climate") or "temperate",
@@ -131,7 +144,7 @@ Return valid structured output.
             "formality_level": prev_intent.get("formality_level") or "smart casual",
             "target_segment": segment,
             "search_query": last_msg,
-            "is_ready_to_recommend": not is_broad and segment != "unknown",
+            "is_ready_to_recommend": is_direct_product or (not is_broad and segment != "unknown"),
             "is_checkout_requested": is_checkout
         }
 
@@ -517,6 +530,8 @@ async def synthesis_node(state: AgentState) -> dict:
     intent = state.get("intent", {})
     profile = state.get("customer_profile", {})
     segment = meta.get("segment", "Men")
+    active_cart = profile.get("cart") or []
+    active_cart_text = ", ".join([f"{item['product_id']} (size: {item['size']})" for item in active_cart]) if active_cart else "Empty"
 
     base_price = pricing.get("base_price", meta.get("price", 0))
     final_price = pricing.get("final_price", base_price)
@@ -550,11 +565,16 @@ async def synthesis_node(state: AgentState) -> dict:
     if alt_eval and alt_eval.get("is_disqualified"):
         alt_note = f"\nNote: We also examined an alternative, but its heavier material is less suited for {intent.get('destination_climate', 'this setting')}."
 
+    cart_instruction = ""
+    if intent.get("is_add_to_cart_requested"):
+        cart_instruction = f"\n- THE CLIENT HAS REQUESTED TO ADD ALL THE SELECTED ITEMS TO THEIR CART. You MUST start your response by confirming you have successfully placed the {meta.get('title')} and its complementary pieces directly into their KAZU shopping cart/bag so they can review them in the shopping bag drawer whenever they are ready."
+
     prompt = f"""
 You are a discerning {persona} for KAZU Atelier curating a selection for a private client.
 
 Stylist Rules:
 - BE EXTREMELY CONCISE. Tell only what is needed. Do not output a wall of text. Speak like a high-end expert who values the client's time.
+{cart_instruction}
 - Prohibited phrases: "Recommended for you", "I have selected", "Here is your", "Hope this helps!", "Let me know if you need anything else!".
 - Jump straight into the styling vision: Start with how the anchor product solves their specific need in 1-2 short sentences.
 - Weave in complementary products naturally as part of the complete look or routine (max 1 sentence).
@@ -570,6 +590,7 @@ Client Context:
 - {context_label}: {context_value}
 - Climate/Setting: {intent.get('destination_climate', 'temperate')}
 - Fit / Style Preference: {profile.get('fit_preference', 'relaxed')}
+- Active Cart Contents: {active_cart_text}
 
 Anchor Product:
 - Title: {meta.get('title')}
@@ -589,7 +610,7 @@ Complete Look / Routine:
 {alt_note}
 """
 
-    res = await master_llm.ainvoke(prompt)
+    res = await master_llm.ainvoke(prompt, config={"run_name": "synthesis_llm"})
     content = res.content
     
     suggested_questions = []
