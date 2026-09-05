@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate, Link, useParams } from 'react-router-dom';
 import {
   Sparkles,
   Send,
@@ -113,10 +113,11 @@ export const ChatPage: React.FC<ChatPageProps> = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { session_id } = useParams<{ session_id?: string }>();
 
   // Session & History State
   const [sessions, setSessions] = useState<ChatSession[]>([]);
-  const [currentSessionId, setCurrentSessionId] = useState<string>(() => `sess_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`);
+  const [currentSessionId, setCurrentSessionId] = useState<string>(() => session_id || `sess_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`);
   const [messages, setMessages] = useState<ChatMessageItem[]>([INITIAL_WELCOME_MSG]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -138,6 +139,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({
   const [userClimate, setUserClimate] = useState<string>('tropical');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const streamAbortRef = useRef<AbortController | null>(null);
+  const checkoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const instantBuyInFlightRef = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -146,6 +150,14 @@ export const ChatPage: React.FC<ChatPageProps> = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
+
+  // Cancel in-flight stream and pending checkout timer on unmount
+  useEffect(() => {
+    return () => {
+      streamAbortRef.current?.abort();
+      if (checkoutTimerRef.current) clearTimeout(checkoutTimerRef.current);
+    };
+  }, []);
 
   // Load all sessions on mount
   const fetchSessions = async () => {
@@ -173,47 +185,61 @@ export const ChatPage: React.FC<ChatPageProps> = ({
     }
   }, [location.state]);
 
-  // Switch / Load Session History
-  const handleSelectSession = async (sessionId: string) => {
-    if (sessionId === currentSessionId) return;
-    setCurrentSessionId(sessionId);
-    setIsLoadingHistory(true);
+  // Sync currentSessionId and load messages when URL session_id changes
+  useEffect(() => {
+    if (session_id) {
+      // If the state is already loaded with this session's messages, skip re-fetching and avoid flickering
+      if (session_id === currentSessionId && messages.length > 1) {
+        return;
+      }
 
-    try {
-      const res = await fetch(`/api/chat/history/${sessionId}`);
-      const data = await res.json();
-      if (data.status === 'success' && Array.isArray(data.messages) && data.messages.length > 0) {
-        setMessages(data.messages);
-      } else {
+      setCurrentSessionId(session_id);
+      setIsLoadingHistory(true);
+      
+      fetch(`/api/chat/history/${session_id}?user_id=usr_guest`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.status === 'success' && Array.isArray(data.messages) && data.messages.length > 0) {
+            setMessages(data.messages);
+          } else {
+            setMessages([INITIAL_WELCOME_MSG]);
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to load session history:', err);
+          setMessages([INITIAL_WELCOME_MSG]);
+        })
+        .finally(() => {
+          setIsLoadingHistory(false);
+        });
+    } else {
+      // No session_id in URL, check if we are currently loading an initial prompt
+      const hasInitialPrompt = location.state && (location.state as any).initialPrompt;
+      if (!hasInitialPrompt) {
         setMessages([INITIAL_WELCOME_MSG]);
       }
-    } catch (err) {
-      console.error('Failed to load session history:', err);
-      setMessages([INITIAL_WELCOME_MSG]);
-    } finally {
-      setIsLoadingHistory(false);
     }
+  }, [session_id, currentSessionId]);
+
+  // Switch / Load Session History
+  const handleSelectSession = (sessionId: string) => {
+    if (sessionId === currentSessionId) return;
+    navigate(`/chat/${sessionId}`);
   };
 
   // Start a fresh new chat session
   const handleNewChat = () => {
+    navigate('/chat');
     const newId = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     setCurrentSessionId(newId);
-    setMessages([
-      {
-        id: `welcome-${Date.now()}`,
-        sender: 'assistant',
-        text: "New consultation started. How can I curate your style today? Specify an occasion, fabric preferences, or climate needs.",
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      }
-    ]);
+    setMessages([INITIAL_WELCOME_MSG]);
   };
 
   // Delete a chat session
   const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await fetch(`/api/chat/sessions/${sessionId}`, { method: 'DELETE' });
+      await fetch(`/api/chat/sessions/${sessionId}?user_id=usr_guest`, { method: 'DELETE' });
       setSessions((prev) => prev.filter((s) => s.session_id !== sessionId));
       if (sessionId === currentSessionId) {
         handleNewChat();
@@ -239,10 +265,16 @@ export const ChatPage: React.FC<ChatPageProps> = ({
     setIsLoading(true);
     setActiveAgentStep('Initializing KAZU styling engine...');
 
+    // Abort any previous in-flight stream before starting a new one
+    streamAbortRef.current?.abort();
+    const controller = new AbortController();
+    streamAbortRef.current = controller;
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           message: text,
           session_id: currentSessionId,
@@ -270,8 +302,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({
       const decoder = new TextDecoder('utf-8');
       let buffer = '';
       let finalDataReceived: any = null;
+      let serverError: string | null = null;
 
-      while (true) {
+      while (!serverError) {
         const { done, value } = await reader.read();
         if (done) break;
 
@@ -285,19 +318,48 @@ export const ChatPage: React.FC<ChatPageProps> = ({
           const dataStr = trimmed.replace(/^data:\s*/, '');
           if (dataStr === '[DONE]') break;
 
+          let parsed: any;
           try {
-            const parsed = JSON.parse(dataStr);
-            if (parsed.type === 'step') {
-              setActiveAgentStep(parsed.label);
-            } else if (parsed.type === 'final') {
-              finalDataReceived = parsed;
-            } else if (parsed.type === 'error') {
-              throw new Error(parsed.detail || 'Agent execution error');
-            }
+            parsed = JSON.parse(dataStr);
           } catch (e) {
-            // Ignore parse errors on partial chunks
+            continue; // Ignore parse errors on partial chunks
+          }
+
+          if (parsed.type === 'step') {
+            setActiveAgentStep(parsed.label);
+          } else if (parsed.type === 'token') {
+            setMessages((prev) => {
+              const existing = prev.find((m) => m.id === 'streaming-asst');
+              if (existing) {
+                return prev.map((m) =>
+                  m.id === 'streaming-asst' ? { ...m, text: m.text + parsed.text } : m
+                );
+              } else {
+                return [
+                  ...prev,
+                  {
+                    id: 'streaming-asst',
+                    sender: 'assistant',
+                    text: parsed.text,
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  },
+                ];
+              }
+            });
+          } else if (parsed.type === 'final') {
+            finalDataReceived = parsed;
+          } else if (parsed.type === 'error') {
+            // Server-reported agent errors must surface, not be swallowed
+            serverError = parsed.detail || 'Agent execution error';
+            break;
           }
         }
+      }
+
+      if (serverError) {
+        // Drop any partial streaming bubble before surfacing the error
+        setMessages((prev) => prev.filter((m) => m.id !== 'streaming-asst'));
+        throw new Error(serverError);
       }
 
       if (finalDataReceived) {
@@ -334,18 +396,42 @@ export const ChatPage: React.FC<ChatPageProps> = ({
           razorpay_order: data.razorpay_order,
         };
 
-        setMessages((prev) => [...prev, assistantMsg]);
+        setMessages((prev) => {
+          const filtered = prev.filter((m) => m.id !== 'streaming-asst');
+          return [...filtered, assistantMsg];
+        });
         fetchSessions();
+
+        // If they were on a new blank session ('/chat'), update URL to '/chat/:session_id'
+        if (!session_id) {
+          navigate(`/chat/${currentSessionId}`, { replace: true });
+        }
+
+        // If the chatbot triggered adding items to the cart
+        if (data.add_to_cart_triggered && Array.isArray(data.add_to_cart_skus)) {
+          data.add_to_cart_skus.forEach((skuId: string) => {
+            const isInCart = cart.some((c) => c.sku_id === skuId);
+            if (!isInCart) {
+              const fullProduct = products.find((p) => p.sku_id === skuId);
+              if (fullProduct) {
+                const sizeVerdict = data.evaluations?.[0]?.size_verdict?.recommended_size || 'L';
+                onAddToCart(fullProduct, sizeVerdict);
+              }
+            }
+          });
+        }
 
         // Auto-launch Razorpay modal if client explicitly requested checkout
         if (data.checkout_ready && data.razorpay_order) {
-          setTimeout(() => {
+          if (checkoutTimerRef.current) clearTimeout(checkoutTimerRef.current);
+          checkoutTimerRef.current = setTimeout(() => {
             handleRazorpayPay(data.razorpay_order);
           }, 400);
         }
 
       }
     } catch (err: any) {
+      if (err?.name === 'AbortError') return; // user navigated away mid-stream
       setMessages((prev) => [
         ...prev,
         {
@@ -787,6 +873,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({
                               variant="gradient"
                               size="sm"
                               onClick={async () => {
+                                if (instantBuyInFlightRef.current) return; // double-click guard
+                                instantBuyInFlightRef.current = true;
                                 try {
                                   const res = await fetch('/api/checkout/create', {
                                     method: 'POST',
@@ -806,6 +894,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({
                                   }
                                 } catch (e) {
                                   alert('Instant buy network error');
+                                } finally {
+                                  instantBuyInFlightRef.current = false;
                                 }
                               }}
                               className="rounded-xl gap-1.5 shadow-md cursor-pointer"

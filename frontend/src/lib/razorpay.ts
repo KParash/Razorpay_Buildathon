@@ -54,7 +54,7 @@ export async function openRazorpayCheckout(orderData: {
     key: orderData.razorpay_key_id || 'rzp_test_MOCK',
     amount: orderData.amount,
     currency: orderData.currency || 'INR',
-    name: 'AURA AI Fashion Store',
+    name: 'KAZU/STYLO',
     description: 'Personalized Outfit Checkout',
     order_id: orderData.id,
     handler: async function (response: any) {

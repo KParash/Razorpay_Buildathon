@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowRight, Sparkles, Truck, RefreshCw, ShieldCheck, Lock } from 'lucide-react';
 import { ProductCard } from '../components/ProductCard';
 import { Product } from '../types/product';
@@ -23,7 +23,9 @@ export const Home: React.FC<HomeProps> = ({
   setActiveSegment: externalSetSegment,
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [internalSegment, setInternalSegment] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   // Use externally controlled segment if provided (from Navbar click), else internal
   const activeSegment = externalSegment ?? internalSegment;
@@ -33,24 +35,54 @@ export const Home: React.FC<HomeProps> = ({
     navigate('/chat', { state: { initialPrompt: prompt } });
   };
 
-  const filteredProducts = products.filter((p) => {
-    const q = searchQuery.toLowerCase();
-    const titleMatch = p.metadata.title?.toLowerCase().includes(q) || false;
-    const catMatch = p.metadata.category?.toLowerCase().includes(q) || false;
-    const subMatch = p.metadata.sub_category?.toLowerCase().includes(q) || false;
-    const descMatch = p.metadata.description?.toLowerCase().includes(q) || false;
-    const fabricMatch = p.metadata.fabric?.toLowerCase().includes(q) || false;
+  const handleSegmentChange = (seg: string) => {
+    setActiveSegment(seg);
+    setSelectedCategory('all');
+  };
 
-    const matchesSearch = !q || titleMatch || catMatch || subMatch || descMatch || fabricMatch;
-    
-    // Segment filter using the `segment` metadata field
+  // Consume deep-link navigation state from the Navbar (e.g. clicking MEN
+  // while on /chat → land on Home with that segment active + scrolled to grid)
+  useEffect(() => {
+    const target = (location.state as { targetCategory?: string } | null)?.targetCategory;
+    if (target) {
+      handleSegmentChange(target);
+      navigate(location.pathname, { replace: true, state: {} });
+      setTimeout(() => {
+        document.getElementById('catalog-grid')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
+
+  // Derive available categories dynamically from products matching the current segment
+  const availableCategories = Array.from(
+    new Set(
+      products
+        .filter((p) => {
+          if (activeSegment === 'all') return true;
+          return (p.metadata.segment || '').toLowerCase() === activeSegment.toLowerCase();
+        })
+        .map((p) => p.metadata.sub_category)
+        .filter((cat): cat is string => !!cat && cat.trim() !== '')
+    )
+  );
+
+  const filteredProducts = products.filter((p) => {
+    // 1. Segment filter using the `segment` metadata field
     let matchesSegment = true;
     if (activeSegment && activeSegment !== 'all') {
       const productSegment = (p.metadata.segment || '').toLowerCase();
       matchesSegment = productSegment === activeSegment.toLowerCase();
     }
 
-    return matchesSearch && matchesSegment;
+    // 2. Category/Sub-category filter
+    let matchesCategory = true;
+    if (selectedCategory && selectedCategory !== 'all') {
+      const productCat = (p.metadata.sub_category || '').toLowerCase();
+      matchesCategory = productCat === selectedCategory.toLowerCase();
+    }
+
+    return matchesSegment && matchesCategory;
   });
 
   return (
@@ -182,78 +214,66 @@ export const Home: React.FC<HomeProps> = ({
 
           {/* Card 2: WOMEN */}
           <div
-            onClick={() => {
-              setActiveSegment('women');
-              const el = document.getElementById('catalog-grid');
-              el?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="flex items-center gap-4 p-4 rounded-2xl group cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/40 border border-transparent hover:border-zinc-200/60 dark:hover:border-zinc-800/60 transition-all duration-300 md:border-l md:border-zinc-200/50 dark:md:border-zinc-800/50 md:rounded-l-none"
+            className="flex items-center gap-4 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-850 bg-zinc-50/50 dark:bg-zinc-900/10 opacity-55 cursor-not-allowed md:border-l md:border-zinc-200/50 dark:md:border-zinc-800/50 md:rounded-l-none transition-all duration-300"
+            title="Only Men's collection is available right now"
           >
             <div className="w-16 h-20 overflow-hidden shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
               <img
                 src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&auto=format&fit=crop&q=80"
                 alt="Women Category"
-                className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
+                className="w-full h-full object-cover grayscale opacity-60 transition-all duration-700"
               />
             </div>
             <div className="space-y-1">
-              <h3 className="font-display text-base font-black tracking-wider uppercase text-zinc-900 dark:text-white">WOMEN</h3>
-              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Effortless style.</p>
-              <div className="pt-1.5 flex items-center gap-1 text-[9px] font-bold tracking-widest text-purple-600 dark:text-purple-400 group-hover:translate-x-1 transition-transform uppercase">
-                <span>SHOP</span>
-                <ArrowRight className="h-3 w-3" />
+              <h3 className="font-display text-base font-black tracking-wider uppercase text-zinc-400 dark:text-zinc-500">WOMEN</h3>
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-550 font-medium">Effortless style.</p>
+              <div className="pt-1.5 flex items-center gap-1 text-[9px] font-bold tracking-widest text-zinc-400 dark:text-zinc-550 uppercase">
+                <span>Unavailable</span>
+                <ArrowRight className="h-3 w-3 text-zinc-400 dark:text-zinc-550" />
               </div>
             </div>
           </div>
 
           {/* Card 3: KIDS */}
           <div
-            onClick={() => {
-              setActiveSegment('kids');
-              const el = document.getElementById('catalog-grid');
-              el?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="flex items-center gap-4 p-4 rounded-2xl group cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/40 border border-transparent hover:border-zinc-200/60 dark:hover:border-zinc-800/60 transition-all duration-300 md:border-l md:border-zinc-200/50 dark:md:border-zinc-800/50 md:rounded-l-none"
+            className="flex items-center gap-4 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-850 bg-zinc-50/50 dark:bg-zinc-900/10 opacity-55 cursor-not-allowed md:border-l md:border-zinc-200/50 dark:md:border-zinc-800/50 md:rounded-l-none transition-all duration-300"
+            title="Only Men's collection is available right now"
           >
             <div className="w-16 h-20 overflow-hidden shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
               <img
                 src="https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=400&auto=format&fit=crop&q=80"
                 alt="Kids Category"
-                className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
+                className="w-full h-full object-cover grayscale opacity-60 transition-all duration-700"
               />
             </div>
             <div className="space-y-1">
-              <h3 className="font-display text-base font-black tracking-wider uppercase text-zinc-900 dark:text-white">KIDS</h3>
-              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Comfort meets cool.</p>
-              <div className="pt-1.5 flex items-center gap-1 text-[9px] font-bold tracking-widest text-purple-600 dark:text-purple-400 group-hover:translate-x-1 transition-transform uppercase">
-                <span>SHOP</span>
-                <ArrowRight className="h-3 w-3" />
+              <h3 className="font-display text-base font-black tracking-wider uppercase text-zinc-400 dark:text-zinc-500">KIDS</h3>
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-550 font-medium">Comfort meets cool.</p>
+              <div className="pt-1.5 flex items-center gap-1 text-[9px] font-bold tracking-widest text-zinc-400 dark:text-zinc-550 uppercase">
+                <span>Unavailable</span>
+                <ArrowRight className="h-3 w-3 text-zinc-400 dark:text-zinc-550" />
               </div>
             </div>
           </div>
 
           {/* Card 4: BEAUTY */}
           <div
-            onClick={() => {
-              setActiveSegment('beauty');
-              const el = document.getElementById('catalog-grid');
-              el?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="flex items-center gap-4 p-4 rounded-2xl group cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/40 border border-transparent hover:border-zinc-200/60 dark:hover:border-zinc-800/60 transition-all duration-300 md:border-l md:border-zinc-200/50 dark:md:border-zinc-800/50 md:rounded-l-none"
+            className="flex items-center gap-4 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-850 bg-zinc-50/50 dark:bg-zinc-900/10 opacity-55 cursor-not-allowed md:border-l md:border-zinc-200/50 dark:md:border-zinc-800/50 md:rounded-l-none transition-all duration-300"
+            title="Only Men's collection is available right now"
           >
             <div className="w-16 h-20 overflow-hidden shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
               <img
                 src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400&auto=format&fit=crop&q=80"
                 alt="Beauty Category"
-                className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
+                className="w-full h-full object-cover grayscale opacity-60 transition-all duration-700"
               />
             </div>
             <div className="space-y-1">
-              <h3 className="font-display text-base font-black tracking-wider uppercase text-zinc-900 dark:text-white">BEAUTY</h3>
-              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Glow essentials.</p>
-              <div className="pt-1.5 flex items-center gap-1 text-[9px] font-bold tracking-widest text-purple-600 dark:text-purple-400 group-hover:translate-x-1 transition-transform uppercase">
-                <span>SHOP</span>
-                <ArrowRight className="h-3 w-3" />
+              <h3 className="font-display text-base font-black tracking-wider uppercase text-zinc-400 dark:text-zinc-500">BEAUTY</h3>
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-550 font-medium">Glow essentials.</p>
+              <div className="pt-1.5 flex items-center gap-1 text-[9px] font-bold tracking-widest text-zinc-400 dark:text-zinc-550 uppercase">
+                <span>Unavailable</span>
+                <ArrowRight className="h-3 w-3 text-zinc-400 dark:text-zinc-550" />
               </div>
             </div>
           </div>
@@ -364,36 +384,83 @@ export const Home: React.FC<HomeProps> = ({
       <main id="catalog-grid" className="mx-auto max-w-7xl px-6 sm:px-8 py-16">
         
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-zinc-200 dark:border-zinc-800">
-          <div>
-            <h2 className="font-display text-3xl font-black tracking-tight uppercase text-zinc-900 dark:text-white">
-              {activeSegment === 'all' ? 'BEST OF KAZU' :
-               activeSegment === 'men' ? 'KAZU MEN' :
-               activeSegment === 'women' ? 'KAZU WOMEN' :
-               activeSegment === 'kids' ? 'KAZU KIDS' :
-               activeSegment === 'beauty' ? 'KAZU BEAUTY' : 'BEST OF KAZU'}
-            </h2>
-            <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mt-1">
-              Curated Essentials & Handpicked Pieces ({filteredProducts.length} Items)
-            </p>
+        <div className="flex flex-col gap-6 pb-8 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+              <h2 className="font-display text-3xl font-black tracking-tight uppercase text-zinc-900 dark:text-white">
+                {activeSegment === 'all' ? 'BEST OF KAZU' :
+                 activeSegment === 'men' ? 'KAZU MEN' :
+                 activeSegment === 'women' ? 'KAZU WOMEN' :
+                 activeSegment === 'kids' ? 'KAZU KIDS' :
+                 activeSegment === 'beauty' ? 'KAZU BEAUTY' : 'BEST OF KAZU'}
+              </h2>
+              <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mt-1">
+                Curated Essentials & Handpicked Pieces ({filteredProducts.length} Items)
+              </p>
+            </div>
+
+            {/* Segment Quick Toggles */}
+            <div className="flex flex-wrap items-center gap-2">
+              {['all', 'men', 'women', 'kids', 'beauty'].map((seg) => {
+                const isAvailable = seg === 'all' || seg === 'men';
+                return (
+                  <button
+                    key={seg}
+                    onClick={() => {
+                      if (isAvailable) handleSegmentChange(seg);
+                    }}
+                    disabled={!isAvailable}
+                    className={`px-5 py-2 text-[10px] font-bold uppercase tracking-widest rounded-full border transition-all duration-300 ${
+                      !isAvailable
+                        ? 'bg-transparent text-zinc-350 dark:text-zinc-700 border-zinc-200 dark:border-zinc-850 cursor-not-allowed'
+                        : activeSegment === seg
+                        ? 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-600/15 cursor-pointer'
+                        : 'bg-transparent text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:border-purple-500 hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer'
+                    }`}
+                    title={!isAvailable ? "Only Men's collection is available right now" : undefined}
+                  >
+                    {seg}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Segment Quick Toggles */}
-          <div className="flex flex-wrap items-center gap-2">
-            {['all', 'men', 'women', 'kids', 'beauty'].map((seg) => (
+          {/* Category Filter Pills (Second Row) */}
+          {availableCategories.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-zinc-150/50 dark:border-zinc-800/50">
+              <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-555 uppercase tracking-widest mr-2 block">
+                Filter by Category:
+              </span>
+              
+              {/* All Categories Pill */}
               <button
-                key={seg}
-                onClick={() => setActiveSegment(seg)}
-                className={`px-5 py-2 text-[10px] font-bold uppercase tracking-widest rounded-full border transition-all duration-300 cursor-pointer ${
-                  activeSegment === seg
-                    ? 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-600/15'
-                    : 'bg-transparent text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:border-purple-500 hover:text-purple-600 dark:hover:text-purple-400'
+                onClick={() => setSelectedCategory('all')}
+                className={`px-4 py-1.5 rounded-xl border text-[10px] font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+                  selectedCategory === 'all'
+                    ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-white dark:text-zinc-950 dark:border-white shadow-sm'
+                    : 'bg-transparent text-zinc-650 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:border-purple-500 hover:text-purple-600 dark:hover:text-purple-400'
                 }`}
               >
-                {seg}
+                All Items
               </button>
-            ))}
-          </div>
+
+              {/* Dynamic Sub-Category Pills */}
+              {availableCategories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-4 py-1.5 rounded-xl border text-[10px] font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+                    selectedCategory.toLowerCase() === cat.toLowerCase()
+                      ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-white dark:text-zinc-950 dark:border-white shadow-sm'
+                      : 'bg-transparent text-zinc-650 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:border-purple-500 hover:text-purple-600 dark:hover:text-purple-400'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Product Cards Grid */}

@@ -26,7 +26,15 @@ if not DATABASE_URL:
 # Direct autocommit connection for LangGraph checkpointer setup/runtime
 _pg_conn = psycopg.connect(DATABASE_URL, autocommit=True)
 
-checkpointer = InMemorySaver()
+# Postgres-backed checkpointing so multi-turn agent state survives restarts;
+# fall back to in-memory if the checkpoint tables can't be provisioned.
+try:
+    from langgraph.checkpoint.postgres import PostgresSaver
+    checkpointer = PostgresSaver(_pg_conn)
+    checkpointer.setup()
+except Exception as e:
+    print(f"[graph] PostgresSaver setup failed ({e}) — falling back to in-memory checkpointing")
+    checkpointer = InMemorySaver()
 
 # 1. Initialize StateGraph
 builder = StateGraph(AgentState)
@@ -46,7 +54,7 @@ def route_after_input(state: AgentState) -> str:
     # Only allow checkout if evaluations exist (i.e., a recommendation was made)
     if intent.get("is_checkout_requested") and state.get("evaluations"):
         return "checkout"
-    if intent.get("is_ready_to_recommend"):
+    if intent.get("is_ready_to_recommend") or intent.get("is_add_to_cart_requested"):
         return "retriever"
     return "clarifier"
 
@@ -70,5 +78,5 @@ builder.add_edge("pricing", "synthesis")
 builder.add_edge("synthesis", END)
 builder.add_edge("checkout", END)
 
-# 5. Compile Runnable Graph with PostgreSQL-backed persistence (multi-turn state)
+# 5. Compile Runnable Graph with Postgres-backed checkpointing (multi-turn state)
 fashion_agent_graph = builder.compile(checkpointer=checkpointer)

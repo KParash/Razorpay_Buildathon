@@ -25,6 +25,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     JSON,
+    UniqueConstraint,
     event,
     inspect,
     text,
@@ -96,6 +97,7 @@ class User(Base):
     disliked_colors = Column(JSON, default=list)
     size_history = Column(JSON, default=lambda: {"tops": "M", "bottoms": "32"})
     budget_tier = Column(String(10), default="mid")
+    search_history = Column(JSON, default=list)
     metadata_ = Column("metadata", JSON, default=dict)  # 'metadata' is reserved in SA
     created_at = Column(DateTime, default=_utcnow)
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
@@ -116,6 +118,7 @@ class User(Base):
             "disliked_colors": self.disliked_colors or [],
             "size_history": self.size_history or {},
             "budget_tier": self.budget_tier,
+            "search_history": self.search_history or [],
             "metadata": self.metadata_ or {},
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
@@ -317,6 +320,9 @@ class Order(Base):
 # ---------------------------------------------------------------------------
 class CartItem(Base):
     __tablename__ = "cart_items"
+    __table_args__ = (
+        UniqueConstraint("user_id", "product_id", "size", name="uq_cart_items_user_product_size"),
+    )
 
     cart_item_id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(String(50), ForeignKey("users.user_id"), nullable=False)
@@ -359,10 +365,52 @@ def _ensure_product_segment_column():
             conn.execute(text("UPDATE products SET segment = 'Men' WHERE segment IS NULL"))
 
 
+def _ensure_user_search_history_column():
+    """Backfill the legacy users table with the `search_history` column if needed."""
+    inspector = inspect(engine)
+    if not inspector.has_table("users"):
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("users")}
+    if "search_history" not in columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE users ADD COLUMN search_history JSONB DEFAULT '[]'::jsonb"))
+
+
+def _ensure_cart_item_unique_constraint():
+    """Add the cart uniqueness constraint to legacy tables (dedupe first)."""
+    inspector = inspect(engine)
+    if not inspector.has_table("cart_items"):
+        return
+
+    constraint_name = "uq_cart_items_user_product_size"
+    has_constraint = any(
+        uc.get("name") == constraint_name for uc in inspector.get_unique_constraints("cart_items")
+    )
+    if has_constraint:
+        return
+
+    # Remove duplicate rows, keeping the most recent entry per (user, product, size)
+    with engine.begin() as conn:
+        conn.execute(text("""
+            DELETE FROM cart_items a USING cart_items b
+            WHERE a.cart_item_id < b.cart_item_id
+              AND a.user_id = b.user_id
+              AND a.product_id = b.product_id
+              AND a.size = b.size
+        """))
+        conn.execute(text(f"""
+            ALTER TABLE cart_items ADD CONSTRAINT {constraint_name}
+            UNIQUE (user_id, product_id, size)
+        """))
+
+
 def init_db():
     """Create all tables if they don't exist and apply small schema backfills."""
     Base.metadata.create_all(bind=engine)
     _ensure_product_segment_column()
+    _ensure_user_search_history_column()
+    _ensure_cart_item_unique_constraint()
 
 
 init_db()

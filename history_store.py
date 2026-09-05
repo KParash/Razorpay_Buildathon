@@ -10,24 +10,24 @@ from typing import List, Dict, Any, Optional
 from db import SessionLocal, Conversation, User
 
 
+def _normalize_user_id(user_id: str) -> str:
+    """Map the anonymous guest id onto the canonical local dev user."""
+    return "usr_local_dev" if user_id == "usr_guest" else user_id
+
+
 def get_all_sessions(user_id: str = "usr_local_dev") -> List[Dict[str, Any]]:
     """
-    Retrieve all sessions for a user, sorted newest to oldest.
-    Accepts usr_guest or usr_local_dev seamlessly.
+    Retrieve all sessions belonging to a single user, sorted newest to oldest.
+    usr_guest is normalized to usr_local_dev to match the save path. Sessions are
+    strictly scoped to the requesting user — no cross-user leakage.
     """
     db = SessionLocal()
     try:
-        # Fallback to usr_local_dev if user_id is guest
-        query_user = user_id
-        if query_user == "usr_guest":
-            # Check if user exists or default to usr_local_dev
-            dev_user = db.query(User).filter_by(user_id="usr_local_dev").first()
-            if dev_user:
-                query_user = "usr_local_dev"
+        query_user = _normalize_user_id(user_id)
 
         convs = (
             db.query(Conversation)
-            .filter(Conversation.user_id.in_([query_user, "usr_guest", "usr_local_dev"]))
+            .filter(Conversation.user_id == query_user)
             .order_by(Conversation.updated_at.desc())
             .all()
         )
@@ -49,13 +49,19 @@ def get_all_sessions(user_id: str = "usr_local_dev") -> List[Dict[str, Any]]:
         db.close()
 
 
-def get_session_messages(session_id: str) -> List[Dict[str, Any]]:
-    """Get all formatted message items for a specific conversation session."""
+def get_session_messages(session_id: str, user_id: Optional[str] = None) -> Optional[List[Dict[str, Any]]]:
+    """
+    Get all formatted message items for a conversation session.
+    When user_id is provided, returns None if the session belongs to a
+    different user (access denied); [] if the session is missing/empty.
+    """
     db = SessionLocal()
     try:
         conv = db.query(Conversation).filter_by(conversation_id=session_id).first()
         if not conv or not conv.messages:
             return []
+        if user_id is not None and conv.user_id != _normalize_user_id(user_id):
+            return None
         return conv.messages
     finally:
         db.close()
@@ -73,9 +79,7 @@ def save_message_to_session(
     db = SessionLocal()
     try:
         # Normalize target user to usr_local_dev if guest
-        target_user_id = user_id
-        if target_user_id == "usr_guest":
-            target_user_id = "usr_local_dev"
+        target_user_id = _normalize_user_id(user_id)
 
         # Ensure user exists in users table
         user = db.query(User).filter_by(user_id=target_user_id).first()
@@ -125,12 +129,15 @@ def save_message_to_session(
         db.close()
 
 
-def delete_session(session_id: str) -> bool:
-    """Delete a conversation session and all its messages."""
+def delete_session(session_id: str, user_id: Optional[str] = None) -> bool:
+    """
+    Delete a conversation session and all its messages.
+    When user_id is provided, refuses to delete sessions owned by other users.
+    """
     db = SessionLocal()
     try:
         conv = db.query(Conversation).filter_by(conversation_id=session_id).first()
-        if conv:
+        if conv and (user_id is None or conv.user_id == _normalize_user_id(user_id)):
             db.delete(conv)
             db.commit()
             return True

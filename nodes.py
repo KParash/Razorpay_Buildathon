@@ -27,6 +27,63 @@ worker_llm = ChatOpenAI(
 )
 
 # -------------------------------------------------------------
+# Prompt History Trimming (Context Window Management)
+# -------------------------------------------------------------
+def _trim_history(history: List[Dict[str, Any]], max_messages: int = 10, max_chars: int = 4000) -> List[Dict[str, Any]]:
+    """
+    Cap the conversation history embedded into LLM prompts so long-running
+    sessions can't overflow the context window. Keeps the newest max_messages
+    turns, further trimmed from the front until total content fits max_chars.
+    """
+    if not history:
+        return []
+    recent = history[-max_messages:]
+    total = sum(len(str(m.get("content", ""))) for m in recent)
+    while len(recent) > 1 and total > max_chars:
+        dropped = recent.pop(0)
+        total -= len(str(dropped.get("content", "")))
+    return recent
+
+
+# -------------------------------------------------------------
+# Token Usage Extraction & Per-Turn Accumulation
+# -------------------------------------------------------------
+ZERO_USAGE: Dict[str, int] = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+
+
+def _usage_dict(res: Any) -> Dict[str, int]:
+    """Extract token usage from a LangChain AIMessage response."""
+    u = getattr(res, "usage_metadata", None) or {}
+    return {
+        "prompt_tokens": int(u.get("input_tokens", 0) or 0),
+        "completion_tokens": int(u.get("output_tokens", 0) or 0),
+        "total_tokens": int(u.get("total_tokens", 0) or 0),
+    }
+
+
+def _sum_usages(usages: List[Dict[str, int]]) -> Dict[str, int]:
+    return {
+        "prompt_tokens": sum(u.get("prompt_tokens", 0) for u in usages),
+        "completion_tokens": sum(u.get("completion_tokens", 0) for u in usages),
+        "total_tokens": sum(u.get("total_tokens", 0) for u in usages),
+    }
+
+
+def _merge_usage(state: AgentState, own: Dict[str, int]) -> Dict[str, int]:
+    """
+    Accumulate this node's usage onto the running per-turn total.
+    (The router RESETS the counter instead of merging, so multi-turn
+    sessions report usage per turn, not cumulative across turns.)
+    """
+    base = state.get("token_usage") or {}
+    return {
+        "prompt_tokens": base.get("prompt_tokens", 0) + own.get("prompt_tokens", 0),
+        "completion_tokens": base.get("completion_tokens", 0) + own.get("completion_tokens", 0),
+        "total_tokens": base.get("total_tokens", 0) + own.get("total_tokens", 0),
+    }
+
+
+# -------------------------------------------------------------
 # KAZU Inventory Reference (All Segments)
 # -------------------------------------------------------------
 KAZU_INVENTORY = """
@@ -58,12 +115,18 @@ class IntentParser(BaseModel):
     target_segment: Optional[str] = Field(None, description="Shopping segment — must be exactly one of: 'Men', 'Women', 'Kids', 'Beauty', or 'unknown'. Infer from context: 'my daughter' → 'Kids', 'skincare routine' → 'Beauty', 'husband' → 'Men'. If completely unclear, return 'unknown'.")
     search_query: str = Field(..., description="Rich semantic catalog search keywords tailored to KAZU's inventory and the identified segment (e.g. 'linen shirt beach trousers men', 'maxi dress resort women', 'kids graphic tee jogger', 'vitamin C serum skincare')")
     is_ready_to_recommend: bool = Field(..., description="Set true ONLY if: (a) segment is known AND occasion/vibe is identified, OR (b) user explicitly names a specific product type. Set false if segment is 'unknown' or intent is too vague.")
-    is_checkout_requested: bool = Field(False, description="Set true ONLY if customer explicitly requests to purchase, buy, or checkout.")
+    is_add_to_cart_requested: bool = Field(False, description="Set true if customer explicitly requests to add the recommended products, look, or curated outfit to their cart/shopping bag.")
+    is_checkout_requested: bool = Field(False, description="Set true ONLY if customer explicitly requests to purchase, buy, or checkout directly.")
+    target_skus_to_add: List[str] = Field(default_factory=list, description="The list of specific product SKU/product IDs (e.g. ['SKU_019', 'SKU_009']) that the customer explicitly wants to add to their cart in their latest message. Read the dialogue history and the latest user request to identify which specific SKUs they want to add (e.g. the anchor product, or particular coordinate products they liked). Empty if no cart addition is requested.")
 
 async def master_router_node(state: AgentState) -> dict:
     history = state.get("messages", [])
     last_msg = history[-1]["content"] if history else ""
+    prompt_history = _trim_history(history)
     prev_intent = state.get("intent") or {}
+    profile = state.get("customer_profile") or {}
+    active_cart = profile.get("cart") or []
+    active_cart_summary = ", ".join([f"{item['product_id']} (size: {item['size']})" for item in active_cart]) if active_cart else "Empty"
 
     prompt = f"""
 You are the Intent Resolution Engine for KAZU — a premium multi-segment fashion and beauty store.
@@ -71,10 +134,11 @@ You are the Intent Resolution Engine for KAZU — a premium multi-segment fashio
 {KAZU_INVENTORY}
 
 Dialogue History:
-{history}
+{prompt_history}
 
 Latest Customer Message: "{last_msg}"
 Previously Extracted Intent: {prev_intent}
+Customer's Active Shopping Cart: {active_cart_summary}
 
 Your Task:
 1. Identify the shopping SEGMENT (Men / Women / Kids / Beauty) from conversation context.
@@ -89,8 +153,14 @@ Your Task:
 3. Set is_ready_to_recommend = true ONLY when:
    - Segment is known (not 'unknown') AND
    - There's at least one specific intent (occasion, product type, or style preference)
+   - CRITICAL OVERRIDE: If the user explicitly asks about, specifies, or names a particular product from KAZU's catalog (e.g. they say "Tell me more about...: Skinny Fit Dark Wash Jeans", "Stretch Slim Fit Chinos", etc., or name a specific SKU), you MUST set is_ready_to_recommend = true, extract the target segment from the product (e.g. 'Men' for chinos/jeans), set the search_query to that exact product title, and proceed directly to retriever. Do NOT ask clarifying questions when the user asks about a specific product.
 
-4. Synthesize a semantic search_query with 3-6 keywords that match KAZU's exact inventory.
+4. Distinguish between adding to cart and direct checkout:
+   - Set is_add_to_cart_requested = true if the customer asks to "add to cart", "add these to my bag/cart", "put all three in the cart", etc.
+   - If is_add_to_cart_requested is true, analyze the dialogue history and latest message to find exactly WHICH specific products the user requested to add (e.g. they say 'add these 2 products' or specify particular items from the prior discussion). Populate only the matching product SKU/product IDs (e.g., ['SKU_019', 'SKU_009']) in target_skus_to_add. Do NOT blindly add all paired/complementary products unless they explicitly ask to add 'all' of them.
+   - Set is_checkout_requested = true ONLY if the customer explicitly requests to "checkout", "buy", "pay", "checkout with Razorpay", or finalize the transaction immediately.
+
+5. Synthesize a semantic search_query with 3-6 keywords that match KAZU's exact inventory.
    - For Men: use words like 'shirt', 'chinos', 'polo', 'sneakers', 'sunglasses'
    - For Women: use words like 'dress', 'blouse', 'wide-leg', 'sandals', 'tote'
    - For Kids: use words like 'kids tee', 'joggers', 'sneakers', 'hoodie'
@@ -99,11 +169,19 @@ Your Task:
 Return valid structured output.
 """
 
+    router_usage = dict(ZERO_USAGE)
     try:
-        structured_router = master_llm.with_structured_output(IntentParser)
-        res = await structured_router.ainvoke(prompt)
-        intent_dict = res.model_dump()
-    except Exception:
+        structured_router = master_llm.with_structured_output(IntentParser, include_raw=True)
+        out = await structured_router.ainvoke(prompt)
+        parsed = out.get("parsed")
+        if parsed is None:
+            raise ValueError(f"structured intent parse failed: {out.get('parsing_error')}")
+        intent_dict = parsed.model_dump()
+        router_usage = _usage_dict(out.get("raw"))
+    except Exception as parse_err:
+        print(f"[router] Intent extraction failed ({parse_err}) — using heuristic fallback")
+
+  
         # Fallback heuristic parser
         is_checkout = any(w in last_msg.lower() for w in ["buy", "checkout", "order", "purchase", "pay"])
         msg_lower = last_msg.lower()
@@ -123,6 +201,7 @@ Return valid structured output.
             "hi", "hello", "hey", "help me shop", "show me", 
             "i need", "help me dress", "recommend", "something nice", "what do you have"
         ])
+        is_direct_product = "tell me more about this" in last_msg.lower() or "suggest complete styling" in last_msg.lower()
         intent_dict = {
             "occasion": prev_intent.get("occasion") or "lifestyle dressing",
             "destination_climate": prev_intent.get("destination_climate") or "temperate",
@@ -131,8 +210,10 @@ Return valid structured output.
             "formality_level": prev_intent.get("formality_level") or "smart casual",
             "target_segment": segment,
             "search_query": last_msg,
-            "is_ready_to_recommend": not is_broad and segment != "unknown",
-            "is_checkout_requested": is_checkout
+            "is_ready_to_recommend": is_direct_product or (not is_broad and segment != "unknown"),
+            "is_add_to_cart_requested": False,
+            "is_checkout_requested": is_checkout,
+            "target_skus_to_add": []
         }
 
     # Cumulative Intent Merge: Persist previous slots across turns
@@ -150,7 +231,8 @@ Return valid structured output.
     if intent_dict.get("is_checkout_requested"):
         merged_intent["is_checkout_requested"] = True
 
-    return {"intent": merged_intent}
+    # Reset the per-turn token counter (downstream nodes merge onto this)
+    return {"intent": merged_intent, "token_usage": router_usage}
 
 # -------------------------------------------------------------
 # 2. Targeted Clarifier Node (clarifier_node)
@@ -188,7 +270,7 @@ Core Directives:
 
     user_context = f"""
 Conversation so far:
-{history}
+{_trim_history(history)}
 
 Customer Profile:
 - Fit Preference: {profile.get('fit_preference', 'relaxed')}
@@ -208,7 +290,8 @@ Task:
 
     return {
         "messages": [{"role": "assistant", "content": res.content}],
-        "final_response": res.content
+        "final_response": res.content,
+        "token_usage": _merge_usage(state, _usage_dict(res))
     }
 
 
@@ -312,15 +395,19 @@ Customer Profile:
 For beauty/skincare, return standard size. For kids' items, infer age group if known.
 """
     try:
-        llm = worker_llm.with_structured_output(SizeVerdict)
-        res = await llm.ainvoke(prompt)
-        return res.model_dump()
-    except Exception:
+        llm = worker_llm.with_structured_output(SizeVerdict, include_raw=True)
+        out = await llm.ainvoke(prompt)
+        if out.get("parsed") is None:
+            raise ValueError(f"structured parse failed: {out.get('parsing_error')}")
+        return out["parsed"].model_dump(), _usage_dict(out.get("raw"))
+    except Exception as e:
+        print(f"[size_worker] LLM evaluation failed for {meta.get('title')}: {e} — using flagged fallback verdict")
         return {
             "recommended_size": profile.get("size_history", {}).get("tops", "M"),
-            "fit_confidence": 0.90,
-            "reasoning": f"Standard recommendation for {meta.get('fit_type', 'regular')} fit."
-        }
+            "fit_confidence": 0.5,
+            "reasoning": f"Heuristic default for {meta.get('fit_type', 'regular')} fit (specialist evaluation unavailable).",
+            "is_fallback": True
+        }, dict(ZERO_USAGE)
 
 # 5.2 Fabric & Climate Specialist
 async def fabric_worker_task(sku: dict, climate: str) -> dict:
@@ -341,15 +428,19 @@ For beauty products: climate_pass is always true. Assess shelf suitability.
 For shoes/bags: assess durability and occasion fit.
 """
     try:
-        llm = worker_llm.with_structured_output(FabricVerdict)
-        res = await llm.ainvoke(prompt)
-        return res.model_dump()
-    except Exception:
+        llm = worker_llm.with_structured_output(FabricVerdict, include_raw=True)
+        out = await llm.ainvoke(prompt)
+        if out.get("parsed") is None:
+            raise ValueError(f"structured parse failed: {out.get('parsing_error')}")
+        return out["parsed"].model_dump(), _usage_dict(out.get("raw"))
+    except Exception as e:
+        print(f"[fabric_worker] LLM evaluation failed for {meta.get('title')}: {e} — using flagged fallback verdict")
         return {
             "climate_pass": True,
             "wrinkle_risk": "Low",
-            "comfort_notes": f"Suitable {fabric_desc} for {climate} setting."
-        }
+            "comfort_notes": f"Suitable {fabric_desc} for {climate} setting (textile specialist evaluation unavailable).",
+            "is_fallback": True
+        }, dict(ZERO_USAGE)
 
 # 5.3 Stylist / Look Specialist
 async def stylist_worker_task(sku: dict, occasion: str) -> dict:
@@ -368,37 +459,41 @@ For beauty: suggest complementary products in a routine or gifting set.
 For accessories: suggest outfits or occasions this best suits.
 """
     try:
-        llm = worker_llm.with_structured_output(StylistVerdict)
-        res = await llm.ainvoke(prompt)
-        return res.model_dump()
-    except Exception:
+        llm = worker_llm.with_structured_output(StylistVerdict, include_raw=True)
+        out = await llm.ainvoke(prompt)
+        if out.get("parsed") is None:
+            raise ValueError(f"structured parse failed: {out.get('parsing_error')}")
+        return out["parsed"].model_dump(), _usage_dict(out.get("raw"))
+    except Exception as e:
+        print(f"[stylist_worker] LLM evaluation failed for {meta.get('title')}: {e} — using flagged fallback verdict")
         return {
             "paired_categories": ["complementary accessory", "classic essential"],
             "styling_tips": "Pair with minimal accessories for a clean, elevated look.",
-            "pairing_rationale": "Balances the look with clean, harmonious elements."
-        }
+            "pairing_rationale": "Balances the look with clean, harmonious elements.",
+            "is_fallback": True
+        }, dict(ZERO_USAGE)
 
 async def worker_swarm_node(state: AgentState) -> dict:
     candidates = state.get("candidate_skus", [])
     if not candidates:
-        from catalog_store import get_all_catalog_products
-        candidates = get_all_catalog_products()[:8]
-        state["candidate_skus"] = candidates
+        # Retrieval found nothing — do NOT fabricate a catalog recommendation.
+        # Return empty and let synthesis produce an honest out-of-stock response.
+        print("[worker_swarm] No candidates from retriever — skipping evaluation, honest no-match response")
+        return {"evaluations": [], "anchor_sku": None, "outfit": None, "token_usage": _merge_usage(state, ZERO_USAGE)}
 
-    anchor = state.get("anchor_sku") or (candidates[0] if candidates else None)
-    if not anchor:
-        return {"evaluations": [], "outfit": None}
+    anchor = state.get("anchor_sku") or candidates[0]
 
     profile = state.get("customer_profile", {})
     climate = state.get("intent", {}).get("destination_climate") or "temperate"
     occasion = state.get("intent", {}).get("occasion") or "curated lifestyle"
 
     # Evaluate anchor with worker swarm
-    size_res, fabric_res, stylist_res = await asyncio.gather(
+    (size_res, size_u), (fabric_res, fabric_u), (stylist_res, stylist_u) = await asyncio.gather(
         size_worker_task(anchor, profile),
         fabric_worker_task(anchor, climate),
         stylist_worker_task(anchor, occasion)
     )
+    swarm_usages = [size_u, fabric_u, stylist_u]
 
     delivery_verdict = {
         "meets_deadline": True,
@@ -413,11 +508,12 @@ async def worker_swarm_node(state: AgentState) -> dict:
         for cand in candidates[1:]:
             cand_fabric = str(cand["metadata"].get("fabric", "")).lower()
             if any(k in cand_fabric for k in ["linen", "cotton", "silk", "blend", "lightweight", "chiffon", "canvas"]):
-                alt_size, alt_fabric, alt_stylist = await asyncio.gather(
+                (alt_size, alt_su), (alt_fabric, alt_fu), (alt_stylist, alt_sku_u) = await asyncio.gather(
                     size_worker_task(cand, profile),
                     fabric_worker_task(cand, climate),
                     stylist_worker_task(cand, occasion)
                 )
+                swarm_usages.extend([alt_su, alt_fu, alt_sku_u])
                 if alt_fabric.get("climate_pass", True):
                     alternative_eval = {
                         "sku_id": anchor["sku_id"],
@@ -469,7 +565,8 @@ async def worker_swarm_node(state: AgentState) -> dict:
     return {
         "anchor_sku": anchor,
         "evaluations": eval_list,
-        "outfit": outfit
+        "outfit": outfit,
+        "token_usage": _merge_usage(state, _sum_usages(swarm_usages))
     }
 
 # -------------------------------------------------------------
@@ -483,11 +580,16 @@ async def pricing_node(state: AgentState) -> dict:
     base_price = float(anchor["metadata"].get("price", 0))
     coupon = anchor["metadata"].get("eligible_coupon", "NONE")
     
-    # Check if user mentioned a promo code in chat
-    user_msgs = " ".join([m.get("content", "") for m in state.get("messages", [])]).upper()
-    if "STYLE20" in user_msgs:
+    # Check if user mentioned a promo code in their LATEST message only —
+    # scanning the full checkpointed history made coupons stick to every
+    # subsequent recommendation in the session.
+    last_user_msg = next(
+        (str(m.get("content", "")) for m in reversed(state.get("messages", [])) if m.get("role") == "user"),
+        ""
+    ).upper()
+    if "STYLE20" in last_user_msg:
         coupon = "STYLE20"
-    elif "AURA10" in user_msgs:
+    elif "AURA10" in last_user_msg:
         coupon = "AURA10"
 
     discount = 0.20 if coupon == "STYLE20" else (0.10 if coupon == "AURA10" else 0.0)
@@ -507,6 +609,14 @@ async def pricing_node(state: AgentState) -> dict:
 # -------------------------------------------------------------
 async def synthesis_node(state: AgentState) -> dict:
     if not state.get("evaluations") or not state.get("anchor_sku"):
+        intent = state.get("intent") or {}
+        if intent.get("is_ready_to_recommend") or intent.get("is_add_to_cart_requested"):
+            # Retrieval ran but surfaced no match — be honest instead of fabricating.
+            honesty_msg = (
+                "I searched the KAZU catalog for that, but we don't currently stock a piece that fits your request. "
+                "If you'd like, I can suggest the closest alternatives from our Men's collection, or something entirely different."
+            )
+            return {"final_response": honesty_msg}
         return {"final_response": "I'm ready to curate your selection. Who are we shopping for today — yourself, a partner, kids, or are you looking for beauty essentials?"}
 
     latest_eval = state["evaluations"][0]
@@ -517,6 +627,8 @@ async def synthesis_node(state: AgentState) -> dict:
     intent = state.get("intent", {})
     profile = state.get("customer_profile", {})
     segment = meta.get("segment", "Men")
+    active_cart = profile.get("cart") or []
+    active_cart_text = ", ".join([f"{item['product_id']} (size: {item['size']})" for item in active_cart]) if active_cart else "Empty"
 
     base_price = pricing.get("base_price", meta.get("price", 0))
     final_price = pricing.get("final_price", base_price)
@@ -550,11 +662,22 @@ async def synthesis_node(state: AgentState) -> dict:
     if alt_eval and alt_eval.get("is_disqualified"):
         alt_note = f"\nNote: We also examined an alternative, but its heavier material is less suited for {intent.get('destination_climate', 'this setting')}."
 
+    cart_instruction = ""
+    if intent.get("is_add_to_cart_requested"):
+        cart_instruction = (
+            "\n- THE CLIENT HAS REQUESTED TO ADD ITEMS FROM THIS SELECTION TO THEIR CART. "
+            "Start your response by confirming that the pieces they asked for are now in their "
+            "KAZU shopping bag (they can review them in the shopping bag drawer). Only claim "
+            "the items they explicitly requested — do NOT claim you added every complementary piece "
+            "or any item they did not ask for."
+        )
+
     prompt = f"""
 You are a discerning {persona} for KAZU Atelier curating a selection for a private client.
 
 Stylist Rules:
 - BE EXTREMELY CONCISE. Tell only what is needed. Do not output a wall of text. Speak like a high-end expert who values the client's time.
+{cart_instruction}
 - Prohibited phrases: "Recommended for you", "I have selected", "Here is your", "Hope this helps!", "Let me know if you need anything else!".
 - Jump straight into the styling vision: Start with how the anchor product solves their specific need in 1-2 short sentences.
 - Weave in complementary products naturally as part of the complete look or routine (max 1 sentence).
@@ -570,6 +693,7 @@ Client Context:
 - {context_label}: {context_value}
 - Climate/Setting: {intent.get('destination_climate', 'temperate')}
 - Fit / Style Preference: {profile.get('fit_preference', 'relaxed')}
+- Active Cart Contents: {active_cart_text}
 
 Anchor Product:
 - Title: {meta.get('title')}
@@ -589,7 +713,7 @@ Complete Look / Routine:
 {alt_note}
 """
 
-    res = await master_llm.ainvoke(prompt)
+    res = await master_llm.ainvoke(prompt, config={"run_name": "synthesis_llm"})
     content = res.content
     
     suggested_questions = []
@@ -614,7 +738,8 @@ Complete Look / Routine:
     return {
         "messages": [{"role": "assistant", "content": final_text}],
         "final_response": final_text,
-        "suggested_questions": suggested_questions[:3]
+        "suggested_questions": suggested_questions[:3],
+        "token_usage": _merge_usage(state, _usage_dict(res))
     }
 
 # -------------------------------------------------------------
@@ -622,22 +747,69 @@ Complete Look / Routine:
 # -------------------------------------------------------------
 async def razorpay_checkout_node(state: AgentState) -> dict:
     import time
+    import uuid
     from checkout_service import create_frozen_razorpay_order
-    
+    from db import SessionLocal, Order, User
+
     pricing = state.get("pricing_result") or {}
     final_total = pricing.get("final_price", 0)
     coupon_code = pricing.get("coupon_code", "NONE")
-    
+    anchor = state.get("anchor_sku")
+    paired_list = [
+        p.get("sku_id")
+        for p in (state.get("outfit") or {}).get("paired_skus", [])
+        if p.get("sku_id")
+    ]
+
     cart_payload = {
         "user_id": state["customer_profile"]["user_id"],
-        "anchor_sku": state["anchor_sku"]["sku_id"] if state.get("anchor_sku") else "SKU_GENERIC",
-        "paired_skus": [p.get("sku_id") for p in (state.get("outfit") or {}).get("paired_skus", [])],
+        "anchor_sku": anchor["sku_id"] if anchor else "SKU_GENERIC",
+        "paired_skus": paired_list,
         "final_total": final_total,
         "coupon": coupon_code,
         "timestamp": int(time.time())
     }
-    
+
     razorpay_order = create_frozen_razorpay_order(cart_payload)
+
+    # Persist the order history record immediately so /api/checkout/verify can
+    # resolve it and the transaction appears in /api/orders once paid.
+    try:
+        db = SessionLocal()
+        try:
+            user_id = cart_payload["user_id"] or "usr_guest"
+            if not db.query(User).filter_by(user_id=user_id).first():
+                if db.query(User).filter_by(user_id="usr_local_dev").first():
+                    user_id = "usr_local_dev"
+                else:
+                    user = User(
+                        user_id=user_id,
+                        username=f"guest_{uuid.uuid4().hex[:6]}",
+                        email=f"{user_id}@example.com"
+                    )
+                    db.add(user)
+                    db.commit()
+            db_order = Order(
+                order_id=f"ord_{uuid.uuid4().hex[:12]}",
+                user_id=user_id,
+                anchor_sku=cart_payload["anchor_sku"],
+                paired_skus=paired_list,
+                amount=float(final_total),
+                currency=razorpay_order.get("currency", "INR"),
+                status="created",
+                coupon=coupon_code,
+                razorpay_order_id=razorpay_order.get("id"),
+                receipt=razorpay_order.get("receipt"),
+                notes={"is_mock": razorpay_order.get("is_mock", False)}
+            )
+            db.add(db_order)
+            db.commit()
+        finally:
+            db.close()
+    except Exception as e:
+        # Order persistence must never crash the chat turn
+        print(f"[razorpay_checkout_node] Failed to persist order history: {e}")
+
     msg = f"Your selection is curated and your order is locked at ₹{final_total} (using code {coupon_code}). Opening KAZU secure checkout powered by Razorpay."
     
     return {

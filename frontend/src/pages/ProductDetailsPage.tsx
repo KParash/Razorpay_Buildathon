@@ -24,7 +24,9 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
-  const product = products.find((p) => p.sku_id === sku_id) || products[0];
+  // No fallback to products[0] — an unknown SKU must render the Not Found state,
+  // not silently display an unrelated product.
+  const product = products.find((p) => p.sku_id === sku_id);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -49,6 +51,10 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
   const { metadata } = product;
   const isAdded = cart.some((c) => c.sku_id === product.sku_id);
   const primaryImage = metadata.image_url || getProductImage(product.sku_id);
+
+  // Only Men's products are currently available
+  const isMenProduct = metadata.segment?.toLowerCase() === 'men';
+  const tooltipText = "Only Men's collection is available right now";
 
   // Puma-style multi-angle product gallery mockups
   const galleryImages = [
@@ -100,17 +106,24 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
               {galleryImages.map((img, idx) => (
                 <div
                   key={idx}
-                  onClick={() => setActiveImageIndex(idx)}
-                  className={`aspect-[3/4] bg-[#f4f2ee] dark:bg-zinc-900/60 overflow-hidden border transition-all duration-300 rounded-2xl cursor-pointer ${
-                    activeImageIndex === idx
-                      ? 'border-purple-500 dark:border-purple-500 shadow-md shadow-purple-500/10'
-                      : 'border-zinc-200/50 dark:border-zinc-800/50 opacity-95 hover:opacity-100 hover:border-zinc-300 dark:hover:border-zinc-700'
+                  onClick={() => {
+                    if (isMenProduct) setActiveImageIndex(idx);
+                  }}
+                  className={`aspect-[3/4] overflow-hidden border transition-all duration-300 rounded-2xl ${
+                    !isMenProduct
+                      ? 'border-zinc-200/50 dark:border-zinc-800/50 opacity-80 cursor-not-allowed shadow-inner'
+                      : activeImageIndex === idx
+                      ? 'border-purple-500 dark:border-purple-500 shadow-md shadow-purple-500/10 cursor-pointer'
+                      : 'border-zinc-200/50 dark:border-zinc-800/50 opacity-95 hover:opacity-100 hover:border-zinc-300 dark:hover:border-zinc-700 cursor-pointer'
                   }`}
+                  title={!isMenProduct ? tooltipText : undefined}
                 >
                   <img
                     src={img}
                     alt={`${metadata.title} angle ${idx + 1}`}
-                    className="w-full h-full object-cover object-center grayscale-[10%] hover:grayscale-0 hover:scale-102 transition-all duration-700 ease-out"
+                    className={`w-full h-full object-cover object-center transition-all duration-700 ease-out ${
+                      !isMenProduct ? 'grayscale opacity-60' : 'grayscale-[10%] hover:grayscale-0 hover:scale-102'
+                    }`}
                   />
                 </div>
               ))}
@@ -124,7 +137,11 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
             <div>
               <div className="flex items-center justify-between text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-2.5">
                 <span>SKU: {sku_id}</span>
-                <Badge variant="purple">NEW RELEASE</Badge>
+                {isMenProduct ? (
+                  <Badge variant="purple">NEW RELEASE</Badge>
+                ) : (
+                  <Badge variant="secondary" className="bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400">UNAVAILABLE</Badge>
+                )}
               </div>
               <h1 className="font-display text-2xl sm:text-3xl font-black tracking-tight uppercase text-zinc-900 dark:text-white leading-tight">
                 {metadata.title}
@@ -137,12 +154,12 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
             {/* Price & Discounts Block */}
             <div className="border-y border-zinc-200/60 dark:border-zinc-800/60 py-4.5 flex items-center justify-between">
               <div>
-                <span className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-white font-mono leading-none">
+                <span className={`text-2xl sm:text-3xl font-black font-mono leading-none ${isMenProduct ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-550'}`}>
                   ₹{Number(metadata.price).toLocaleString('en-IN')}
                 </span>
                 <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block font-bold mt-1.5 uppercase tracking-wide">Includes all taxes & duties</span>
               </div>
-              {metadata.eligible_coupon && metadata.eligible_coupon !== 'NONE' && (
+              {isMenProduct && metadata.eligible_coupon && metadata.eligible_coupon !== 'NONE' && (
                 <div className="flex items-center gap-1.5 bg-purple-50 dark:bg-purple-950/25 border border-purple-200/60 dark:border-purple-800/40 text-purple-750 dark:text-purple-300 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider shadow-sm">
                   <Tag className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0 animate-pulse" />
                   <span>CODE: {metadata.eligible_coupon}</span>
@@ -154,25 +171,33 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
             <div className="space-y-3.5">
               <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
                 <span>SELECT SIZE</span>
-                <button
-                  onClick={handleAskStylistForThisSKU}
-                  className="text-purple-600 dark:text-purple-400 hover:text-purple-700 hover:underline cursor-pointer flex items-center gap-1 transition-colors"
-                >
-                  <Sparkles className="h-3 w-3 animate-pulse" />
-                  <span>Ask AI Fit Consultant</span>
-                </button>
+                {isMenProduct && (
+                  <button
+                    onClick={handleAskStylistForThisSKU}
+                    className="text-purple-600 dark:text-purple-400 hover:text-purple-700 hover:underline cursor-pointer flex items-center gap-1 transition-colors"
+                  >
+                    <Sparkles className="h-3 w-3 animate-pulse" />
+                    <span>Ask AI Fit Consultant</span>
+                  </button>
+                )}
               </div>
 
               <div className="grid grid-cols-5 gap-2">
                 {['S', 'M', 'L', 'XL', 'XXL'].map((sz) => (
                   <button
                     key={sz}
-                    onClick={() => setSelectedSize(sz)}
-                    className={`py-3 rounded-xl border text-xs font-mono font-bold transition-all duration-300 cursor-pointer ${
-                      selectedSize === sz
-                        ? 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-600/15'
-                        : 'bg-transparent text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 hover:border-purple-500 hover:text-purple-600 dark:hover:text-purple-450'
+                    disabled={!isMenProduct}
+                    onClick={() => {
+                      if (isMenProduct) setSelectedSize(sz);
+                    }}
+                    className={`py-3 rounded-xl border text-xs font-mono font-bold transition-all duration-300 ${
+                      !isMenProduct
+                        ? 'bg-transparent text-zinc-400 dark:text-zinc-650 border-zinc-250 dark:border-zinc-850 cursor-not-allowed'
+                        : selectedSize === sz
+                        ? 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-600/15 cursor-pointer'
+                        : 'bg-transparent text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 hover:border-purple-500 hover:text-purple-600 dark:hover:text-purple-450 cursor-pointer'
                     }`}
+                    title={!isMenProduct ? tooltipText : undefined}
                   >
                     {sz}
                   </button>
@@ -182,47 +207,83 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({
 
             {/* Add to Cart & Wishlist CTAs */}
             <div className="space-y-3 pt-2">
+              {isMenProduct ? (
+                <>
+                  <Button
+                    variant={isAdded ? 'outline' : 'default'}
+                    size="lg"
+                    onClick={() => {
+                      onAddToCart(product, selectedSize);
+                      onOpenCart();
+                    }}
+                    className={`w-full py-4 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      isAdded
+                        ? 'border-emerald-500 hover:border-emerald-600 text-emerald-600 dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20'
+                        : 'bg-zinc-900 hover:bg-black text-white dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 shadow-lg shadow-zinc-950/10'
+                    }`}
+                  >
+                    {isAdded ? (
+                      <>
+                        <Check className="h-4 w-4 text-emerald-500" />
+                        <span>ADDED TO SHOPPING BAG</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingBag className="h-4 w-4 shrink-0" />
+                        <span>ADD TO BAG • ₹{Number(metadata.price).toLocaleString('en-IN')}</span>
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={handleAskStylistForThisSKU}
+                    className="w-full py-3.5 border-purple-200 hover:border-purple-300 text-purple-700 dark:border-purple-800 dark:text-purple-300 bg-purple-500/[0.02] dark:bg-purple-950/10 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all cursor-pointer shadow-sm"
+                  >
+                    <Sparkles className="h-4 w-4 animate-pulse text-purple-600 dark:text-purple-400" />
+                    <span>CONSULT AI STYLIST FOR THIS SKU</span>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    disabled
+                    className="w-full py-4 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-not-allowed bg-zinc-100 dark:bg-zinc-900/60 text-zinc-400 dark:text-zinc-500 border-zinc-200 dark:border-zinc-850"
+                    title={tooltipText}
+                  >
+                    <ShoppingBag className="h-4 w-4 shrink-0" />
+                    <span>UNAVAILABLE</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    disabled
+                    className="w-full py-3.5 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-not-allowed bg-zinc-100 dark:bg-zinc-900/30 border-zinc-200 dark:border-zinc-850 text-zinc-400 dark:text-zinc-505"
+                    title={tooltipText}
+                  >
+                    <Sparkles className="h-4 w-4 text-zinc-400 dark:text-zinc-600" />
+                    <span>CONSULT AI STYLIST FOR THIS SKU</span>
+                  </Button>
+                </>
+              )}
+
               <Button
-                variant={isAdded ? 'outline' : 'default'}
+                variant="outline"
                 size="lg"
                 onClick={() => {
-                  onAddToCart(product, selectedSize);
-                  onOpenCart();
+                  if (isMenProduct) setIsWishlisted(!isWishlisted);
                 }}
-                className={`w-full py-4 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                  isAdded
-                    ? 'border-emerald-500 hover:border-emerald-600 text-emerald-600 dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20'
-                    : 'bg-zinc-900 hover:bg-black text-white dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 shadow-lg shadow-zinc-950/10'
+                disabled={!isMenProduct}
+                className={`w-full py-3 border text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
+                  isMenProduct
+                    ? 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-700 cursor-pointer'
+                    : 'bg-zinc-150 dark:bg-zinc-900/20 border-zinc-200 dark:border-zinc-850 text-zinc-400 dark:text-zinc-555 cursor-not-allowed pointer-events-none'
                 }`}
-              >
-                {isAdded ? (
-                  <>
-                    <Check className="h-4 w-4 text-emerald-500" />
-                    <span>ADDED TO SHOPPING BAG</span>
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag className="h-4 w-4 shrink-0" />
-                    <span>ADD TO BAG  ₹{Number(metadata.price).toLocaleString('en-IN')}</span>
-                  </>
-                )}
-              </Button>
-
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={handleAskStylistForThisSKU}
-                className="w-full py-3.5 border-purple-200 hover:border-purple-300 text-purple-700 dark:border-purple-800 dark:text-purple-300 bg-purple-500/[0.02] dark:bg-purple-950/10 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all cursor-pointer shadow-sm"
-              >
-                <Sparkles className="h-4 w-4 animate-pulse text-purple-600 dark:text-purple-400" />
-                <span>CONSULT AI STYLIST FOR THIS SKU</span>
-              </Button>
-
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => setIsWishlisted(!isWishlisted)}
-                className="w-full py-3 border border-zinc-200 dark:border-zinc-800 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:border-zinc-400 dark:hover:border-zinc-700 transition-all cursor-pointer"
+                title={!isMenProduct ? tooltipText : undefined}
               >
                 <Heart className={`h-4 w-4 transition-colors ${isWishlisted ? 'fill-rose-550 text-rose-500' : 'text-zinc-405 dark:text-zinc-500'}`} />
                 <span>{isWishlisted ? 'SAVED TO WISHLIST' : 'ADD TO WISHLIST'}</span>

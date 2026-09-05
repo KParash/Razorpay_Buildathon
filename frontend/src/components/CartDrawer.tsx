@@ -3,14 +3,14 @@ import { ShoppingBag, X, Trash2, ShieldCheck, Tag, CreditCard, Sparkles, CheckCi
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Badge } from './ui/Badge';
-import { Product } from './ProductCard';
+import { CartLineItem, getProductImage } from '@/types/product';
 import { openRazorpayCheckout } from '@/lib/razorpay';
 
 interface CartDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  cart: Product[];
-  onRemoveFromCart: (skuId: string) => void;
+  cart: CartLineItem[];
+  onRemoveFromCart: (skuId: string, size?: string) => void;
   onClearCart: () => void;
   onOpenChat: (query?: string) => void;
 }
@@ -214,9 +214,15 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             <div className="flex-1 overflow-y-auto p-5 space-y-3.5">
               {cart.map((item) => (
                 <div
-                  key={item.sku_id}
-                  className="flex items-center justify-between rounded-2xl border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-900/40 p-4 gap-3 shadow-sm hover:border-purple-500/20 dark:hover:border-purple-500/20 transition-all duration-300"
+                  key={`${item.sku_id}-${item.selected_size || 'L'}`}
+                  className="flex items-center justify-between rounded-2xl border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-900/40 p-3.5 gap-3 shadow-sm hover:border-purple-500/20 dark:hover:border-purple-500/20 transition-all duration-300"
                 >
+                  <img
+                    src={getProductImage(item.sku_id, item.metadata.image_url)}
+                    alt={item.metadata.title}
+                    loading="lazy"
+                    className="h-16 w-16 shrink-0 rounded-xl object-cover border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900"
+                  />
                   <div className="flex-1 overflow-hidden">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[9px] font-mono text-zinc-400 dark:text-purple-400 uppercase font-bold tracking-widest">
@@ -231,6 +237,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     </h4>
                     <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 mt-0.5 uppercase tracking-wider">
                       {item.metadata.fabric} • {item.metadata.color}
+                      {item.selected_size && (
+                        <span className="text-purple-600 dark:text-purple-400"> • Size {item.selected_size}</span>
+                      )}
                     </p>
                   </div>
 
@@ -239,7 +248,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       ₹{item.metadata.price}
                     </span>
                     <button
-                      onClick={() => onRemoveFromCart(item.sku_id)}
+                      onClick={() => onRemoveFromCart(item.sku_id, item.selected_size)}
                       className="rounded-xl p-2 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-red-500 dark:hover:text-red-400 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 transition-colors cursor-pointer"
                       title="Remove item"
                     >
