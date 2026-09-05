@@ -24,6 +24,7 @@ export const Home: React.FC<HomeProps> = ({
 }) => {
   const navigate = useNavigate();
   const [internalSegment, setInternalSegment] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   // Use externally controlled segment if provided (from Navbar click), else internal
   const activeSegment = externalSegment ?? internalSegment;
@@ -33,15 +34,40 @@ export const Home: React.FC<HomeProps> = ({
     navigate('/chat', { state: { initialPrompt: prompt } });
   };
 
+  const handleSegmentChange = (seg: string) => {
+    setActiveSegment(seg);
+    setSelectedCategory('all');
+  };
+
+  // Derive available categories dynamically from products matching the current segment
+  const availableCategories = Array.from(
+    new Set(
+      products
+        .filter((p) => {
+          if (activeSegment === 'all') return true;
+          return (p.metadata.segment || '').toLowerCase() === activeSegment.toLowerCase();
+        })
+        .map((p) => p.metadata.sub_category)
+        .filter((cat): cat is string => !!cat && cat.trim() !== '')
+    )
+  );
+
   const filteredProducts = products.filter((p) => {
-    // Segment filter using the `segment` metadata field
+    // 1. Segment filter using the `segment` metadata field
     let matchesSegment = true;
     if (activeSegment && activeSegment !== 'all') {
       const productSegment = (p.metadata.segment || '').toLowerCase();
       matchesSegment = productSegment === activeSegment.toLowerCase();
     }
 
-    return matchesSegment;
+    // 2. Category/Sub-category filter
+    let matchesCategory = true;
+    if (selectedCategory && selectedCategory !== 'all') {
+      const productCat = (p.metadata.sub_category || '').toLowerCase();
+      matchesCategory = productCat === selectedCategory.toLowerCase();
+    }
+
+    return matchesSegment && matchesCategory;
   });
 
   return (
@@ -343,45 +369,83 @@ export const Home: React.FC<HomeProps> = ({
       <main id="catalog-grid" className="mx-auto max-w-7xl px-6 sm:px-8 py-16">
         
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-zinc-200 dark:border-zinc-800">
-          <div>
-            <h2 className="font-display text-3xl font-black tracking-tight uppercase text-zinc-900 dark:text-white">
-              {activeSegment === 'all' ? 'BEST OF KAZU' :
-               activeSegment === 'men' ? 'KAZU MEN' :
-               activeSegment === 'women' ? 'KAZU WOMEN' :
-               activeSegment === 'kids' ? 'KAZU KIDS' :
-               activeSegment === 'beauty' ? 'KAZU BEAUTY' : 'BEST OF KAZU'}
-            </h2>
-            <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mt-1">
-              Curated Essentials & Handpicked Pieces ({filteredProducts.length} Items)
-            </p>
+        <div className="flex flex-col gap-6 pb-8 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+              <h2 className="font-display text-3xl font-black tracking-tight uppercase text-zinc-900 dark:text-white">
+                {activeSegment === 'all' ? 'BEST OF KAZU' :
+                 activeSegment === 'men' ? 'KAZU MEN' :
+                 activeSegment === 'women' ? 'KAZU WOMEN' :
+                 activeSegment === 'kids' ? 'KAZU KIDS' :
+                 activeSegment === 'beauty' ? 'KAZU BEAUTY' : 'BEST OF KAZU'}
+              </h2>
+              <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mt-1">
+                Curated Essentials & Handpicked Pieces ({filteredProducts.length} Items)
+              </p>
+            </div>
+
+            {/* Segment Quick Toggles */}
+            <div className="flex flex-wrap items-center gap-2">
+              {['all', 'men', 'women', 'kids', 'beauty'].map((seg) => {
+                const isAvailable = seg === 'all' || seg === 'men';
+                return (
+                  <button
+                    key={seg}
+                    onClick={() => {
+                      if (isAvailable) handleSegmentChange(seg);
+                    }}
+                    disabled={!isAvailable}
+                    className={`px-5 py-2 text-[10px] font-bold uppercase tracking-widest rounded-full border transition-all duration-300 ${
+                      !isAvailable
+                        ? 'bg-transparent text-zinc-350 dark:text-zinc-700 border-zinc-200 dark:border-zinc-850 cursor-not-allowed'
+                        : activeSegment === seg
+                        ? 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-600/15 cursor-pointer'
+                        : 'bg-transparent text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:border-purple-500 hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer'
+                    }`}
+                    title={!isAvailable ? "Only Men's collection is available right now" : undefined}
+                  >
+                    {seg}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Segment Quick Toggles */}
-          <div className="flex flex-wrap items-center gap-2">
-            {['all', 'men', 'women', 'kids', 'beauty'].map((seg) => {
-              const isAvailable = seg === 'all' || seg === 'men';
-              return (
+          {/* Category Filter Pills (Second Row) */}
+          {availableCategories.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-zinc-150/50 dark:border-zinc-800/50">
+              <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-555 uppercase tracking-widest mr-2 block">
+                Filter by Category:
+              </span>
+              
+              {/* All Categories Pill */}
+              <button
+                onClick={() => setSelectedCategory('all')}
+                className={`px-4 py-1.5 rounded-xl border text-[10px] font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+                  selectedCategory === 'all'
+                    ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-white dark:text-zinc-950 dark:border-white shadow-sm'
+                    : 'bg-transparent text-zinc-650 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:border-purple-500 hover:text-purple-600 dark:hover:text-purple-400'
+                }`}
+              >
+                All Items
+              </button>
+
+              {/* Dynamic Sub-Category Pills */}
+              {availableCategories.map((cat) => (
                 <button
-                  key={seg}
-                  onClick={() => {
-                    if (isAvailable) setActiveSegment(seg);
-                  }}
-                  disabled={!isAvailable}
-                  className={`px-5 py-2 text-[10px] font-bold uppercase tracking-widest rounded-full border transition-all duration-300 ${
-                    !isAvailable
-                      ? 'bg-transparent text-zinc-350 dark:text-zinc-700 border-zinc-200 dark:border-zinc-850 cursor-not-allowed'
-                      : activeSegment === seg
-                      ? 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-600/15 cursor-pointer'
-                      : 'bg-transparent text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:border-purple-500 hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer'
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-4 py-1.5 rounded-xl border text-[10px] font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+                    selectedCategory.toLowerCase() === cat.toLowerCase()
+                      ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-white dark:text-zinc-950 dark:border-white shadow-sm'
+                      : 'bg-transparent text-zinc-650 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:border-purple-500 hover:text-purple-600 dark:hover:text-purple-400'
                   }`}
-                  title={!isAvailable ? "Only Men's collection is available right now" : undefined}
                 >
-                  {seg}
+                  {cat}
                 </button>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Product Cards Grid */}
