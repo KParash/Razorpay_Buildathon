@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Search, Sun, Moon, Sparkles, Heart, User as UserIcon, X, ArrowRight } from 'lucide-react';
+import { ShoppingBag, Search, Sun, Moon, Sparkles, Heart, User as UserIcon, X, ArrowRight, Clock } from 'lucide-react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTheme } from '../lib/ThemeContext';
 
@@ -66,17 +66,30 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="mx-auto grid grid-cols-12 max-w-7xl items-center">
           
           {/* Left Navigation Links (Cols 1-4) */}
-          <nav className="col-span-4 hidden lg:flex items-center gap-7 text-[12px] font-bold tracking-widest text-[#222222] dark:text-[#d1d1d1]">
-            {navLinks.map((link) => (
-              <button
-                key={link.label}
-                onClick={() => handleNavClick(link.key)}
-                className="hover:text-black dark:hover:text-white transition-colors uppercase cursor-pointer relative py-1 group"
-              >
-                {link.label}
-                <span className="absolute bottom-0 left-0 w-0 h-[1.5px] bg-black dark:bg-white transition-all duration-200 group-hover:w-full" />
-              </button>
-            ))}
+          <nav className="col-span-4 hidden lg:flex items-center gap-7 text-[12px] font-bold tracking-widest">
+            {navLinks.map((link) => {
+              const isAvailable = link.key === 'men';
+              return (
+                <button
+                  key={link.label}
+                  onClick={() => {
+                    if (isAvailable) handleNavClick(link.key);
+                  }}
+                  disabled={!isAvailable}
+                  className={`transition-colors uppercase relative py-1 group ${
+                    isAvailable
+                      ? 'text-[#222222] dark:text-[#d1d1d1] hover:text-black dark:hover:text-white cursor-pointer'
+                      : 'text-zinc-400 dark:text-zinc-650 cursor-not-allowed'
+                  }`}
+                  title={!isAvailable ? "Only Men's collection is available right now" : undefined}
+                >
+                  {link.label}
+                  {isAvailable && (
+                    <span className="absolute bottom-0 left-0 w-0 h-[1.5px] bg-black dark:bg-white transition-all duration-200 group-hover:w-full" />
+                  )}
+                </button>
+              );
+            })}
           </nav>
 
           {/* Center: Iconic KAZU Brand Logo (Cols 5-8 strictly centered) */}
@@ -126,6 +139,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Heart className="h-4 w-4 stroke-[1.8]" />
               <span className="hidden xl:inline">WISHLIST</span>
+            </button>
+
+            {/* Orders Log */}
+            <button
+              onClick={() => navigate('/orders')}
+              className="hidden sm:flex items-center gap-1.5 hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer uppercase"
+              title="Purchase History"
+            >
+              <Clock className="h-4 w-4 stroke-[1.8]" />
+              <span className="hidden xl:inline">ORDERS</span>
             </button>
 
             {/* Cart Button */}

@@ -182,78 +182,66 @@ export const Home: React.FC<HomeProps> = ({
 
           {/* Card 2: WOMEN */}
           <div
-            onClick={() => {
-              setActiveSegment('women');
-              const el = document.getElementById('catalog-grid');
-              el?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="flex items-center gap-4 p-4 rounded-2xl group cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/40 border border-transparent hover:border-zinc-200/60 dark:hover:border-zinc-800/60 transition-all duration-300 md:border-l md:border-zinc-200/50 dark:md:border-zinc-800/50 md:rounded-l-none"
+            className="flex items-center gap-4 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-850 bg-zinc-50/50 dark:bg-zinc-900/10 opacity-55 cursor-not-allowed md:border-l md:border-zinc-200/50 dark:md:border-zinc-800/50 md:rounded-l-none transition-all duration-300"
+            title="Only Men's collection is available right now"
           >
             <div className="w-16 h-20 overflow-hidden shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
               <img
                 src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&auto=format&fit=crop&q=80"
                 alt="Women Category"
-                className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
+                className="w-full h-full object-cover grayscale opacity-60 transition-all duration-700"
               />
             </div>
             <div className="space-y-1">
-              <h3 className="font-display text-base font-black tracking-wider uppercase text-zinc-900 dark:text-white">WOMEN</h3>
-              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Effortless style.</p>
-              <div className="pt-1.5 flex items-center gap-1 text-[9px] font-bold tracking-widest text-purple-600 dark:text-purple-400 group-hover:translate-x-1 transition-transform uppercase">
-                <span>SHOP</span>
-                <ArrowRight className="h-3 w-3" />
+              <h3 className="font-display text-base font-black tracking-wider uppercase text-zinc-400 dark:text-zinc-500">WOMEN</h3>
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-550 font-medium">Effortless style.</p>
+              <div className="pt-1.5 flex items-center gap-1 text-[9px] font-bold tracking-widest text-zinc-400 dark:text-zinc-550 uppercase">
+                <span>Unavailable</span>
+                <ArrowRight className="h-3 w-3 text-zinc-400 dark:text-zinc-550" />
               </div>
             </div>
           </div>
 
           {/* Card 3: KIDS */}
           <div
-            onClick={() => {
-              setActiveSegment('kids');
-              const el = document.getElementById('catalog-grid');
-              el?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="flex items-center gap-4 p-4 rounded-2xl group cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/40 border border-transparent hover:border-zinc-200/60 dark:hover:border-zinc-800/60 transition-all duration-300 md:border-l md:border-zinc-200/50 dark:md:border-zinc-800/50 md:rounded-l-none"
+            className="flex items-center gap-4 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-850 bg-zinc-50/50 dark:bg-zinc-900/10 opacity-55 cursor-not-allowed md:border-l md:border-zinc-200/50 dark:md:border-zinc-800/50 md:rounded-l-none transition-all duration-300"
+            title="Only Men's collection is available right now"
           >
             <div className="w-16 h-20 overflow-hidden shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
               <img
                 src="https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=400&auto=format&fit=crop&q=80"
                 alt="Kids Category"
-                className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
+                className="w-full h-full object-cover grayscale opacity-60 transition-all duration-700"
               />
             </div>
             <div className="space-y-1">
-              <h3 className="font-display text-base font-black tracking-wider uppercase text-zinc-900 dark:text-white">KIDS</h3>
-              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Comfort meets cool.</p>
-              <div className="pt-1.5 flex items-center gap-1 text-[9px] font-bold tracking-widest text-purple-600 dark:text-purple-400 group-hover:translate-x-1 transition-transform uppercase">
-                <span>SHOP</span>
-                <ArrowRight className="h-3 w-3" />
+              <h3 className="font-display text-base font-black tracking-wider uppercase text-zinc-400 dark:text-zinc-500">KIDS</h3>
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-550 font-medium">Comfort meets cool.</p>
+              <div className="pt-1.5 flex items-center gap-1 text-[9px] font-bold tracking-widest text-zinc-400 dark:text-zinc-550 uppercase">
+                <span>Unavailable</span>
+                <ArrowRight className="h-3 w-3 text-zinc-400 dark:text-zinc-550" />
               </div>
             </div>
           </div>
 
           {/* Card 4: BEAUTY */}
           <div
-            onClick={() => {
-              setActiveSegment('beauty');
-              const el = document.getElementById('catalog-grid');
-              el?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="flex items-center gap-4 p-4 rounded-2xl group cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/40 border border-transparent hover:border-zinc-200/60 dark:hover:border-zinc-800/60 transition-all duration-300 md:border-l md:border-zinc-200/50 dark:md:border-zinc-800/50 md:rounded-l-none"
+            className="flex items-center gap-4 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-850 bg-zinc-50/50 dark:bg-zinc-900/10 opacity-55 cursor-not-allowed md:border-l md:border-zinc-200/50 dark:md:border-zinc-800/50 md:rounded-l-none transition-all duration-300"
+            title="Only Men's collection is available right now"
           >
             <div className="w-16 h-20 overflow-hidden shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
               <img
                 src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400&auto=format&fit=crop&q=80"
                 alt="Beauty Category"
-                className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
+                className="w-full h-full object-cover grayscale opacity-60 transition-all duration-700"
               />
             </div>
             <div className="space-y-1">
-              <h3 className="font-display text-base font-black tracking-wider uppercase text-zinc-900 dark:text-white">BEAUTY</h3>
-              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Glow essentials.</p>
-              <div className="pt-1.5 flex items-center gap-1 text-[9px] font-bold tracking-widest text-purple-600 dark:text-purple-400 group-hover:translate-x-1 transition-transform uppercase">
-                <span>SHOP</span>
-                <ArrowRight className="h-3 w-3" />
+              <h3 className="font-display text-base font-black tracking-wider uppercase text-zinc-400 dark:text-zinc-500">BEAUTY</h3>
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-550 font-medium">Glow essentials.</p>
+              <div className="pt-1.5 flex items-center gap-1 text-[9px] font-bold tracking-widest text-zinc-400 dark:text-zinc-550 uppercase">
+                <span>Unavailable</span>
+                <ArrowRight className="h-3 w-3 text-zinc-400 dark:text-zinc-550" />
               </div>
             </div>
           </div>
@@ -380,19 +368,28 @@ export const Home: React.FC<HomeProps> = ({
 
           {/* Segment Quick Toggles */}
           <div className="flex flex-wrap items-center gap-2">
-            {['all', 'men', 'women', 'kids', 'beauty'].map((seg) => (
-              <button
-                key={seg}
-                onClick={() => setActiveSegment(seg)}
-                className={`px-5 py-2 text-[10px] font-bold uppercase tracking-widest rounded-full border transition-all duration-300 cursor-pointer ${
-                  activeSegment === seg
-                    ? 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-600/15'
-                    : 'bg-transparent text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:border-purple-500 hover:text-purple-600 dark:hover:text-purple-400'
-                }`}
-              >
-                {seg}
-              </button>
-            ))}
+            {['all', 'men', 'women', 'kids', 'beauty'].map((seg) => {
+              const isAvailable = seg === 'all' || seg === 'men';
+              return (
+                <button
+                  key={seg}
+                  onClick={() => {
+                    if (isAvailable) setActiveSegment(seg);
+                  }}
+                  disabled={!isAvailable}
+                  className={`px-5 py-2 text-[10px] font-bold uppercase tracking-widest rounded-full border transition-all duration-300 ${
+                    !isAvailable
+                      ? 'bg-transparent text-zinc-350 dark:text-zinc-700 border-zinc-200 dark:border-zinc-850 cursor-not-allowed'
+                      : activeSegment === seg
+                      ? 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-600/15 cursor-pointer'
+                      : 'bg-transparent text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:border-purple-500 hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer'
+                  }`}
+                  title={!isAvailable ? "Only Men's collection is available right now" : undefined}
+                >
+                  {seg}
+                </button>
+              );
+            })}
           </div>
         </div>
 
