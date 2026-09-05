@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate, Link, useParams } from 'react-router-dom';
 import {
   Sparkles,
   Send,
@@ -113,10 +113,11 @@ export const ChatPage: React.FC<ChatPageProps> = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { session_id } = useParams<{ session_id?: string }>();
 
   // Session & History State
   const [sessions, setSessions] = useState<ChatSession[]>([]);
-  const [currentSessionId, setCurrentSessionId] = useState<string>(() => `sess_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`);
+  const [currentSessionId, setCurrentSessionId] = useState<string>(() => session_id || `sess_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`);
   const [messages, setMessages] = useState<ChatMessageItem[]>([INITIAL_WELCOME_MSG]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -173,40 +174,46 @@ export const ChatPage: React.FC<ChatPageProps> = ({
     }
   }, [location.state]);
 
-  // Switch / Load Session History
-  const handleSelectSession = async (sessionId: string) => {
-    if (sessionId === currentSessionId) return;
-    setCurrentSessionId(sessionId);
-    setIsLoadingHistory(true);
-
-    try {
-      const res = await fetch(`/api/chat/history/${sessionId}`);
-      const data = await res.json();
-      if (data.status === 'success' && Array.isArray(data.messages) && data.messages.length > 0) {
-        setMessages(data.messages);
-      } else {
-        setMessages([INITIAL_WELCOME_MSG]);
-      }
-    } catch (err) {
-      console.error('Failed to load session history:', err);
+  // Sync currentSessionId and load messages when URL session_id changes
+  useEffect(() => {
+    if (session_id) {
+      setCurrentSessionId(session_id);
+      setIsLoadingHistory(true);
+      
+      fetch(`/api/chat/history/${session_id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.status === 'success' && Array.isArray(data.messages) && data.messages.length > 0) {
+            setMessages(data.messages);
+          } else {
+            setMessages([INITIAL_WELCOME_MSG]);
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to load session history:', err);
+          setMessages([INITIAL_WELCOME_MSG]);
+        })
+        .finally(() => {
+          setIsLoadingHistory(false);
+        });
+    } else {
+      // No session_id in URL, start with welcome screen
       setMessages([INITIAL_WELCOME_MSG]);
-    } finally {
-      setIsLoadingHistory(false);
     }
+  }, [session_id]);
+
+  // Switch / Load Session History
+  const handleSelectSession = (sessionId: string) => {
+    if (sessionId === currentSessionId) return;
+    navigate(`/chat/${sessionId}`);
   };
 
   // Start a fresh new chat session
   const handleNewChat = () => {
+    navigate('/chat');
     const newId = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     setCurrentSessionId(newId);
-    setMessages([
-      {
-        id: `welcome-${Date.now()}`,
-        sender: 'assistant',
-        text: "New consultation started. How can I curate your style today? Specify an occasion, fabric preferences, or climate needs.",
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      }
-    ]);
+    setMessages([INITIAL_WELCOME_MSG]);
   };
 
   // Delete a chat session
@@ -336,6 +343,11 @@ export const ChatPage: React.FC<ChatPageProps> = ({
 
         setMessages((prev) => [...prev, assistantMsg]);
         fetchSessions();
+
+        // If they were on a new blank session ('/chat'), update URL to '/chat/:session_id'
+        if (!session_id) {
+          navigate(`/chat/${currentSessionId}`, { replace: true });
+        }
 
         // Auto-launch Razorpay modal if client explicitly requested checkout
         if (data.checkout_ready && data.razorpay_order) {

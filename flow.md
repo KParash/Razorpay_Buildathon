@@ -13,19 +13,21 @@
 │  BROWSER (React + Vite + Tailwind v4)                          │
 │                                                                 │
 │  Routes:                                                        │
-│    /          → Home.tsx (Product Grid + Category Filters)       │
+│    /          → Home.tsx (Clean Editorial Landing Page)         │
 │    /chat      → ChatPage.tsx (Full-Page Stylist Chat + Sidebar) │
+│    /search    → SearchPage.tsx (Dedicated Catalog Search Grid)  │
+│    /orders    → OrdersPage.tsx (Chronological Timeline Log)     │
 │                                                                 │
 │  Shared State:                                                  │
 │    App.tsx manages: products[], cart[], searchQuery, isCartOpen  │
 │    ThemeContext toggles .dark class on <html>                    │
 │                                                                 │
 │  Components:                                                    │
-│    Navbar.tsx        → Search bar, Cart icon, Chat CTA           │
+│    Navbar.tsx        → Search drawer, Cart badge, Orders CTA      │
 │    ProductCard.tsx   → SKU card with image, fit badge, coupon    │
 │    CartDrawer.tsx    → Slide-over cart with Razorpay checkout    │
-│    ChatDrawer.tsx    → Lightweight side-panel chat (Home page)   │
-│    ChatPage.tsx      → Full-page chat with history sidebar       │
+│    OrdersPage.tsx    → Timeline of verified paid transactions    │
+│    SearchPage.tsx    → Query matched grids with Segment filters  │
 └──────────────────────────┬──────────────────────────────────────┘
                            │ HTTP (fetch)
                            ▼
@@ -33,37 +35,39 @@
 │  FastAPI BACKEND (main.py, uvicorn :8000)                      │
 │                                                                 │
 │  Endpoints:                                                     │
-│    GET  /api/products           → catalog_store.get_all_...()   │
-│    GET  /api/products/search    → catalog_store.search_...()    │
-│    POST /api/chat               → graph.fashion_agent_graph     │
-│    GET  /api/chat/sessions      → history_store sessions list   │
-│    GET  /api/chat/history/:id   → history_store messages        │
-│    DELETE /api/chat/sessions/:id→ history_store delete           │
-│    POST /v1/chat/completions    → OpenAI-compat (LibreChat)     │
-│    POST /api/checkout/create    → checkout_service order         │
-│    POST /api/checkout/verify    → stub verification             │
+│    GET  /api/products             → Fetch product catalog       │
+│    GET  /api/products/search      → Token ranked search results │
+│    POST /api/chat                 → LangGraph assistant swarm   │
+│    GET  /api/chat/sessions        → Chat session directory      │
+│    GET  /api/chat/history/:id     → Fetch multi-turn messages   │
+│    DELETE /api/chat/sessions/:id  → Remove chat session         │
+│    POST /api/checkout/create      → Register frozen order       │
+│    POST /api/checkout/verify      → Cryptographic HMAC verify   │
+│    GET  /api/cart                 → Retrieve persistent cart    │
+│    POST /api/cart/add             → Save SKU & size to cart     │
+│    POST /api/cart/remove          → Remove item from cart       │
+│    POST /api/cart/clear           → Empty active cart rows      │
+│    GET  /api/user/search-history  → Fetch recent search queries │
+│    POST /api/user/search-history  → Append unique search terms  │
+│    GET  /api/orders               → Fetch paid purchase history │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ### 1.2 Step-by-Step User Interaction Flow
 
-1. **Page Load (`/`):** `App.tsx` fires `fetch('/api/products')`. The backend calls `get_all_catalog_products()`, which returns the active product catalog from PostgreSQL via `catalog_store.py`. Products render as a grid of `ProductCard` components.
-
-2. **Product Discovery:** The user browses the grid. `Home.tsx` provides **dynamic category filters** (derived from catalog metadata) and a **search bar** that filters products client-side by title, category, fabric, and color.
-
-3. **Ask AI Stylist (from card):** Each `ProductCard` has a floating "Ask AI Stylist" button. Clicking it navigates to `/chat` with the product title pre-filled as the initial query via `useLocation().state`.
-
-4. **Chat Page (`/chat`):** The full-page `ChatPage.tsx` renders:
-   - **Left sidebar:** Fetches session history from `GET /api/chat/sessions?user_id=usr_guest`. Displays session titles, timestamps, and message counts. Clicking a session loads its messages via `GET /api/chat/history/{session_id}`.
-   - **Main chat pane:** User types a message → `POST /api/chat` with `{ message, session_id, customer_profile }`.
-
-5. **Backend Processing:** `main.py` receives the request, persists the user message to `history_store`, invokes `fashion_agent_graph.ainvoke()`, persists the assistant response (including `recommendation`, `candidate_skus`, `evaluations`, `pricing_result`, and `checkout_ready`), then returns the full payload.
-
-6. **Response Rendering:** `ChatPage.tsx` renders the assistant's prose response. If a `recommendation` object is present, it renders an **inline product card** with image, price, fabric, and fit details.
-
-7. **Add to Cart:** The user clicks "Add to Cart" on either a `ProductCard` or an in-chat recommendation. The item is appended to the `cart[]` state in `App.tsx`.
-
-8. **Checkout (`CartDrawer`):** Opening the cart drawer shows all items with a total. Clicking "Checkout with Razorpay" invokes `POST /api/checkout/create`, receives an order object, and calls `openRazorpayCheckout()` to launch the Razorpay payment modal.
+1. **Page Load (`/`):** `App.tsx` fires `fetch('/api/products')` and `fetch('/api/cart?user_id=usr_guest')` concurrently. The catalog and user's saved persistent cart (with quantities and selected sizes) are retrieved from the database, eliminating cart loss on refreshes.
+2. **Category Selection & Segment Locks:** The homepage renders four segment strip cards (MEN, WOMEN, KIDS, BEAUTY). Because only the Men's collection is in stock, clicking on WOMEN, KIDS, or BEAUTY cards is disabled (`cursor-not-allowed`) and displays a hover tooltip: `"Only Men's collection is available right now"`.
+3. **Product Discovery & Search Page (`/search`):** Clicking the search icon opens the search drawer. Typing a keyword and pressing `Enter` closes the drawer and redirects the user to `/search` (e.g. results page), keeping the home page clean and static. The Search Page displays clickable chronological **Recent Searches** chips (representing the user's latest 5 queries fetched from the DB) for quick navigation.
+4. **Interactive Product Cards:** Clicking on any available product image or title smoothly navigates to its dedicated `/product/:sku_id` details page. Un-available category cards apply a grayscale filter and display a tooltip warning on hover.
+5. **Ask AI Stylist (from card/details):** Click "Style Advisor" or "Consult AI Stylist" to transition to `/chat` with a pre-filled Occasion/Fabric/Fit prompt.
+6. **Chat Page (`/chat`):** Features a clean, distraction-free environment:
+   - **Left Sidebar**: Keeps track of chat histories, "+ New Consultation", and "Stylist Specs" (fit preference and climate modifiers) inside one control drawer.
+   - **Structured AI Cards**: If a recommendation is surfaced, it contains an inline product card. Clicking "Add to Cart" automatically pulls the AI-recommended size (`msg.evaluations[0].size_verdict.recommended_size`) and saves it directly to the user's persistent cart!
+7. **Add to Cart & Coupon Sync:** Adding items from the product details page saves the specific selected size to the PostgreSQL database. Discount coupon inputs (such as `STYLE20` for 20% off) inside `CartDrawer.tsx` are persisted in browser `localStorage` and automatically cleared upon transaction success.
+8. **Razorpay Checkout & Webhook Clears:** Clicking "Checkout" creates a frozen order record on the server, launching the Razorpay payment Sandbox. On successful signature verification (`POST /api/checkout/verify`), the backend:
+   - Confirms order as `status="paid"` using HMAC-SHA256 verification.
+   - **Wipes the user's active cart from the database**, and clears applied coupons from `localStorage`.
+9. **Purchase History Timeline (`/orders`):** Users click `ORDERS` inside the navbar to view their purchase history. It queries `GET /api/orders` and renders all paid orders in a gorgeous vertical chronological timeline milestone view, with links back to the catalog items.
 
 ---
 
@@ -84,7 +88,7 @@
                 │                │    climate, budget, is_ready, checkout
                 └───────┬────────┘
                         │
-            ┌───────────┼──────────────┐
+            ┌___________┼──────────────┐
             │ (conditional edge)        │
             ▼           ▼              ▼
     ┌────────────┐ ┌──────────┐ ┌───────────┐
@@ -92,11 +96,12 @@
     │            │ │          │ │            │
     │ Evocative  │ │ Postgres │ │ Razorpay   │
     │ styling Qs │ │ ranking  │ │ order      │
-    └─────┬──────┘ │ search   │ │ freeze     │
-          │        └────┬─────┘ └──────┬─────┘
-          ▼             │              │
-         END            ▼              ▼
-                ┌──────────────┐      END
+    │            │ │ search   │ │ freeze     │
+    └─────┬──────┘ └────┬─────┘ └──────┬─────┘
+          │              │              │
+          ▼              │              ▼
+         END             ▼             END
+                ┌──────────────┐
                 │ worker_swarm │
                 │              │
                 │ asyncio.gather():
@@ -173,69 +178,26 @@ final_price = round(base_price * (1 - discount), 2)
 
 **STYLE20 override:** If the user's message text contains "STYLE20" (case-insensitive), the pricing node forces `coupon = "STYLE20"` regardless of the product's `eligible_coupon` metadata. This enables the "discount hunter" user flow.
 
-### 2.5 Category-Aware Synthesis
-
-`synthesis_node` receives the full evaluation output and generates the final response. The prompt includes **category-specific guidelines**:
-- **Fashion & Apparel:** Silhouettes, textile drape, occasion dress code, pairing.
-- **Beauty & Skincare:** Ingredients, daily ritual, hydration barrier, radiant finish.
-- **Electronics & Gadgets:** Acoustics, ergonomics, craftsmanship, commute/workout versatility.
-- **Health / Home:** Wellness impact, build quality, daily integration.
-
 ---
 
-## 3. The Evaluation Lifecycle
+## 3. Database & Storage Architecture
 
-### 3.1 Pipeline Execution Flow
+### 3.1 SQLAlchemy Models & Schema Definitions (`db.py`)
 
-```
-eval_pipeline.py
-    │
-    ├─ load_dotenv() → set LANGCHAIN_TRACING_V2=true
-    ├─ Client() → verify LangSmith connection
-    │
-    ├─ FOR each test_case in EVALUATION_DATASET (6 scenarios):
-    │   │
-    │   ├─ Build initial AgentState with test input + customer_profile
-    │   ├─ Generate unique session_id: eval_{tc_id}_{timestamp}
-    │   ├─ Set config.tags = ["evaluation", tc_id, target_category]
-    │   │
-    │   ├─ fashion_agent_graph.ainvoke(state, config) → agent_res
-    │   │   (Full LangGraph execution: router → retriever/clarifier →
-    │   │    worker_swarm → pricing → synthesis)
-    │   │
-    │   ├─ DETERMINISTIC CHECKS:
-    │   │   ├─ Route accuracy: intent.is_ready_to_recommend vs. expected
-    │   │   └─ Budget compliance: anchor_sku.price ≤ expected max_budget
-    │   │
-    │   ├─ LLM-AS-A-JUDGE: judge_agent_response(tc, agent_res)
-    │   │   ├─ Sends full agent output to judge_llm (T=0.0)
-    │   │   ├─ Structured extraction → AgentEvaluationGrade
-    │   │   └─ Returns: relevance, persona, recommendation, helpfulness,
-    │   │              passed (avg ≥ 7.0), critique
-    │   │
-    │   └─ Append result to results[]
-    │
-    ├─ AGGREGATE: mean scores, pass rate, composite quality
-    │
-    ├─ WRITE: eval_results/eval_run_{timestamp}.json
-    └─ WRITE: eval_results/latest_report.md
-```
+All transaction, chat history, catalog, and session state are persisted within PostgreSQL (Supabase) via SQLAlchemy ORM models:
 
-### 3.2 Test Scenario Coverage
+*   **`users`**: Manages customer profiles, sizing history, liked/disliked parameters, and search query cache:
+    *   `search_history`: JSON column storing the latest 5 queries chronologically.
+*   **`cart_items`**: Manages persistent e-commerce baskets:
+    *   `user_id`, `product_id`, `quantity`, and `size` (capturing chosen product sizing).
+*   **`conversations`**: Stores multi-turn chat threads and message details.
+*   **`products`**: Full e-commerce catalog storage.
+*   **`orders`**: Keeps trace of frozen transactions, coupon details, amounts, and Razorpay signature verification parameters.
 
-| # | Scenario | Tests | Expected Route |
-|---|---|---|---|
-| 1 | Beach Wedding in Goa (≤ ₹4000) | Budget filtering, climate fabric match, persona tone | `retriever` |
-| 2 | Rooftop Cocktail Party | Formality detection, structured outerwear recommendation | `retriever` |
-| 3 | Skincare & Hydration | Cross-category (Beauty) semantic retrieval precision | `retriever` |
-| 4 | Wireless Bluetooth Headphones | Cross-category (Electronics) retrieval and feature highlighting | `retriever` |
-| 5 | Ambiguous "Something Nice" | Clarifier routing, no premature checkout, evocative questions | `clarifier` |
-| 6 | Discount Hunter (STYLE20) | Coupon application, 20% discount computation, pricing output | `retriever` |
-
-### 3.3 Output Artifacts
-
-- **`eval_results/eval_run_{YYYYMMDD_HHMMSS}.json`** — Full structured benchmark data (per-scenario scores, critiques, SKU selections, response previews). Timestamped for regression tracking.
-- **`eval_results/latest_report.md`** — Human-readable Markdown summary with quality dimension tables, per-scenario breakdown, and detailed evaluator critiques.
+### 3.2 Database Bootstrapping and Dynamic Migrations
+Our database architecture implements a safe, self-healing startup pipeline inside `db.py` to prevent structural mismatches on deployment:
+- `_ensure_product_segment_column()`: Auto-backfills the legacy catalog table with the category segments.
+- `_ensure_user_search_history_column()`: Automatically checks column descriptors on the `users` table and executes dynamic SQL (`ALTER TABLE users ADD COLUMN...`) if missing.
 
 ---
 
@@ -245,23 +207,11 @@ eval_pipeline.py
 
 | Boundary | Current State | Production Risk |
 |---|---|---|
-| **Product images** | Hardcoded `SKU_IMAGES` dictionary in [`product.ts`](file:///e:/Buildathon/Razorpay_Buildathon/frontend/src/types/product.ts) maps 8 SKU IDs to Unsplash URLs. The 50-product catalog (`new_catalog.json`) includes `image_url` fields, but `getProductImage()` falls back to Unsplash for any SKU not in the map. | **42 of 50 products display the same fallback image.** Product discovery is visually broken for the majority of the catalog. |
-| **Postgres-backed catalog search** | `catalog_store.py` ranks active products directly from PostgreSQL using deterministic query-token matching and optional segment/budget filters. | Not viable beyond single-process development. No local vector index to warm up or rebuild. The trade-off is simpler ranking rather than learned semantic similarity. |
-| **`PostgresSaver` checkpointer** | Backed by Supabase PostgreSQL. All multi-turn conversation state survives restarts while the database remains available. | Production still needs backups and connection monitoring, but no local state file. |
-| **`chat_history.json` file store** | Single flat JSON file. No file-level locking. No rotation or pruning. | Concurrent requests can corrupt the file. Unbounded growth over time. |
-| **Groq free-tier rate limits** | `qwen/qwen3.8-27b` via Groq. 30 RPM on free tier. The worker swarm fires 3 concurrent calls per recommendation. | Under concurrent users, rate limit exhaustion triggers cascading `except` fallbacks, degrading recommendation quality silently. |
+| **Product images** | Hardcoded `SKU_IMAGES` dictionary in `product.ts` maps SKU IDs to Unsplash URLs. | product discovery is visually dependent on fallback placeholders for unrecognized SKUs. |
+| **Postgres-backed catalog search** | `catalog_store.py` ranks active products directly from PostgreSQL using deterministic query-token matching and optional segment/budget filters. | Simplistic query matching instead of vector semantic similarities. |
+| **Groq free-tier rate limits** | `qwen/qwen3.8-27b` via Groq. 30 RPM on free tier. | Rate limit exhaustion on worker swarms degrades recommendation quality. |
 
-### 4.2 Pending Integration Gaps
-
-| Gap | Current Behavior | Impact |
-|---|---|---|
-| **Razorpay signature verification** | `POST /api/checkout/verify` returns `{"status": "success"}` unconditionally without validating `razorpay_signature` against `RAZORPAY_KEY_SECRET`. | **Critical security vulnerability.** An attacker can forge payment confirmation. |
-| **Inventory management** | No stock tracking. "Frozen order" does not decrement inventory. | Double-selling of out-of-stock items in multi-user scenarios. |
-| **No semantic vector filter** | The current ranking layer searches the active product catalog directly from PostgreSQL using deterministic query-token matching and optional segment/budget filters. | Cross-category semantic bleeding: a query for "moisturizer" may surface fashion items with similar adjectives (e.g., "hydrating linen"). |
-| **FALLBACK_PRODUCTS in App.tsx** | [`App.tsx`](file:///e:/Buildathon/Razorpay_Buildathon/frontend/src/App.tsx) contains a hardcoded 8-item `FALLBACK_PRODUCTS` array (lines 9–114) used when `/api/products` fails. These are the original seed catalog SKUs, not the current 50-item catalog. | If the backend is unreachable, the frontend displays stale products that may not exist in the current catalog cache. |
-| **OpenAI-compat endpoint profile** | `POST /v1/chat/completions` uses a hardcoded `default_profile` (lines 206–213) with `fit_preference: "relaxed"` and `budget_tier: "mid"`. LibreChat users cannot customize their profile. | All LibreChat sessions produce recommendations calibrated for a single persona. |
-
-### 4.3 Data Flow Boundaries
+### 4.2 Data Flow Boundaries
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -274,23 +224,12 @@ eval_pipeline.py
 │    └─ Trace telemetry (async, non-blocking)                  │
 │                                                              │
 │  Razorpay SDK (razorpay.com)                                 │
-│    └─ Order creation (mock mode when keys absent)            │
+│    └─ Order creation and HMACS Cryptographic Verification    │
 │                                                              │
 │  Unsplash CDN (images.unsplash.com)                          │
 │    └─ Product images (8 hardcoded, rest fallback)            │
 │                                                              │
 │  HuggingFace Hub (huggingface.co)                            │
 │    └─ all-MiniLM-L6-v2 model weights (cached locally)       │
-└──────────────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────────┐
-│ LOCAL PERSISTENCE (no external DB)                           │
-│                                                              │
-│  chat_history.json     → Session metadata + message logs     │
-│  new_catalog.json      → 50-product source-of-truth catalog  │
-│  eval_results/*.json   → Timestamped benchmark run data      │
-│  eval_results/*.md     → Human-readable evaluation reports   │
-│  PostgreSQL-backed catalog search → Ranked product results   │
-│  PostgresSaver         → LangGraph multi-turn checkpoints    │
 └──────────────────────────────────────────────────────────────┘
 ```
