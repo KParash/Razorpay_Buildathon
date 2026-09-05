@@ -96,6 +96,7 @@ class User(Base):
     disliked_colors = Column(JSON, default=list)
     size_history = Column(JSON, default=lambda: {"tops": "M", "bottoms": "32"})
     budget_tier = Column(String(10), default="mid")
+    search_history = Column(JSON, default=list)
     metadata_ = Column("metadata", JSON, default=dict)  # 'metadata' is reserved in SA
     created_at = Column(DateTime, default=_utcnow)
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
@@ -116,6 +117,7 @@ class User(Base):
             "disliked_colors": self.disliked_colors or [],
             "size_history": self.size_history or {},
             "budget_tier": self.budget_tier,
+            "search_history": self.search_history or [],
             "metadata": self.metadata_ or {},
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
@@ -359,10 +361,23 @@ def _ensure_product_segment_column():
             conn.execute(text("UPDATE products SET segment = 'Men' WHERE segment IS NULL"))
 
 
+def _ensure_user_search_history_column():
+    """Backfill the legacy users table with the `search_history` column if needed."""
+    inspector = inspect(engine)
+    if not inspector.has_table("users"):
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("users")}
+    if "search_history" not in columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE users ADD COLUMN search_history JSONB DEFAULT '[]'::jsonb"))
+
+
 def init_db():
     """Create all tables if they don't exist and apply small schema backfills."""
     Base.metadata.create_all(bind=engine)
     _ensure_product_segment_column()
+    _ensure_user_search_history_column()
 
 
 init_db()

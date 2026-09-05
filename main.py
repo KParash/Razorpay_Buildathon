@@ -99,6 +99,10 @@ class RemoveCartItemRequest(BaseModel):
 class ClearCartRequest(BaseModel):
     user_id: str = "usr_guest"
 
+class SaveSearchRequest(BaseModel):
+    user_id: str = "usr_guest"
+    query: str
+
 
 
 # -------------------------------------------------------------------
@@ -495,6 +499,45 @@ async def clear_cart(req: ClearCartRequest, db: Session = Depends(get_db)):
     db.query(CartItem).filter_by(user_id=user_id).delete()
     db.commit()
     return {"status": "success", "message": "Cart cleared successfully"}
+
+
+@app.get("/api/user/search-history")
+async def get_search_history(user_id: str = "usr_guest", db: Session = Depends(get_db)):
+    """Retrieve persistent search history list (last 5 queries) for a specific user."""
+    user = db.query(User).filter_by(user_id=user_id).first()
+    return {
+        "status": "success",
+        "search_history": user.search_history if user and user.search_history else []
+    }
+
+@app.post("/api/user/search-history")
+async def save_search_history(req: SaveSearchRequest, db: Session = Depends(get_db)):
+    """Chronologically append a new keyword to the user's recent search list (caps at 5 items)."""
+    user_id = req.user_id or "usr_guest"
+    query = req.query.strip()
+    if not query:
+        return {"status": "success", "search_history": []}
+
+    user = db.query(User).filter_by(user_id=user_id).first()
+    if not user:
+        user = User(
+            user_id=user_id,
+            username=f"guest_{uuid.uuid4().hex[:6]}",
+            email=f"{user_id}@example.com"
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    history = list(user.search_history or [])
+    if query in history:
+        history.remove(query)
+    history.insert(0, query)
+    user.search_history = history[:5]
+    
+    db.commit()
+    db.refresh(user)
+    return {"status": "success", "search_history": user.search_history}
 
 
 @app.get("/api/orders")

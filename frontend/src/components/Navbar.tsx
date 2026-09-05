@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShoppingBag, Search, Sun, Moon, Sparkles, Heart, User as UserIcon, X, ArrowRight, Clock } from 'lucide-react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTheme } from '../lib/ThemeContext';
@@ -23,6 +23,35 @@ export const Navbar: React.FC<NavbarProps> = ({
   const location = useLocation();
   const isChatPage = location.pathname === '/chat';
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (showSearchModal) {
+      fetch('/api/user/search-history?user_id=usr_guest')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.status === 'success' && data.search_history) {
+            setRecentSearches(data.search_history);
+          }
+        })
+        .catch((err) => console.error('Failed to retrieve search history:', err));
+    }
+  }, [showSearchModal]);
+
+  const handleSearchSubmit = (query: string) => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+
+    fetch('/api/user/search-history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: 'usr_guest', query: trimmed }),
+    }).catch((err) => console.error('Failed to save search history:', err));
+
+    if (setSearchQuery) setSearchQuery(trimmed);
+    setShowSearchModal(false);
+    navigate('/search');
+  };
 
   const navLinks = [
     { label: 'MEN', key: 'men' },
@@ -205,15 +234,40 @@ export const Navbar: React.FC<NavbarProps> = ({
                   if (setSearchQuery) setSearchQuery(e.target.value);
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') setShowSearchModal(false);
+                  if (e.key === 'Enter') {
+                    handleSearchSubmit(searchQuery);
+                  }
                 }}
                 className="w-full h-12 bg-white dark:bg-[#1c1c1f] border border-black/10 dark:border-white/10 pl-11 pr-4 text-sm font-medium text-black dark:text-white placeholder:text-zinc-400 focus:outline-none focus:border-black dark:focus:border-white"
               />
             </div>
+
+            {/* Recent Searches Section */}
+            {recentSearches.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-black/10 dark:border-white/10 space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-550 block">
+                  Recent Searches
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {recentSearches.map((item, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleSearchSubmit(item)}
+                      className="px-3.5 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 hover:border-purple-500/50 hover:text-purple-600 dark:hover:text-purple-400 text-xs font-semibold transition-all cursor-pointer shadow-sm"
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="mt-4 flex items-center justify-between text-xs text-zinc-500">
               <span>Press <strong className="text-black dark:text-white">ENTER</strong> to apply filter</span>
               <button
-                onClick={() => setShowSearchModal(false)}
+                onClick={() => {
+                  handleSearchSubmit(searchQuery);
+                }}
                 className="flex items-center gap-1 font-bold text-black dark:text-white hover:underline cursor-pointer"
               >
                 <span>View Results</span>
